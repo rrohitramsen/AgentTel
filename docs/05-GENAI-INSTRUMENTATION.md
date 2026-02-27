@@ -20,6 +20,49 @@ All GenAI library dependencies are `compileOnly` — they activate only when the
 
 ## Dependency Setup
 
+**Maven:**
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>io.agenttel</groupId>
+        <artifactId>agenttel-genai</artifactId>
+        <version>0.1.0-alpha</version>
+    </dependency>
+
+    <!-- Include whichever GenAI libraries you use: -->
+    <dependency>
+        <groupId>dev.langchain4j</groupId>
+        <artifactId>langchain4j-core</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+    <!-- or -->
+    <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-core</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+    <!-- or -->
+    <dependency>
+        <groupId>com.anthropic</groupId>
+        <artifactId>anthropic-java</artifactId>
+        <version>2.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.openai</groupId>
+        <artifactId>openai-java</artifactId>
+        <version>4.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bedrockruntime</artifactId>
+        <version>2.30.0</version>
+    </dependency>
+</dependencies>
+```
+
+**Gradle:**
+
 ```kotlin
 // build.gradle.kts
 dependencies {

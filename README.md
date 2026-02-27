@@ -70,6 +70,35 @@ Full observability for AI/ML workloads on the JVM:
 
 ### 1. Add Dependencies
 
+**Maven:**
+
+```xml
+<dependencies>
+    <!-- Core: span enrichment, baselines, anomaly detection, SLO tracking -->
+    <dependency>
+        <groupId>io.agenttel</groupId>
+        <artifactId>agenttel-spring-boot-starter</artifactId>
+        <version>0.1.0-alpha</version>
+    </dependency>
+
+    <!-- Optional: GenAI instrumentation -->
+    <dependency>
+        <groupId>io.agenttel</groupId>
+        <artifactId>agenttel-genai</artifactId>
+        <version>0.1.0-alpha</version>
+    </dependency>
+
+    <!-- Optional: Agent interface layer (MCP server, incident context, remediation) -->
+    <dependency>
+        <groupId>io.agenttel</groupId>
+        <artifactId>agenttel-agent</artifactId>
+        <version>0.1.0-alpha</version>
+    </dependency>
+</dependencies>
+```
+
+**Gradle:**
+
 ```kotlin
 // build.gradle.kts
 dependencies {
@@ -245,6 +274,43 @@ Affected Deps: stripe-api
 | Anthropic Java SDK | 2.0.0+ (optional) |
 | OpenAI Java SDK | 4.0.0+ (optional) |
 | AWS Bedrock SDK | 2.30.0+ (optional) |
+
+## Build Tool Support
+
+AgentTel publishes standard Maven artifacts to Maven Central. Your application can use **any build tool** — Maven, Gradle, sbt, Bazel, or anything that resolves Maven dependencies.
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>io.agenttel</groupId>
+    <artifactId>agenttel-spring-boot-starter</artifactId>
+    <version>0.1.0-alpha</version>
+</dependency>
+```
+
+### Gradle (Kotlin DSL)
+
+```kotlin
+implementation("io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")
+```
+
+### Gradle (Groovy DSL)
+
+```groovy
+implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
+```
+
+### All Available Artifacts
+
+| Group ID | Artifact ID | Description |
+|----------|------------|-------------|
+| `io.agenttel` | `agenttel-api` | Annotations and constants (zero dependencies) |
+| `io.agenttel` | `agenttel-core` | Runtime engine |
+| `io.agenttel` | `agenttel-genai` | GenAI instrumentation |
+| `io.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents) |
+| `io.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
+| `io.agenttel` | `agenttel-testing` | Test utilities |
 
 ## Building from Source
 
