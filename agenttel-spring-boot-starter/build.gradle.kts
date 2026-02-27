@@ -17,7 +17,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-autoconfigure")
     implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.springframework:spring-web")
+    compileOnly("org.springframework:spring-webmvc")
+    compileOnly("jakarta.servlet:jakarta.servlet-api")
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
+
+    compileOnly(project(":agenttel-agent"))
 
     annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor:${springBootVersion}")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")

@@ -8,7 +8,7 @@ otel:
   traces:
     exporter: logging
   metrics:
-    exporter: none
+    exporter: logging
   logs:
     exporter: none
   resource:
@@ -53,4 +53,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus

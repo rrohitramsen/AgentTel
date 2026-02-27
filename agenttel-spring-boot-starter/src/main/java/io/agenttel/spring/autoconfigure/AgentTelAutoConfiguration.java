@@ -21,10 +21,13 @@ import io.agenttel.core.topology.TopologyRegistry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Auto-configuration for AgentTel in Spring Boot applications.
@@ -135,6 +138,21 @@ public class AgentTelAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public AgentTelAnnotationBeanPostProcessor agentTelAnnotationBeanPostProcessor(
+            TopologyRegistry topology,
+            StaticBaselineProvider baselines,
+            OperationContextRegistry operationContexts) {
+        return new AgentTelAnnotationBeanPostProcessor(topology, baselines, operationContexts);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AgentOperationAspect agentOperationAspect(AgentTelEngine engine) {
+        return new AgentOperationAspect(engine);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public AgentTelEngine agentTelEngine(TopologyRegistry topology,
                                           StaticBaselineProvider baselines,
                                           RollingBaselineProvider rollingBaselines,
@@ -176,5 +194,22 @@ public class AgentTelAutoConfiguration {
         // This ensures the processor is added during SDK initialization.
         return customizer -> customizer.addTracerProviderCustomizer(
                 (builder, config) -> builder.addSpanProcessor(spanProcessor));
+    }
+
+    @Bean
+    @ConditionalOnClass(name = "org.springframework.web.servlet.HandlerInterceptor")
+    public WebMvcConfigurer agentTelWebMvcConfigurer(
+            StaticBaselineProvider baselines,
+            OperationContextRegistry operationContexts) {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                // Enriches spans with baseline and decision attributes after route resolution.
+                // At SpanProcessor.onStart(), the span name is just "POST" (HTTP method).
+                // By the time this interceptor runs, the route is resolved and we can look up
+                // the operation name (e.g., "POST /api/payments") for baseline/decision metadata.
+                registry.addInterceptor(new AgentTelEnrichmentInterceptor(baselines, operationContexts));
+            }
+        };
     }
 }

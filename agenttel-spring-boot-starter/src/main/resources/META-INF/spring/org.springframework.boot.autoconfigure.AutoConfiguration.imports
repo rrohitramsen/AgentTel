@@ -1,1 +1,2 @@
 io.agenttel.spring.autoconfigure.AgentTelAutoConfiguration
+io.agenttel.spring.autoconfigure.AgentTelAgentAutoConfiguration
