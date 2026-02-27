@@ -262,6 +262,17 @@ Affected Deps: stripe-api
 | [API Reference](docs/06-API-REFERENCE.md) | Annotations, programmatic API, and configuration reference |
 | [Roadmap](docs/07-ROADMAP.md) | Implementation phases and release plan |
 
+## Examples
+
+Working examples to get you started quickly:
+
+| Example | Description | Run Command |
+|---------|-------------|-------------|
+| [Spring Boot Example](examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `./gradlew :examples:spring-boot-example:bootRun` |
+| [LangChain4j Example](examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
+
+Each example includes a README with step-by-step instructions and curl commands to exercise the instrumentation.
+
 ## Compatibility
 
 | Component | Supported Versions |
@@ -327,7 +338,9 @@ implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 
 ## Contributing
 
-Contributions are welcome. Please see the [Architecture](docs/03-ARCHITECTURE.md) document for design guidance.
+Contributions are welcome. Please read the [Contributing Guide](CONTRIBUTING.md) for build instructions, PR guidelines, and code style conventions. See the [Architecture](docs/03-ARCHITECTURE.md) document for design guidance.
+
+For security issues, please see our [Security Policy](SECURITY.md).
 
 ## License
 
