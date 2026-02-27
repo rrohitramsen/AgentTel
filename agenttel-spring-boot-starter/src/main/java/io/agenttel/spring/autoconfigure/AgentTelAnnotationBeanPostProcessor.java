@@ -13,7 +13,6 @@ import io.agenttel.core.enrichment.OperationContextRegistry;
 import io.agenttel.core.topology.TopologyRegistry;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,7 +26,6 @@ import java.lang.reflect.Method;
  * Scans Spring beans for AgentTel annotations at startup and populates
  * the TopologyRegistry and OperationContextRegistry.
  */
-@Component
 public class AgentTelAnnotationBeanPostProcessor implements BeanPostProcessor {
 
     private final TopologyRegistry topologyRegistry;

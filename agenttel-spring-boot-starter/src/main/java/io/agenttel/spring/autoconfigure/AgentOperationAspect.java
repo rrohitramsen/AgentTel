@@ -9,8 +9,6 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.stereotype.Component;
-
 /**
  * AOP aspect that wraps methods annotated with {@code @AgentOperation}.
  * If an OTel span already exists (from Spring MVC auto-instrumentation),
@@ -18,7 +16,6 @@ import org.springframework.stereotype.Component;
  * If no span exists, it creates one.
  */
 @Aspect
-@Component
 public class AgentOperationAspect {
 
     private final AgentTelEngine engine;

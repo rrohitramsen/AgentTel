@@ -34,6 +34,15 @@ import java.util.concurrent.TimeUnit;
  */
 public class AgentTelSpanProcessor implements SpanProcessor {
 
+    /**
+     * Callback for span completion events. Used to feed health aggregation
+     * without creating a dependency from core to the agent module.
+     */
+    @FunctionalInterface
+    public interface SpanCompletionListener {
+        void onSpanCompleted(String operationName, double latencyMs, boolean isError);
+    }
+
     private final TopologyRegistry topology;
     private final BaselineProvider baselineProvider;
     private final OperationContextRegistry operationContexts;
@@ -42,6 +51,7 @@ public class AgentTelSpanProcessor implements SpanProcessor {
     private final RollingBaselineProvider rollingBaselines;
     private final SloTracker sloTracker;
     private final AgentTelEventEmitter eventEmitter;
+    private volatile SpanCompletionListener spanCompletionListener;
 
     public AgentTelSpanProcessor(TopologyRegistry topology,
                                   BaselineProvider baselineProvider,
@@ -65,6 +75,14 @@ public class AgentTelSpanProcessor implements SpanProcessor {
         this.rollingBaselines = rollingBaselines;
         this.sloTracker = sloTracker;
         this.eventEmitter = eventEmitter;
+    }
+
+    /**
+     * Sets a listener that will be notified on every span completion.
+     * Used by the agent module to feed ServiceHealthAggregator.
+     */
+    public void setSpanCompletionListener(SpanCompletionListener listener) {
+        this.spanCompletionListener = listener;
     }
 
     @Override
@@ -99,6 +117,12 @@ public class AgentTelSpanProcessor implements SpanProcessor {
             } else {
                 rollingBaselines.recordLatency(operationName, latencyMs);
             }
+        }
+
+        // Notify health aggregation listener
+        SpanCompletionListener listener = this.spanCompletionListener;
+        if (listener != null) {
+            listener.onSpanCompleted(operationName, latencyMs, isError);
         }
 
         // SLO tracking
@@ -147,7 +171,7 @@ public class AgentTelSpanProcessor implements SpanProcessor {
 
     @Override
     public boolean isEndRequired() {
-        return anomalyDetector != null || rollingBaselines != null || sloTracker != null;
+        return anomalyDetector != null || rollingBaselines != null || sloTracker != null || spanCompletionListener != null;
     }
 
     @Override
