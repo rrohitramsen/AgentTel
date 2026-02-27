@@ -1,0 +1,78 @@
+/* Hero section on home page */
+.md-typeset .hero {
+  text-align: center;
+  padding: 2rem 1rem 3rem;
+}
+
+.md-typeset .hero h1 {
+  font-size: 3.2rem;
+  font-weight: 800;
+  margin-bottom: 0;
+  background: linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.md-typeset .hero .hero-tagline {
+  font-size: 1.4rem;
+  color: var(--md-default-fg-color--light);
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+  font-weight: 400;
+}
+
+.md-typeset .hero .hero-description {
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+}
+
+/* Feature grid */
+.md-typeset .feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.md-typeset .feature-card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.md-typeset .feature-card:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.md-typeset .feature-card h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.md-typeset .feature-card p {
+  font-size: 0.9rem;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0;
+}
+
+/* "What is" section */
+.md-typeset .what-is {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.md-typeset .what-is h2 {
+  text-align: center;
+}
+
+/* Mermaid diagram sizing */
+.md-typeset .mermaid {
+  text-align: center;
+  margin: 1.5rem 0;
+}
