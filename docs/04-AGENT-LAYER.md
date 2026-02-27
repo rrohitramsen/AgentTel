@@ -6,24 +6,41 @@ The `agenttel-agent` module provides the interface layer between AI agents and y
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     AI Agent / LLM                       │
-│           (Claude, GPT, custom agent, etc.)              │
-└──────────────────────┬──────────────────────────────────┘
-                       │ JSON-RPC (MCP Protocol)
-┌──────────────────────▼──────────────────────────────────┐
-│                    MCP Server                            │
-│  get_service_health · get_incident_context               │
-│  list_remediation_actions · execute_remediation           │
-│  get_recent_agent_actions                                │
-├─────────────────────────────────────────────────────────┤
-│              AgentContextProvider                         │
-│        Single entry point for all agent queries          │
-├──────────┬──────────┬──────────┬───────────┬────────────┤
-│  Health  │ Incident │ Remediat │  Action   │  Context   │
-│  Aggreg. │ Context  │ Registry │  Tracker  │  Formatter │
-└──────────┴──────────┴──────────┴───────────┴────────────┘
+```mermaid
+graph TB
+    Agent["AI Agent / LLM<br/><small>Claude, GPT, custom agent</small>"]
+
+    subgraph MCP["MCP Server"]
+        Tools["get_service_health · get_incident_context<br/>list_remediation_actions · execute_remediation<br/>get_recent_agent_actions"]
+    end
+
+    ACP["AgentContextProvider<br/><small>Single entry point for all agent queries</small>"]
+
+    subgraph Components["Components"]
+        HA["Health<br/>Aggregator"]
+        IC["Incident<br/>Context"]
+        RR["Remediation<br/>Registry"]
+        AT["Action<br/>Tracker"]
+        CF["Context<br/>Formatter"]
+    end
+
+    Agent -->|"JSON-RPC (MCP Protocol)"| MCP
+    MCP --> ACP
+    ACP --> HA
+    ACP --> IC
+    ACP --> RR
+    ACP --> AT
+    ACP --> CF
+
+    style Agent fill:#4338ca,stroke:#6366f1,color:#fff
+    style MCP fill:#6366f1,stroke:#818cf8,color:#fff
+    style ACP fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style Components fill:#1e1b4b,stroke:#4338ca,color:#e0e7ff
+    style HA fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style IC fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style RR fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style AT fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style CF fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
 ```
 
 ---
