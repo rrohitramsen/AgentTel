@@ -7,9 +7,19 @@ import io.agenttel.api.ServiceTier;
 import io.agenttel.api.annotations.AgentObservable;
 import io.agenttel.api.annotations.DeclareConsumer;
 import io.agenttel.api.annotations.DeclareDependency;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@OpenAPIDefinition(
+        info = @Info(
+                title = "AgentTel Payment Service API",
+                version = "0.1.0-alpha",
+                description = "Demo payment service instrumented with AgentTel for agent-ready telemetry. "
+                        + "All endpoints are enriched with baselines, decision metadata, and anomaly detection."
+        )
+)
 @AgentObservable(
         service = "payment-service",
         team = "payments-platform",

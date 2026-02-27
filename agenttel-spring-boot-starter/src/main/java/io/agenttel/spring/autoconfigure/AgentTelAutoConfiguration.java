@@ -1,19 +1,23 @@
 package io.agenttel.spring.autoconfigure;
 
+import io.agenttel.api.BaselineSource;
 import io.agenttel.api.ConsumptionPattern;
 import io.agenttel.api.DependencyCriticality;
 import io.agenttel.api.DependencyType;
+import io.agenttel.api.EscalationLevel;
 import io.agenttel.api.ServiceTier;
+import io.agenttel.api.baseline.OperationBaseline;
 import io.agenttel.api.topology.ConsumerDescriptor;
 import io.agenttel.api.topology.DependencyDescriptor;
 import io.agenttel.core.anomaly.AnomalyDetector;
 import io.agenttel.core.anomaly.PatternMatcher;
-import io.agenttel.core.baseline.BaselineProvider;
+import io.agenttel.core.baseline.DurationParser;
 import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.baseline.StaticBaselineProvider;
 import io.agenttel.core.causality.CausalityTracker;
 import io.agenttel.core.engine.AgentTelEngine;
 import io.agenttel.core.enrichment.AgentTelSpanProcessor;
+import io.agenttel.core.enrichment.OperationContext;
 import io.agenttel.core.enrichment.OperationContextRegistry;
 import io.agenttel.core.resource.AgentTelGlobalState;
 import io.agenttel.core.slo.SloTracker;
@@ -108,8 +112,66 @@ public class AgentTelAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OperationContextRegistry agentTelOperationContextRegistry() {
-        return new OperationContextRegistry();
+    public OperationContextRegistry agentTelOperationContextRegistry(AgentTelProperties props,
+                                                                       StaticBaselineProvider baselines) {
+        OperationContextRegistry registry = new OperationContextRegistry();
+
+        // Register operations from YAML config (runs before annotation scanning)
+        for (var entry : props.getOperations().entrySet()) {
+            String operationName = entry.getKey();
+            var op = entry.getValue();
+
+            // Resolve profile defaults if referenced
+            AgentTelProperties.ProfileProperties profile = null;
+            if (!op.getProfile().isEmpty()) {
+                profile = props.getProfiles().get(op.getProfile());
+            }
+
+            // Register baseline (baselines are always per-operation, not from profiles)
+            double p50 = DurationParser.parseToMs(op.getExpectedLatencyP50());
+            double p99 = DurationParser.parseToMs(op.getExpectedLatencyP99());
+            double errorRate = op.getExpectedErrorRate();
+            if (p50 > 0 || p99 > 0 || errorRate >= 0) {
+                baselines.register(operationName, OperationBaseline.builder(operationName)
+                        .latencyP50Ms(Math.max(p50, 0))
+                        .latencyP99Ms(Math.max(p99, 0))
+                        .errorRate(Math.max(errorRate, 0))
+                        .source(BaselineSource.STATIC)
+                        .build());
+            }
+
+            // Resolve decision context: profile defaults < per-operation explicit overrides.
+            // Fields that differ from OperationProperties defaults are considered "explicitly set".
+            boolean retryable, idempotent, safeToRestart;
+            String runbookUrl, fallbackDesc, escalationStr;
+            if (profile != null) {
+                retryable = op.isRetryable() || profile.isRetryable();
+                idempotent = op.isIdempotent() || profile.isIdempotent();
+                safeToRestart = !op.isSafeToRestart() ? false : profile.isSafeToRestart();
+                runbookUrl = !op.getRunbookUrl().isEmpty() ? op.getRunbookUrl() : profile.getRunbookUrl();
+                fallbackDesc = !op.getFallbackDescription().isEmpty() ? op.getFallbackDescription() : profile.getFallbackDescription();
+                escalationStr = !"auto_resolve".equals(op.getEscalationLevel()) ? op.getEscalationLevel() : profile.getEscalationLevel();
+            } else {
+                retryable = op.isRetryable();
+                idempotent = op.isIdempotent();
+                safeToRestart = op.isSafeToRestart();
+                runbookUrl = op.getRunbookUrl();
+                fallbackDesc = op.getFallbackDescription();
+                escalationStr = op.getEscalationLevel();
+            }
+
+            EscalationLevel escalation;
+            try {
+                escalation = EscalationLevel.fromValue(escalationStr);
+            } catch (IllegalArgumentException e) {
+                escalation = EscalationLevel.AUTO_RESOLVE;
+            }
+            registry.register(operationName, new OperationContext(
+                    retryable, idempotent, runbookUrl,
+                    fallbackDesc, escalation, safeToRestart));
+        }
+
+        return registry;
     }
 
     @Bean
@@ -141,8 +203,9 @@ public class AgentTelAutoConfiguration {
     public AgentTelAnnotationBeanPostProcessor agentTelAnnotationBeanPostProcessor(
             TopologyRegistry topology,
             StaticBaselineProvider baselines,
-            OperationContextRegistry operationContexts) {
-        return new AgentTelAnnotationBeanPostProcessor(topology, baselines, operationContexts);
+            OperationContextRegistry operationContexts,
+            AgentTelProperties props) {
+        return new AgentTelAnnotationBeanPostProcessor(topology, baselines, operationContexts, props.getProfiles());
     }
 
     @Bean
@@ -176,15 +239,14 @@ public class AgentTelAutoConfiguration {
     }
 
     @Bean
-    public AgentTelSpanProcessor agentTelSpanProcessor(TopologyRegistry topology,
-                                                        StaticBaselineProvider baselines,
+    public AgentTelSpanProcessor agentTelSpanProcessor(StaticBaselineProvider baselines,
                                                         OperationContextRegistry operationContexts,
                                                         AnomalyDetector anomalyDetector,
                                                         PatternMatcher patternMatcher,
                                                         RollingBaselineProvider rollingBaselines,
                                                         SloTracker sloTracker) {
         return new AgentTelSpanProcessor(
-                topology, baselines, operationContexts,
+                baselines, operationContexts,
                 anomalyDetector, patternMatcher, rollingBaselines, sloTracker, null);
     }
 

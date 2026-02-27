@@ -2,11 +2,9 @@ package io.agenttel.core.enrichment;
 
 import io.agenttel.api.BaselineSource;
 import io.agenttel.api.EscalationLevel;
-import io.agenttel.api.ServiceTier;
 import io.agenttel.api.attributes.AgentTelAttributes;
 import io.agenttel.api.baseline.OperationBaseline;
 import io.agenttel.core.baseline.StaticBaselineProvider;
-import io.agenttel.core.topology.TopologyRegistry;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -30,13 +28,6 @@ class AgentTelSpanProcessorTest {
     void setUp() {
         spanExporter = InMemorySpanExporter.create();
 
-        // Set up topology
-        TopologyRegistry topology = new TopologyRegistry();
-        topology.setTeam("payments-platform");
-        topology.setTier(ServiceTier.CRITICAL);
-        topology.setDomain("commerce");
-        topology.setOnCallChannel("#payments-oncall");
-
         // Set up baselines
         StaticBaselineProvider baselineProvider = new StaticBaselineProvider();
         baselineProvider.register("POST /api/payments", OperationBaseline.builder("POST /api/payments")
@@ -53,7 +44,7 @@ class AgentTelSpanProcessorTest {
                 "cached pricing", EscalationLevel.PAGE_ONCALL, false
         ));
 
-        AgentTelSpanProcessor processor = new AgentTelSpanProcessor(topology, baselineProvider, opContexts);
+        AgentTelSpanProcessor processor = new AgentTelSpanProcessor(baselineProvider, opContexts);
 
         tracerProvider = SdkTracerProvider.builder()
                 .addSpanProcessor(processor)
@@ -66,22 +57,6 @@ class AgentTelSpanProcessorTest {
     @AfterEach
     void tearDown() {
         tracerProvider.close();
-    }
-
-    @Test
-    void enrichesSpanWithTopologyAttributes() {
-        tracer.spanBuilder("POST /api/payments").startSpan().end();
-
-        List<SpanData> spans = spanExporter.getFinishedSpanItems();
-        assertThat(spans).hasSize(1);
-
-        SpanData span = spans.get(0);
-        assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_TEAM))
-                .isEqualTo("payments-platform");
-        assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_TIER))
-                .isEqualTo("critical");
-        assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_DOMAIN))
-                .isEqualTo("commerce");
     }
 
     @Test
@@ -115,12 +90,11 @@ class AgentTelSpanProcessorTest {
     }
 
     @Test
-    void spanWithoutBaselineStillGetsTopology() {
+    void spanWithUnknownOperationGetsNoBaselineOrDecision() {
         tracer.spanBuilder("GET /unknown").startSpan().end();
 
         SpanData span = spanExporter.getFinishedSpanItems().get(0);
-        assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_TEAM))
-                .isEqualTo("payments-platform");
+        // Topology is on the OTel Resource (not per-span), so no topology attributes here
         assertThat(span.getAttributes().get(AgentTelAttributes.BASELINE_LATENCY_P99_MS)).isNull();
         assertThat(span.getAttributes().get(AgentTelAttributes.DECISION_RETRYABLE)).isNull();
     }

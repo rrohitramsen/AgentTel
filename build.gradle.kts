@@ -35,7 +35,35 @@ allprojects {
 
 // Published library modules (not examples)
 val publishedModules = setOf("agenttel-api", "agenttel-core", "agenttel-genai",
-    "agenttel-agent", "agenttel-spring-boot-starter", "agenttel-testing")
+    "agenttel-agent", "agenttel-javaagent-extension", "agenttel-spring-boot-starter", "agenttel-testing")
+
+// Aggregated Javadoc across all published library modules
+tasks.register<Javadoc>("aggregatedJavadoc") {
+    group = "documentation"
+    description = "Generates aggregated Javadoc for all library modules"
+    destinationDir = file("${layout.buildDirectory.get()}/docs/javadoc")
+
+    val published = publishedModules
+    val javadocProjects = subprojects.filter { it.name in published }
+
+    dependsOn(javadocProjects.map { it.tasks.named("classes") })
+
+    javadocProjects.forEach { proj ->
+        source(proj.sourceSets["main"].allJava)
+    }
+    classpath = files(javadocProjects.map { it.sourceSets["main"].compileClasspath })
+
+    options {
+        this as StandardJavadocDocletOptions
+        addStringOption("Xdoclint:none", "-quiet")
+        encoding = "UTF-8"
+        charSet = "UTF-8"
+        windowTitle = "AgentTel ${project.version} API"
+        docTitle = "AgentTel ${project.version} API"
+        overview = "src/javadoc/overview.html"
+    }
+    isFailOnError = false
+}
 
 subprojects {
     apply(plugin = "java-library")

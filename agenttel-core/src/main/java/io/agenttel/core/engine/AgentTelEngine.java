@@ -79,7 +79,7 @@ public class AgentTelEngine {
      */
     public AgentTelSpanProcessor createSpanProcessor() {
         return new AgentTelSpanProcessor(
-                topology, baselineProvider, operationContexts,
+                baselineProvider, operationContexts,
                 anomalyDetector, patternMatcher, rollingBaselines, sloTracker, eventEmitter);
     }
 

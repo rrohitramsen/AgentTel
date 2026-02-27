@@ -15,6 +15,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AgentOperation {
 
+    /** Operation profile name (e.g., "critical-write", "read-only"). Empty means no profile. */
+    String profile() default "";
+
     /** Expected median latency (e.g., "45ms", "1s"). Empty means unset. */
     String expectedLatencyP50() default "";
 

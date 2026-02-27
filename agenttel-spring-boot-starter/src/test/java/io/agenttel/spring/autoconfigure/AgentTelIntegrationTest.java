@@ -1,11 +1,8 @@
 package io.agenttel.spring.autoconfigure;
 
-import io.agenttel.api.EscalationLevel;
-import io.agenttel.api.attributes.AgentTelAttributes;
 import io.agenttel.core.anomaly.AnomalyDetector;
 import io.agenttel.core.anomaly.PatternMatcher;
 import io.agenttel.core.baseline.RollingBaselineProvider;
-import io.agenttel.core.baseline.StaticBaselineProvider;
 import io.agenttel.core.engine.AgentTelEngine;
 import io.agenttel.core.enrichment.AgentTelSpanProcessor;
 import io.agenttel.core.slo.SloDefinition;
@@ -18,7 +15,6 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -53,9 +49,8 @@ class AgentTelIntegrationTest {
     }
 
     @Test
-    void fullPipelineEnrichesSpans() {
+    void fullPipelineCreatesSpans() {
         contextRunner.run(context -> {
-            AgentTelEngine engine = context.getBean(AgentTelEngine.class);
             AgentTelSpanProcessor processor = context.getBean(AgentTelSpanProcessor.class);
 
             InMemorySpanExporter exporter = InMemorySpanExporter.create();
@@ -71,17 +66,8 @@ class AgentTelIntegrationTest {
 
             List<SpanData> spans = exporter.getFinishedSpanItems();
             assertThat(spans).hasSize(1);
-
-            SpanData span = spans.get(0);
-            // Verify topology enrichment
-            assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_TEAM))
-                    .isEqualTo("payments-platform");
-            assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_TIER))
-                    .isEqualTo("critical");
-            assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_DOMAIN))
-                    .isEqualTo("commerce");
-            assertThat(span.getAttributes().get(AgentTelAttributes.TOPOLOGY_ON_CALL_CHANNEL))
-                    .isEqualTo("#payments-oncall");
+            // Topology is on the OTel Resource (via AgentTelResourceProvider SPI),
+            // not on span attributes. Full Resource test is in PaymentServiceIntegrationTest.
 
             tracerProvider.close();
         });

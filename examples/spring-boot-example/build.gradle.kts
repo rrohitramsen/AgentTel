@@ -23,6 +23,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
     testImplementation(project(":agenttel-testing"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
