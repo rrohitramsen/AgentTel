@@ -20,6 +20,23 @@ agenttel:
     tier: critical
     domain: commerce
     on-call-channel: "#payments-oncall"
+  dependencies:
+    - name: payment-gateway
+      type: rest_api
+      criticality: required
+      timeout-ms: 5000
+      circuit-breaker: true
+      fallback: "Return cached pricing from last successful gateway call"
+    - name: postgres-orders
+      type: database
+      criticality: required
+      timeout-ms: 3000
+  consumers:
+    - name: notification-service
+      pattern: asynchronous
+  baselines:
+    rolling-window-size: 1000
+    rolling-min-samples: 10
   anomaly-detection:
     enabled: true
     z-score-threshold: 3.0
