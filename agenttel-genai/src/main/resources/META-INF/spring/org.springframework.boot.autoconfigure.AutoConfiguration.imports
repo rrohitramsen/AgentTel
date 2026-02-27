@@ -1,0 +1,5 @@
+io.agenttel.genai.springai.SpringAiGenAiAutoConfiguration
+io.agenttel.genai.langchain4j.LangChain4jGenAiAutoConfiguration
+io.agenttel.genai.anthropic.AnthropicGenAiAutoConfiguration
+io.agenttel.genai.openai.OpenAiGenAiAutoConfiguration
+io.agenttel.genai.bedrock.BedrockGenAiAutoConfiguration

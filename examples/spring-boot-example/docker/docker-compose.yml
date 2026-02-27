@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.0
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.64
+    ports:
+      - "16686:16686"
+      - "4319:4317"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true

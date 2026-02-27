@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: payment-service
+
+# OTel configuration
+otel:
+  exporter:
+    otlp:
+      endpoint: http://localhost:4318
+      protocol: http/protobuf
+  resource:
+    attributes:
+      service.name: payment-service
+
+# AgentTel configuration
+agenttel:
+  enabled: true
+  topology:
+    team: payments-platform
+    tier: critical
+    domain: commerce
+    on-call-channel: "#payments-oncall"
+  anomaly-detection:
+    enabled: true
+    z-score-threshold: 3.0
+  deployment:
+    emit-on-startup: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

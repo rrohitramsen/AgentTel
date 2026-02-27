@@ -1,0 +1,103 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_TEMPO",
+      "label": "Tempo",
+      "description": "Tempo data source for traces",
+      "type": "datasource",
+      "pluginId": "tempo"
+    }
+  ],
+  "title": "AgentTel GenAI",
+  "uid": "agenttel-genai",
+  "description": "GenAI instrumentation dashboard showing LLM calls, costs, and token usage",
+  "tags": ["agenttel", "genai", "llm", "ai"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "title": "LLM Calls by Model",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.gen_ai.operation.name = \"chat\" } | select(name, span.gen_ai.system, span.gen_ai.request.model, span.gen_ai.usage.input_tokens, span.gen_ai.usage.output_tokens, span.agenttel.genai.cost_usd)"
+        }
+      ],
+      "description": "All LLM chat calls with model, tokens, and cost"
+    },
+    {
+      "title": "Embedding Calls",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.gen_ai.operation.name = \"embeddings\" } | select(name, span.gen_ai.system, span.gen_ai.request.model, span.gen_ai.usage.input_tokens, span.agenttel.genai.framework)"
+        }
+      ],
+      "description": "Embedding model calls with token usage"
+    },
+    {
+      "title": "RAG Retrieval",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.gen_ai.operation.name = \"retrieve\" } | select(name, span.agenttel.genai.rag_source_count, duration)"
+        }
+      ],
+      "description": "RAG content retrieval with source counts"
+    },
+    {
+      "title": "Cost by Framework",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.agenttel.genai.cost_usd > 0 } | select(span.agenttel.genai.framework, span.gen_ai.system, span.gen_ai.request.model, span.agenttel.genai.cost_usd)"
+        }
+      ],
+      "description": "GenAI costs broken down by framework and provider"
+    },
+    {
+      "title": "Slow LLM Calls (>5s)",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.gen_ai.operation.name = \"chat\" && duration > 5s } | select(name, span.gen_ai.request.model, span.gen_ai.usage.input_tokens, span.gen_ai.usage.output_tokens, duration, span.agenttel.genai.cost_usd)"
+        }
+      ],
+      "description": "LLM calls taking longer than 5 seconds"
+    },
+    {
+      "title": "Error LLM Calls",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.gen_ai.operation.name != \"\" && status = error } | select(name, span.gen_ai.system, span.gen_ai.request.model, span.agenttel.genai.framework)"
+        }
+      ],
+      "description": "Failed GenAI API calls"
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

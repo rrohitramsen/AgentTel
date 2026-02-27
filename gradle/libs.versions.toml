@@ -1,0 +1,56 @@
+[versions]
+java = "17"
+otel-bom = "1.59.0"
+otel-semconv = "1.40.0"
+otel-instrumentation-bom = "2.24.0"
+spring-boot = "3.4.3"
+jackson = "2.17.2"
+junit = "5.11.4"
+assertj = "3.27.3"
+mockito = "5.14.2"
+slf4j = "2.0.16"
+
+[libraries]
+# OpenTelemetry
+otel-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "otel-bom" }
+otel-api = { module = "io.opentelemetry:opentelemetry-api" }
+otel-sdk = { module = "io.opentelemetry:opentelemetry-sdk" }
+otel-sdk-trace = { module = "io.opentelemetry:opentelemetry-sdk-trace" }
+otel-sdk-logs = { module = "io.opentelemetry:opentelemetry-sdk-logs" }
+otel-sdk-testing = { module = "io.opentelemetry:opentelemetry-sdk-testing" }
+otel-sdk-autoconfigure-spi = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi" }
+otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "otel-semconv" }
+otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otel-semconv" }
+
+# OpenTelemetry Instrumentation
+otel-instrumentation-bom = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom", version.ref = "otel-instrumentation-bom" }
+otel-spring-boot-starter = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter" }
+
+# Spring Boot
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure" }
+spring-boot-autoconfigure-processor = { module = "org.springframework.boot:spring-boot-autoconfigure-processor" }
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+
+# Jackson
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+
+# Testing
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+
+# Logging
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
