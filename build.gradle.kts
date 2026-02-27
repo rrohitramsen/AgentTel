@@ -35,7 +35,7 @@ allprojects {
 
 // Published library modules (not examples)
 val publishedModules = setOf("agenttel-api", "agenttel-core", "agenttel-genai",
-    "agenttel-agent", "agenttel-spring-boot-starter", "agenttel-testing")
+    "agenttel-agent", "agenttel-javaagent-extension", "agenttel-spring-boot-starter", "agenttel-testing")
 
 subprojects {
     apply(plugin = "java-library")

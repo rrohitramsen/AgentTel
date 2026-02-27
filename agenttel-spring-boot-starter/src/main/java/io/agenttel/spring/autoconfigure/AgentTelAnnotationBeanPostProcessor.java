@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * Scans Spring beans for AgentTel annotations at startup and populates
@@ -31,13 +32,16 @@ public class AgentTelAnnotationBeanPostProcessor implements BeanPostProcessor {
     private final TopologyRegistry topologyRegistry;
     private final StaticBaselineProvider baselineProvider;
     private final OperationContextRegistry operationContextRegistry;
+    private final Map<String, AgentTelProperties.ProfileProperties> profiles;
 
     public AgentTelAnnotationBeanPostProcessor(TopologyRegistry topologyRegistry,
                                                 StaticBaselineProvider baselineProvider,
-                                                OperationContextRegistry operationContextRegistry) {
+                                                OperationContextRegistry operationContextRegistry,
+                                                Map<String, AgentTelProperties.ProfileProperties> profiles) {
         this.topologyRegistry = topologyRegistry;
         this.baselineProvider = baselineProvider;
         this.operationContextRegistry = operationContextRegistry;
+        this.profiles = profiles;
     }
 
     @Override
@@ -94,18 +98,39 @@ public class AgentTelAnnotationBeanPostProcessor implements BeanPostProcessor {
             if (op != null) {
                 String operationName = deriveOperationName(method);
 
-                // Register baseline
-                baselineProvider.registerFromAnnotation(operationName, op);
+                // Config takes priority — skip if already registered from YAML
+                if (baselineProvider.getBaseline(operationName).isEmpty()) {
+                    baselineProvider.registerFromAnnotation(operationName, op);
+                }
+                if (operationContextRegistry.getContext(operationName).isEmpty()) {
+                    // Resolve profile if referenced
+                    AgentTelProperties.ProfileProperties profile = null;
+                    if (!op.profile().isEmpty()) {
+                        profile = profiles.get(op.profile());
+                    }
 
-                // Register operation context
-                operationContextRegistry.register(operationName, new OperationContext(
-                        op.retryable(),
-                        op.idempotent(),
-                        op.runbookUrl(),
-                        op.fallbackDescription(),
-                        op.escalationLevel(),
-                        op.safeToRestart()
-                ));
+                    if (profile != null) {
+                        // Merge: annotation explicit values override profile defaults
+                        operationContextRegistry.register(operationName, new OperationContext(
+                                op.retryable() || profile.isRetryable(),
+                                op.idempotent() || profile.isIdempotent(),
+                                !op.runbookUrl().isEmpty() ? op.runbookUrl() : profile.getRunbookUrl(),
+                                !op.fallbackDescription().isEmpty() ? op.fallbackDescription() : profile.getFallbackDescription(),
+                                op.escalationLevel() != EscalationLevel.NOTIFY_TEAM ? op.escalationLevel() :
+                                        EscalationLevel.fromValue(profile.getEscalationLevel()),
+                                !op.safeToRestart() ? false : profile.isSafeToRestart()
+                        ));
+                    } else {
+                        operationContextRegistry.register(operationName, new OperationContext(
+                                op.retryable(),
+                                op.idempotent(),
+                                op.runbookUrl(),
+                                op.fallbackDescription(),
+                                op.escalationLevel(),
+                                op.safeToRestart()
+                        ));
+                    }
+                }
             }
         }
     }

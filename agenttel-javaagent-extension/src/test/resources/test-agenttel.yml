@@ -1,0 +1,50 @@
+agenttel:
+  topology:
+    team: payments-platform
+    tier: critical
+    domain: commerce
+    on-call-channel: "#payments-oncall"
+    repo-url: "https://github.com/example/payment-service"
+  dependencies:
+    - name: payment-gateway
+      type: external_api
+      criticality: required
+      timeout-ms: 5000
+      circuit-breaker: true
+      fallback: "Return cached pricing"
+    - name: postgres-orders
+      type: database
+      criticality: required
+      timeout-ms: 3000
+  consumers:
+    - name: notification-service
+      pattern: async
+  profiles:
+    critical-write:
+      retryable: false
+      idempotent: false
+      escalation-level: page_oncall
+      safe-to-restart: false
+    read-only:
+      retryable: true
+      idempotent: true
+      escalation-level: notify_team
+      safe-to-restart: true
+  operations:
+    "POST /api/payments":
+      profile: critical-write
+      expected-latency-p50: "45ms"
+      expected-latency-p99: "200ms"
+      expected-error-rate: 0.001
+      retryable: true
+      runbook-url: "https://wiki/runbooks/process-payment"
+      fallback-description: "Returns cached pricing from last successful gateway call"
+    "GET /api/payments/{id}":
+      profile: read-only
+      expected-latency-p50: "15ms"
+      expected-latency-p99: "80ms"
+  baselines:
+    rolling-window-size: 500
+    rolling-min-samples: 5
+  anomaly-detection:
+    z-score-threshold: 2.5

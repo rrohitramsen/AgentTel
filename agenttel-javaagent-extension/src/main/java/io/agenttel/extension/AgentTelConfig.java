@@ -1,6 +1,7 @@
-package io.agenttel.spring.autoconfigure;
+package io.agenttel.extension;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -8,46 +9,48 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Configuration properties for AgentTel.
- * Bind to the {@code agenttel.*} namespace in application.yml.
+ * Configuration POJO for AgentTel javaagent extension.
+ * Mirrors the Spring Boot properties structure but is framework-independent.
+ * Parsed from YAML config file by Jackson.
  */
-@ConfigurationProperties(prefix = "agenttel")
-public class AgentTelProperties {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class AgentTelConfig {
 
     private boolean enabled = true;
-    private TopologyProperties topology = new TopologyProperties();
-    private List<DependencyProperties> dependencies = new ArrayList<>();
-    private List<ConsumerProperties> consumers = new ArrayList<>();
-    private Map<String, ProfileProperties> profiles = new LinkedHashMap<>();
-    private Map<String, OperationProperties> operations = new LinkedHashMap<>();
-    private BaselineProperties baselines = new BaselineProperties();
-    private AnomalyDetectionProperties anomalyDetection = new AnomalyDetectionProperties();
-    private DeploymentProperties deployment = new DeploymentProperties();
+    private TopologyConfig topology = new TopologyConfig();
+    private List<DependencyConfig> dependencies = new ArrayList<>();
+    private List<ConsumerConfig> consumers = new ArrayList<>();
+    private Map<String, ProfileConfig> profiles = new LinkedHashMap<>();
+    private Map<String, OperationConfig> operations = new LinkedHashMap<>();
+    private BaselineConfig baselines = new BaselineConfig();
+    @JsonProperty("anomaly-detection")
+    private AnomalyDetectionConfig anomalyDetection = new AnomalyDetectionConfig();
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public TopologyProperties getTopology() { return topology; }
-    public void setTopology(TopologyProperties topology) { this.topology = topology; }
-    public List<DependencyProperties> getDependencies() { return dependencies; }
-    public void setDependencies(List<DependencyProperties> dependencies) { this.dependencies = dependencies; }
-    public List<ConsumerProperties> getConsumers() { return consumers; }
-    public void setConsumers(List<ConsumerProperties> consumers) { this.consumers = consumers; }
-    public Map<String, ProfileProperties> getProfiles() { return profiles; }
-    public void setProfiles(Map<String, ProfileProperties> profiles) { this.profiles = profiles; }
-    public Map<String, OperationProperties> getOperations() { return operations; }
-    public void setOperations(Map<String, OperationProperties> operations) { this.operations = operations; }
-    public BaselineProperties getBaselines() { return baselines; }
-    public void setBaselines(BaselineProperties baselines) { this.baselines = baselines; }
-    public AnomalyDetectionProperties getAnomalyDetection() { return anomalyDetection; }
-    public void setAnomalyDetection(AnomalyDetectionProperties anomalyDetection) { this.anomalyDetection = anomalyDetection; }
-    public DeploymentProperties getDeployment() { return deployment; }
-    public void setDeployment(DeploymentProperties deployment) { this.deployment = deployment; }
+    public TopologyConfig getTopology() { return topology; }
+    public void setTopology(TopologyConfig topology) { this.topology = topology; }
+    public List<DependencyConfig> getDependencies() { return dependencies; }
+    public void setDependencies(List<DependencyConfig> dependencies) { this.dependencies = dependencies; }
+    public List<ConsumerConfig> getConsumers() { return consumers; }
+    public void setConsumers(List<ConsumerConfig> consumers) { this.consumers = consumers; }
+    public Map<String, ProfileConfig> getProfiles() { return profiles; }
+    public void setProfiles(Map<String, ProfileConfig> profiles) { this.profiles = profiles; }
+    public Map<String, OperationConfig> getOperations() { return operations; }
+    public void setOperations(Map<String, OperationConfig> operations) { this.operations = operations; }
+    public BaselineConfig getBaselines() { return baselines; }
+    public void setBaselines(BaselineConfig baselines) { this.baselines = baselines; }
+    public AnomalyDetectionConfig getAnomalyDetection() { return anomalyDetection; }
+    public void setAnomalyDetection(AnomalyDetectionConfig anomalyDetection) { this.anomalyDetection = anomalyDetection; }
 
-    public static class TopologyProperties {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class TopologyConfig {
         private String team = "";
         private String tier = "standard";
         private String domain = "";
+        @JsonProperty("on-call-channel")
         private String onCallChannel = "";
+        @JsonProperty("repo-url")
         private String repoUrl = "";
 
         public String getTeam() { return team; }
@@ -62,14 +65,18 @@ public class AgentTelProperties {
         public void setRepoUrl(String repoUrl) { this.repoUrl = repoUrl; }
     }
 
-    public static class DependencyProperties {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class DependencyConfig {
         private String name;
         private String type;
         private String criticality = "required";
         private String protocol = "";
+        @JsonProperty("timeout-ms")
         private int timeoutMs = 0;
+        @JsonProperty("circuit-breaker")
         private boolean circuitBreaker = false;
         private String fallback = "";
+        @JsonProperty("health-endpoint")
         private String healthEndpoint = "";
 
         public String getName() { return name; }
@@ -90,9 +97,11 @@ public class AgentTelProperties {
         public void setHealthEndpoint(String healthEndpoint) { this.healthEndpoint = healthEndpoint; }
     }
 
-    public static class ConsumerProperties {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ConsumerConfig {
         private String name;
         private String pattern = "sync";
+        @JsonProperty("sla-latency-ms")
         private int slaLatencyMs = 0;
 
         public String getName() { return name; }
@@ -103,21 +112,23 @@ public class AgentTelProperties {
         public void setSlaLatencyMs(int slaLatencyMs) { this.slaLatencyMs = slaLatencyMs; }
     }
 
-    public static class BaselineProperties {
-        private String source = "static";
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class BaselineConfig {
+        @JsonProperty("rolling-window-size")
         private int rollingWindowSize = 1000;
+        @JsonProperty("rolling-min-samples")
         private int rollingMinSamples = 10;
 
-        public String getSource() { return source; }
-        public void setSource(String source) { this.source = source; }
         public int getRollingWindowSize() { return rollingWindowSize; }
         public void setRollingWindowSize(int rollingWindowSize) { this.rollingWindowSize = rollingWindowSize; }
         public int getRollingMinSamples() { return rollingMinSamples; }
         public void setRollingMinSamples(int rollingMinSamples) { this.rollingMinSamples = rollingMinSamples; }
     }
 
-    public static class AnomalyDetectionProperties {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class AnomalyDetectionConfig {
         private boolean enabled = true;
+        @JsonProperty("z-score-threshold")
         private double zScoreThreshold = 3.0;
 
         public boolean isEnabled() { return enabled; }
@@ -126,30 +137,17 @@ public class AgentTelProperties {
         public void setZScoreThreshold(double zScoreThreshold) { this.zScoreThreshold = zScoreThreshold; }
     }
 
-    public static class DeploymentProperties {
-        private boolean emitOnStartup = true;
-        private String version = "";
-        private String commitSha = "";
-
-        public boolean isEmitOnStartup() { return emitOnStartup; }
-        public void setEmitOnStartup(boolean emitOnStartup) { this.emitOnStartup = emitOnStartup; }
-        public String getVersion() { return version; }
-        public void setVersion(String version) { this.version = version; }
-        public String getCommitSha() { return commitSha; }
-        public void setCommitSha(String commitSha) { this.commitSha = commitSha; }
-    }
-
-    /**
-     * Reusable sets of operational defaults.
-     * Profiles define decision context (retry policy, escalation, etc.) that can be
-     * referenced by multiple operations to reduce config repetition.
-     */
-    public static class ProfileProperties {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ProfileConfig {
         private boolean retryable = false;
         private boolean idempotent = false;
+        @JsonProperty("runbook-url")
         private String runbookUrl = "";
+        @JsonProperty("fallback-description")
         private String fallbackDescription = "";
+        @JsonProperty("escalation-level")
         private String escalationLevel = "auto_resolve";
+        @JsonProperty("safe-to-restart")
         private boolean safeToRestart = true;
 
         public boolean isRetryable() { return retryable; }
@@ -166,20 +164,24 @@ public class AgentTelProperties {
         public void setSafeToRestart(boolean safeToRestart) { this.safeToRestart = safeToRestart; }
     }
 
-    /**
-     * Per-operation metadata: baselines and decision context.
-     * Map key is the operation name (e.g., "POST /api/payments").
-     */
-    public static class OperationProperties {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OperationConfig {
         private String profile = "";
+        @JsonProperty("expected-latency-p50")
         private String expectedLatencyP50 = "";
+        @JsonProperty("expected-latency-p99")
         private String expectedLatencyP99 = "";
+        @JsonProperty("expected-error-rate")
         private double expectedErrorRate = -1;
         private boolean retryable = false;
         private boolean idempotent = false;
+        @JsonProperty("runbook-url")
         private String runbookUrl = "";
+        @JsonProperty("fallback-description")
         private String fallbackDescription = "";
+        @JsonProperty("escalation-level")
         private String escalationLevel = "auto_resolve";
+        @JsonProperty("safe-to-restart")
         private boolean safeToRestart = true;
 
         public String getProfile() { return profile; }

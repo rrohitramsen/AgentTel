@@ -27,6 +27,20 @@ Modern observability tools generate massive volumes of telemetry — traces, met
 
 AgentTel closes these gaps at the instrumentation layer.
 
+## Design Philosophy
+
+**Core principle: telemetry should carry enough context for AI agents to reason and act autonomously.**
+
+AgentTel enriches telemetry at three levels — all configurable via YAML, no code changes required:
+
+| Level | Where | What | Example |
+|-------|-------|------|---------|
+| **Topology** | OTel Resource (once per service) | Service identity, ownership, dependencies | team, tier, on-call channel |
+| **Baselines** | Span attributes (per operation) | What "normal" looks like | P50/P99 latency, error rate |
+| **Decisions** | Span attributes (per operation) | What an agent is allowed to do | retryable, runbook URL, escalation level |
+
+Topology is set once on the OTel Resource and automatically associated with all telemetry by the SDK. Baselines and decision metadata are attached per-operation on spans. This avoids redundant data on every span while ensuring agents always have the full context.
+
 ## What AgentTel Provides
 
 ### Enriched Telemetry (agenttel-core)
@@ -115,9 +129,12 @@ dependencies {
 
 ### 2. Configure Your Service
 
+All enrichment is driven by YAML configuration -- no code changes needed:
+
 ```yaml
 # application.yml
 agenttel:
+  # Topology: set once on the OTel Resource, associated with all telemetry
   topology:
     team: payments-platform
     tier: critical
@@ -133,6 +150,34 @@ agenttel:
       type: rest_api
       criticality: required
       fallback: "Return cached pricing"
+
+  # Reusable operational profiles — reduce repetition across operations
+  profiles:
+    critical-write:
+      retryable: false
+      escalation-level: page_oncall
+      safe-to-restart: false
+    read-only:
+      retryable: true
+      idempotent: true
+      escalation-level: notify_team
+
+  # Per-operation baselines and decision metadata
+  # Use bracket notation [key] for operation names with special characters
+  operations:
+    "[POST /api/payments]":
+      profile: critical-write
+      expected-latency-p50: "45ms"
+      expected-latency-p99: "200ms"
+      expected-error-rate: 0.001
+      retryable: true               # overrides profile default
+      idempotent: true
+      runbook-url: "https://wiki/runbooks/process-payment"
+    "[GET /api/payments/{id}]":
+      profile: read-only
+      expected-latency-p50: "15ms"
+      expected-latency-p99: "80ms"
+
   baselines:
     rolling-window-size: 1000
     rolling-min-samples: 10
@@ -140,23 +185,19 @@ agenttel:
     z-score-threshold: 3.0
 ```
 
-### 3. Annotate Operations
+### 3. Optional: Annotate for IDE Support
+
+Annotations are optional -- YAML config above is sufficient. Use `@AgentOperation` when you want IDE autocomplete and compile-time validation. Reference profiles to avoid repeating values:
 
 ```java
-@AgentOperation(
-    expectedLatencyP50 = "45ms",
-    expectedLatencyP99 = "200ms",
-    expectedErrorRate = 0.001,
-    retryable = true,
-    idempotent = true,
-    runbookUrl = "https://wiki/runbooks/process-payment",
-    escalationLevel = EscalationLevel.PAGE_ONCALL
-)
+@AgentOperation(profile = "critical-write")
 @PostMapping("/api/payments")
 public ResponseEntity<PaymentResult> processPayment(@RequestBody PaymentRequest req) {
     // Your business logic — spans are enriched automatically
 }
 ```
+
+> When both YAML config and annotations define the same operation, YAML config takes priority. Per-operation values override profile defaults.
 
 ### 4. Start the MCP Server (Optional)
 
@@ -174,17 +215,28 @@ AI agents can now call tools like `get_service_health`, `get_incident_context`, 
 
 ### 5. What You Get
 
-Every span is enriched with agent-actionable context:
+**Resource attributes** (set once per service, associated with all telemetry):
 
 ```
-agenttel.topology.team        = "payments-platform"
-agenttel.topology.tier        = "critical"
-agenttel.baseline.latency_p50 = 45.0
-agenttel.baseline.source      = "composite"
-agenttel.decision.retryable   = true
-agenttel.decision.runbook_url = "https://wiki/runbooks/process-payment"
-agenttel.anomaly.detected     = false
-agenttel.slo.budget_remaining = 0.85
+agenttel.topology.team         = "payments-platform"
+agenttel.topology.tier         = "critical"
+agenttel.topology.domain       = "commerce"
+agenttel.topology.on_call_channel = "#payments-oncall"
+agenttel.topology.dependencies = [{"name":"postgres","type":"database",...}]
+```
+
+**Span attributes** (per operation, only on operations with registered metadata):
+
+```
+agenttel.baseline.latency_p50_ms = 45.0
+agenttel.baseline.latency_p99_ms = 200.0
+agenttel.baseline.error_rate     = 0.001
+agenttel.baseline.source         = "static"
+agenttel.decision.retryable      = true
+agenttel.decision.runbook_url    = "https://wiki/runbooks/process-payment"
+agenttel.decision.escalation_level = "page_oncall"
+agenttel.anomaly.detected        = false
+agenttel.slo.budget_remaining    = 0.85
 ```
 
 When an incident occurs, agents get structured context via MCP:
@@ -217,23 +269,24 @@ Affected Deps: stripe-api
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Your Application                       │
-│      @AgentOperation annotations + business logic           │
-├─────────────────────────────────────────────────────────────┤
-│                agenttel-spring-boot-starter                  │
-│        Auto-configuration · BeanPostProcessor · AOP         │
-├───────────────┬──────────────────┬──────────────────────────┤
-│ agenttel-core │  agenttel-genai  │     agenttel-agent       │
-│               │                  │                          │
-│ SpanProcessor │ LangChain4j      │ MCP Server (JSON-RPC)    │
-│ Baselines     │ Spring AI        │ Health Aggregation       │
-│  (static +    │ Anthropic SDK    │ Incident Context Builder │
-│   rolling)    │ OpenAI SDK       │ Remediation Framework    │
-│ Anomaly       │ Bedrock SDK      │ Agent Action Tracker     │
-│  Detection    │ Cost Calculator  │ Context Formatters       │
-│ SLO Tracking  │                  │                          │
-│ Pattern       │                  │                          │
-│  Matching     │                  │                          │
-├───────────────┴──────────────────┴──────────────────────────┤
+│    application.yml config + optional @AgentOperation        │
+├──────────────────────────────┬──────────────────────────────┤
+│  agenttel-spring-boot-starter│  agenttel-javaagent-extension│
+│  Auto-config · BPP · AOP    │  Zero-code OTel javaagent    │
+│  (Spring Boot apps)         │  extension (any JVM app)     │
+├───────────────┬──────────────┴─┬────────────────────────────┤
+│ agenttel-core │  agenttel-genai │     agenttel-agent        │
+│               │                 │                           │
+│ SpanProcessor │ LangChain4j     │ MCP Server (JSON-RPC)     │
+│ Baselines     │ Spring AI       │ Health Aggregation        │
+│  (static +    │ Anthropic SDK   │ Incident Context Builder  │
+│   rolling)    │ OpenAI SDK      │ Remediation Framework     │
+│ Anomaly       │ Bedrock SDK     │ Agent Action Tracker      │
+│  Detection    │ Cost Calculator │ Context Formatters        │
+│ SLO Tracking  │                 │                           │
+│ Pattern       │                 │                           │
+│  Matching     │                 │                           │
+├───────────────┴─────────────────┴───────────────────────────┤
 │                        agenttel-api                          │
 │     @AgentOperation · AgentTelAttributes · Data Models      │
 ├─────────────────────────────────────────────────────────────┤
@@ -247,6 +300,7 @@ Affected Deps: stripe-api
 | `agenttel-core` | `io.agenttel:agenttel-core` | Runtime engine — span enrichment, static + rolling baselines, z-score anomaly detection, pattern matching, SLO tracking, structured events. |
 | `agenttel-genai` | `io.agenttel:agenttel-genai` | GenAI instrumentation — LangChain4j wrappers, Spring AI enrichment, Anthropic/OpenAI/Bedrock SDK instrumentation, cost calculation. |
 | `agenttel-agent` | `io.agenttel:agenttel-agent` | Agent interface layer — MCP server, real-time health aggregation, incident context builder, remediation framework, agent action tracking. |
+| `agenttel-javaagent-extension` | `io.agenttel:agenttel-javaagent-extension` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
 | `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
 | `agenttel-testing` | `io.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
 
@@ -261,6 +315,7 @@ Affected Deps: stripe-api
 | [GenAI Instrumentation](docs/05-GENAI-INSTRUMENTATION.md) | LLM framework instrumentation and cost tracking |
 | [API Reference](docs/06-API-REFERENCE.md) | Annotations, programmatic API, and configuration reference |
 | [Roadmap](docs/07-ROADMAP.md) | Implementation phases and release plan |
+| [Design Considerations](docs/08-DESIGN-CONSIDERATIONS.md) | Trade-offs, evolution path, and future direction |
 
 ## Examples
 
@@ -320,8 +375,48 @@ implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 | `io.agenttel` | `agenttel-core` | Runtime engine |
 | `io.agenttel` | `agenttel-genai` | GenAI instrumentation |
 | `io.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents) |
+| `io.agenttel` | `agenttel-javaagent-extension` | Zero-code OTel javaagent extension |
 | `io.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
 | `io.agenttel` | `agenttel-testing` | Test utilities |
+
+## Zero-Code Mode (JavaAgent Extension)
+
+For applications where you cannot add a library dependency, use the javaagent extension. No code changes, no Spring dependency:
+
+```bash
+java -javaagent:opentelemetry-javaagent.jar \
+     -Dotel.javaagent.extensions=agenttel-javaagent-extension.jar \
+     -Dagenttel.config.file=agenttel.yml \
+     -jar myapp.jar
+```
+
+The extension reads configuration from `agenttel.yml` (same YAML format as above), system properties (`-Dagenttel.topology.team=payments`), or environment variables (`AGENTTEL_TOPOLOGY_TEAM=payments`). It registers as an OTel `AutoConfigurationCustomizerProvider` via SPI, adding topology to the Resource and enriching spans with baselines and decisions.
+
+## FAQ
+
+**Does AgentTel require code changes?**
+No. All enrichment can be driven entirely from YAML configuration (`application.yml` for Spring Boot, or `agenttel.yml` for the javaagent extension). Annotations like `@AgentOperation` are optional and only needed when you want IDE autocomplete and compile-time validation.
+
+**How does this differ from Datadog/New Relic agents?**
+Vendor agents collect metrics, traces, and logs. AgentTel enriches telemetry with *agent-actionable context* — baselines (what "normal" looks like), decision metadata (retryable, runbook URL, escalation level), and topology (who owns this, what depends on what). This is the structured context AI agents need to autonomously reason about and resolve incidents, not just observe them.
+
+**Will this increase my telemetry size?**
+Topology attributes are set once on the OTel Resource (not repeated on every span). Baselines and decision metadata add ~300-500 bytes per enriched operation span. Only operations with registered metadata are enriched — internal framework spans (Spring dispatcher, Tomcat, etc.) are not affected.
+
+**Can I use this without Spring Boot?**
+Yes. The javaagent extension works with any JVM application — no Spring dependency. The core library can also be used programmatically via `AgentTelEngine.builder()` for custom integration.
+
+**What's the performance overhead?**
+Span enrichment adds sub-millisecond latency per span (hash map lookups). Rolling baselines and anomaly detection use O(1) sliding windows. The library is designed for high-throughput production use.
+
+**Does it work with my existing OTel setup?**
+Yes. AgentTel registers as a standard OTel `SpanProcessor` and `ResourceProvider`. It is fully compatible with any OTel-compatible backend (Jaeger, Grafana Tempo, Datadog, New Relic, Honeycomb, etc.) and does not modify existing spans — it only adds attributes.
+
+**What are operation profiles?**
+Predefined sets of operational defaults (retry policy, escalation level, etc.) that reduce config repetition. Define a profile once, reference it from multiple operations. Per-operation values override profile defaults.
+
+**How does YAML config interact with annotations?**
+YAML config takes priority. When both YAML config and `@AgentOperation` annotations define the same operation, the YAML values are used. Annotations fill in gaps for operations not defined in config.
 
 ## Building from Source
 

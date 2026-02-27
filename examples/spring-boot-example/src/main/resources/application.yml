@@ -37,6 +37,37 @@ agenttel:
   consumers:
     - name: notification-service
       pattern: async
+  # Reusable operational profiles — reduce repetition across operations.
+  profiles:
+    critical-write:
+      retryable: false
+      idempotent: false
+      escalation-level: page_oncall
+      safe-to-restart: false
+    read-only:
+      retryable: true
+      idempotent: true
+      escalation-level: notify_team
+      safe-to-restart: true
+  # Per-operation metadata: baselines and decision context.
+  # This replaces or supplements @AgentOperation annotations.
+  # Operations can reference a profile for defaults, then override specific fields.
+  # NOTE: Use bracket notation [key] for operation names with special characters
+  # (spaces, slashes) so Spring Boot preserves the exact key.
+  operations:
+    "[POST /api/payments]":
+      profile: critical-write
+      expected-latency-p50: "45ms"
+      expected-latency-p99: "200ms"
+      expected-error-rate: 0.001
+      retryable: true
+      idempotent: true
+      runbook-url: "https://wiki/runbooks/process-payment"
+      fallback-description: "Returns cached pricing from last successful gateway call"
+    "[GET /api/payments/{id}]":
+      profile: read-only
+      expected-latency-p50: "15ms"
+      expected-latency-p99: "80ms"
   baselines:
     rolling-window-size: 1000
     rolling-min-samples: 10

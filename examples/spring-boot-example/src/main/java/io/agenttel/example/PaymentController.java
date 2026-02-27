@@ -1,6 +1,5 @@
 package io.agenttel.example;
 
-import io.agenttel.api.EscalationLevel;
 import io.agenttel.api.annotations.AgentOperation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,17 +16,10 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequestMapping("/api/payments")
 public class PaymentController {
 
-    @AgentOperation(
-            expectedLatencyP50 = "45ms",
-            expectedLatencyP99 = "200ms",
-            expectedErrorRate = 0.001,
-            retryable = true,
-            idempotent = true,
-            runbookUrl = "https://wiki/runbooks/process-payment",
-            fallbackDescription = "Returns cached pricing from last successful gateway call",
-            escalationLevel = EscalationLevel.PAGE_ONCALL,
-            safeToRestart = false
-    )
+    // Profile "critical-write" provides: escalation=PAGE_ONCALL, safeToRestart=false.
+    // Per-operation overrides: retryable, idempotent, runbook, fallback.
+    // Baselines and remaining decision context come from application.yml.
+    @AgentOperation(profile = "critical-write")
     @PostMapping
     public ResponseEntity<PaymentResult> processPayment(@RequestBody PaymentRequest request) {
         // Simulate processing latency
@@ -36,12 +28,7 @@ public class PaymentController {
         return ResponseEntity.ok(new PaymentResult(txnId, "SUCCESS", request.amount()));
     }
 
-    @AgentOperation(
-            expectedLatencyP50 = "10ms",
-            expectedLatencyP99 = "50ms",
-            retryable = true,
-            idempotent = true
-    )
+    @AgentOperation(profile = "read-only")
     @GetMapping("/{id}")
     public ResponseEntity<PaymentResult> getPayment(@PathVariable String id) {
         simulateLatency(5, 20);

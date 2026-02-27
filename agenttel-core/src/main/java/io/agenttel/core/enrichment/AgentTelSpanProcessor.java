@@ -11,7 +11,6 @@ import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.baseline.RollingWindow;
 import io.agenttel.core.events.AgentTelEventEmitter;
 import io.agenttel.core.slo.SloTracker;
-import io.agenttel.core.topology.TopologyRegistry;
 import io.opentelemetry.api.logs.Severity;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
@@ -28,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * OTel SpanProcessor that enriches spans with AgentTel attributes.
  *
- * <p>On span start (onStart): attaches topology, baselines, and decision metadata.
+ * <p>On span start (onStart): attaches baselines and decision metadata.
  * On span end (onEnd): performs anomaly detection, pattern matching, SLO tracking,
  * and emits structured events for detected anomalies and SLO budget alerts.
  */
@@ -43,7 +42,6 @@ public class AgentTelSpanProcessor implements SpanProcessor {
         void onSpanCompleted(String operationName, double latencyMs, boolean isError);
     }
 
-    private final TopologyRegistry topology;
     private final BaselineProvider baselineProvider;
     private final OperationContextRegistry operationContexts;
     private final AnomalyDetector anomalyDetector;
@@ -53,21 +51,18 @@ public class AgentTelSpanProcessor implements SpanProcessor {
     private final AgentTelEventEmitter eventEmitter;
     private volatile SpanCompletionListener spanCompletionListener;
 
-    public AgentTelSpanProcessor(TopologyRegistry topology,
-                                  BaselineProvider baselineProvider,
+    public AgentTelSpanProcessor(BaselineProvider baselineProvider,
                                   OperationContextRegistry operationContexts) {
-        this(topology, baselineProvider, operationContexts, null, null, null, null, null);
+        this(baselineProvider, operationContexts, null, null, null, null, null);
     }
 
-    public AgentTelSpanProcessor(TopologyRegistry topology,
-                                  BaselineProvider baselineProvider,
+    public AgentTelSpanProcessor(BaselineProvider baselineProvider,
                                   OperationContextRegistry operationContexts,
                                   AnomalyDetector anomalyDetector,
                                   PatternMatcher patternMatcher,
                                   RollingBaselineProvider rollingBaselines,
                                   SloTracker sloTracker,
                                   AgentTelEventEmitter eventEmitter) {
-        this.topology = topology;
         this.baselineProvider = baselineProvider;
         this.operationContexts = operationContexts;
         this.anomalyDetector = anomalyDetector;
@@ -87,14 +82,15 @@ public class AgentTelSpanProcessor implements SpanProcessor {
 
     @Override
     public void onStart(Context parentContext, ReadWriteSpan span) {
-        // 1. Attach topology attributes
-        enrichWithTopology(span);
+        // Topology is set once on the OTel Resource via AgentTelResourceProvider (SPI),
+        // not duplicated on every span. See docs/08-DESIGN-CONSIDERATIONS.md §4.
 
-        // 2. Attach baselines if available
+        // Attach baselines if available (works for non-HTTP spans with known names;
+        // HTTP spans get enriched later by AgentTelEnrichmentInterceptor after route resolution)
         String operationName = span.getName();
         enrichWithBaseline(span, operationName);
 
-        // 3. Attach decision metadata if available
+        // Attach decision metadata if available
         enrichWithDecisionMetadata(span, operationName);
     }
 
@@ -217,19 +213,6 @@ public class AgentTelSpanProcessor implements SpanProcessor {
             };
 
             eventEmitter.emitEvent(AgentTelEvents.SLO_BUDGET_ALERT, body, severity);
-        }
-    }
-
-    private void enrichWithTopology(ReadWriteSpan span) {
-        if (!topology.getTeam().isEmpty()) {
-            span.setAttribute(AgentTelAttributes.TOPOLOGY_TEAM, topology.getTeam());
-        }
-        span.setAttribute(AgentTelAttributes.TOPOLOGY_TIER, topology.getTier().getValue());
-        if (!topology.getDomain().isEmpty()) {
-            span.setAttribute(AgentTelAttributes.TOPOLOGY_DOMAIN, topology.getDomain());
-        }
-        if (!topology.getOnCallChannel().isEmpty()) {
-            span.setAttribute(AgentTelAttributes.TOPOLOGY_ON_CALL_CHANNEL, topology.getOnCallChannel());
         }
     }
 

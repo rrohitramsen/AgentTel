@@ -68,19 +68,20 @@ class PaymentServiceIntegrationTest {
     }
 
     @Test
-    void topologyAttributesPresent() {
+    void topologyAttributesOnResource() {
         postPayment(100.0);
         waitForSpans();
 
         SpanData serverSpan = findServerSpan("POST /api/payments");
         assertThat(serverSpan).isNotNull();
-        assertThat(serverSpan.getAttributes().get(AgentTelAttributes.TOPOLOGY_TEAM))
+        // Topology is on the OTel Resource (set once per service), not duplicated per span
+        assertThat(serverSpan.getResource().getAttributes().get(AgentTelAttributes.TOPOLOGY_TEAM))
                 .isEqualTo("payments-platform");
-        assertThat(serverSpan.getAttributes().get(AgentTelAttributes.TOPOLOGY_TIER))
+        assertThat(serverSpan.getResource().getAttributes().get(AgentTelAttributes.TOPOLOGY_TIER))
                 .isEqualTo("critical");
-        assertThat(serverSpan.getAttributes().get(AgentTelAttributes.TOPOLOGY_DOMAIN))
+        assertThat(serverSpan.getResource().getAttributes().get(AgentTelAttributes.TOPOLOGY_DOMAIN))
                 .isEqualTo("commerce");
-        assertThat(serverSpan.getAttributes().get(AgentTelAttributes.TOPOLOGY_ON_CALL_CHANNEL))
+        assertThat(serverSpan.getResource().getAttributes().get(AgentTelAttributes.TOPOLOGY_ON_CALL_CHANNEL))
                 .isEqualTo("#payments-oncall");
     }
 
@@ -91,7 +92,7 @@ class PaymentServiceIntegrationTest {
 
         SpanData serverSpan = findServerSpan("POST /api/payments");
         assertThat(serverSpan).isNotNull();
-        // Baselines come from @AgentOperation annotation: expectedLatencyP50="45ms", expectedLatencyP99="200ms"
+        // Baselines come from YAML config (agenttel.operations) or @AgentOperation annotation
         assertThat(serverSpan.getAttributes().get(AgentTelAttributes.BASELINE_LATENCY_P50_MS))
                 .isEqualTo(45.0);
         assertThat(serverSpan.getAttributes().get(AgentTelAttributes.BASELINE_LATENCY_P99_MS))
@@ -107,7 +108,7 @@ class PaymentServiceIntegrationTest {
 
         SpanData serverSpan = findServerSpan("POST /api/payments");
         assertThat(serverSpan).isNotNull();
-        // Decision metadata from @AgentOperation annotation
+        // Decision metadata from YAML config (agenttel.operations) or @AgentOperation annotation
         assertThat(serverSpan.getAttributes().get(AgentTelAttributes.DECISION_RETRYABLE))
                 .isTrue();
         assertThat(serverSpan.getAttributes().get(AgentTelAttributes.DECISION_IDEMPOTENT))
