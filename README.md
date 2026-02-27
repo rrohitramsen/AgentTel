@@ -1,6 +1,6 @@
 <p align="center">
   <strong>AgentTel</strong><br/>
-  <em>Agent-Ready Telemetry for Java</em>
+  <em>Agent-Ready Telemetry for JVM Applications</em>
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 
 ---
 
-AgentTel is a Java library that enriches [OpenTelemetry](https://opentelemetry.io) spans with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards.
+AgentTel is a JVM library that enriches [OpenTelemetry](https://opentelemetry.io) spans with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards. Works with Java, Kotlin, Scala, and any JVM language.
 
 Standard observability answers *"What happened?"* AgentTel adds *"What does an AI agent need to know to act on this?"*
 
