@@ -42,6 +42,17 @@ AgentTel enriches telemetry at three levels — all configurable via YAML, no co
 
 Topology is set once on the OTel Resource and automatically associated with all telemetry by the SDK. Baselines and decision metadata are attached per-operation on spans. This avoids redundant data on every span while ensuring agents always have the full context.
 
+## Quick Demo
+
+Try AgentTel in one command — starts a demo payment service with OTel Collector and Jaeger:
+
+```bash
+cd examples/spring-boot-example
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Then open [Jaeger](http://localhost:16686) to see enriched traces, [Swagger UI](http://localhost:8080/swagger-ui.html) for the API, and [MCP Tool Docs](http://localhost:8081/mcp/docs) for the agent interface.
+
 ## What AgentTel Provides
 
 ### Enriched Telemetry (agenttel-core)
