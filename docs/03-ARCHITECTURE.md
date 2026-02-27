@@ -6,34 +6,27 @@ This document describes the technical architecture of AgentTel, including module
 
 ## High-Level Architecture
 
-```
-                        ┌────────────────────────────────┐
-                        │         AI Agent / LLM          │
-                        │   (Claude, GPT, custom agent)   │
-                        └────────────┬───────────────────┘
-                                     │ MCP (JSON-RPC)
-                        ┌────────────▼───────────────────┐
-                        │       agenttel-agent            │
-                        │  MCP Server · Health Aggregator │
-                        │  Incident Context · Remediation │
-                        └────────────┬───────────────────┘
-                                     │ reads from
-┌──────────────────┐    ┌────────────▼───────────────────┐
-│  Your Application │───▶│       agenttel-core            │
-│  @AgentOperation  │    │  SpanProcessor · Baselines     │
-│  business logic   │    │  Anomaly Detection · SLOs      │
-└──────────────────┘    │  Pattern Matching · Events     │
-                        └────────────┬───────────────────┘
-                                     │ enriched spans
-                        ┌────────────▼───────────────────┐
-                        │     OpenTelemetry SDK           │
-                        │   OTLP Export to Backend        │
-                        └────────────┬───────────────────┘
-                                     │
-                        ┌────────────▼───────────────────┐
-                        │   Observability Backend         │
-                        │  Jaeger / Tempo / Datadog / ... │
-                        └────────────────────────────────┘
+```mermaid
+graph TB
+    Agent["AI Agent / LLM<br/><small>Claude, GPT, custom agent</small>"]
+    AGT["agenttel-agent<br/><small>MCP Server · Health Aggregator<br/>Incident Context · Remediation</small>"]
+    APP["Your Application<br/><small>@AgentOperation · business logic</small>"]
+    CORE["agenttel-core<br/><small>SpanProcessor · Baselines<br/>Anomaly Detection · SLOs<br/>Pattern Matching · Events</small>"]
+    OTEL["OpenTelemetry SDK<br/><small>OTLP Export to Backend</small>"]
+    BACKEND["Observability Backend<br/><small>Jaeger / Tempo / Datadog / ...</small>"]
+
+    Agent -->|"MCP (JSON-RPC)"| AGT
+    AGT -->|"reads from"| CORE
+    APP -->|"instrumented by"| CORE
+    CORE -->|"enriched spans"| OTEL
+    OTEL -->|"export"| BACKEND
+
+    style Agent fill:#4338ca,stroke:#6366f1,color:#fff
+    style AGT fill:#6366f1,stroke:#818cf8,color:#fff
+    style APP fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style CORE fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style OTEL fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style BACKEND fill:#a5b4fc,stroke:#c7d2fe,color:#1e1b4b
 ```
 
 ---
@@ -129,8 +122,14 @@ RollingWindow.Snapshot snapshot = window.snapshot();
 
 Chains multiple baseline sources with fallback:
 
-```
-Static → Rolling → Default
+```mermaid
+graph LR
+    S["Static Baselines<br/><small>(from config/annotations)</small>"] -->|"fallback"| R["Rolling Baselines<br/><small>(from live traffic)</small>"]
+    R -->|"fallback"| D["Default Baselines"]
+
+    style S fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style R fill:#6366f1,stroke:#818cf8,color:#fff
+    style D fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
 ```
 
 The first provider that returns a non-empty baseline for an operation wins. This ensures:
@@ -226,51 +225,57 @@ See [Agent Layer](04-AGENT-LAYER.md) for detailed documentation.
 
 ### Span Enrichment Flow
 
-```
-1. HTTP Request arrives
-   │
-2. Spring AOP intercepts @AgentOperation method
-   │
-3. AgentTelSpanProcessor.onStart()
-   ├── Read @AgentOperation metadata
-   ├── Set topology attributes
-   ├── Set baseline attributes (static → rolling → default)
-   └── Set decision attributes
-   │
-4. Application code executes
-   ├── GenAI calls auto-instrumented (if using LangChain4j/Spring AI)
-   ├── Dependency calls tracked
-   └── Errors captured
-   │
-5. AgentTelSpanProcessor.onEnd()
-   ├── Feed latency to RollingBaselineProvider
-   ├── Run AnomalyDetector (z-score computation)
-   ├── Run PatternMatcher (cascade, leak, spike detection)
-   ├── Record in SloTracker
-   ├── Emit anomaly events (if anomalous)
-   └── Emit SLO budget alerts (if thresholds crossed)
-   │
-6. SpanExporter exports enriched span
-   ├── CostEnrichingSpanExporter adds cost_usd (for GenAI spans)
-   └── OTLP export to backend
+```mermaid
+flowchart TD
+    A["1. HTTP Request arrives"] --> B["2. Spring AOP intercepts<br/>@AgentOperation method"]
+    B --> C["3. AgentTelSpanProcessor.onStart()"]
+    C --> C1["Read @AgentOperation metadata"]
+    C --> C2["Set topology attributes"]
+    C --> C3["Set baseline attributes<br/>(static → rolling → default)"]
+    C --> C4["Set decision attributes"]
+    C4 --> D["4. Application code executes"]
+    D --> D1["GenAI calls auto-instrumented"]
+    D --> D2["Dependency calls tracked"]
+    D --> D3["Errors captured"]
+    D3 --> E["5. AgentTelSpanProcessor.onEnd()"]
+    E --> E1["Feed latency to RollingBaselineProvider"]
+    E --> E2["Run AnomalyDetector (z-score)"]
+    E --> E3["Run PatternMatcher"]
+    E --> E4["Record in SloTracker"]
+    E --> E5["Emit anomaly / SLO events"]
+    E5 --> F["6. SpanExporter exports enriched span"]
+    F --> F1["CostEnrichingSpanExporter adds cost_usd"]
+    F --> F2["OTLP export to backend"]
+
+    style A fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style B fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style C fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style D fill:#6366f1,stroke:#818cf8,color:#fff
+    style E fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style F fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
 ```
 
 ### Agent Query Flow
 
-```
-1. AI Agent calls MCP tool (e.g., get_incident_context)
-   │
-2. McpServer routes JSON-RPC request to handler
-   │
-3. AgentContextProvider assembles context
-   ├── ServiceHealthAggregator → current operation/dependency metrics
-   ├── IncidentContextBuilder → structured incident package
-   ├── PatternMatcher → detected patterns
-   └── RemediationRegistry → available actions
-   │
-4. ContextFormatter produces prompt-optimized output
-   │
-5. MCP response returned to agent
+```mermaid
+flowchart TD
+    A["1. AI Agent calls MCP tool<br/>(e.g., get_incident_context)"] --> B["2. McpServer routes<br/>JSON-RPC request to handler"]
+    B --> C["3. AgentContextProvider<br/>assembles context"]
+    C --> C1["ServiceHealthAggregator<br/>operation/dependency metrics"]
+    C --> C2["IncidentContextBuilder<br/>structured incident package"]
+    C --> C3["PatternMatcher<br/>detected patterns"]
+    C --> C4["RemediationRegistry<br/>available actions"]
+    C1 --> D["4. ContextFormatter<br/>prompt-optimized output"]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    D --> E["5. MCP response<br/>returned to agent"]
+
+    style A fill:#4338ca,stroke:#6366f1,color:#fff
+    style B fill:#6366f1,stroke:#818cf8,color:#fff
+    style C fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style D fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style E fill:#4338ca,stroke:#6366f1,color:#fff
 ```
 
 ---

@@ -1,114 +1,211 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
+<div class="hero" markdown>
+
 # AgentTel
 
-**Agent-Ready Telemetry for JVM Applications**
+<p class="hero-tagline">Agent-Ready Telemetry for JVM Applications</p>
 
----
-
-AgentTel is a JVM library that enriches [OpenTelemetry](https://opentelemetry.io) spans with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards.
-
-Standard observability answers *"What happened?"* AgentTel adds *"What does an AI agent need to know to act on this?"*
+<p class="hero-description">
+Enrich OpenTelemetry spans with the structured context AI agents need to
+autonomously diagnose, reason about, and resolve production incidents.
+</p>
 
 [Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/rrohitramsen/AgentTel){ .md-button }
+[Architecture](concepts/architecture.md){ .md-button }
+
+</div>
 
 ---
 
-## The Problem
+## What is AgentTel?
 
-Modern observability tools generate massive volumes of telemetry — traces, metrics, logs — optimized for human consumption through dashboards and alert rules. AI agents tasked with autonomous incident response face critical gaps:
+<div class="what-is" markdown>
+
+Standard observability answers *"What happened?"*
+AgentTel adds *"What does an AI agent need to know to act on this?"*
+
+Modern observability tools generate massive volumes of telemetry — traces, metrics, logs — optimized for **human consumption** through dashboards and alert rules. AI agents tasked with autonomous incident response face critical gaps:
 
 - **No behavioral context** — Spans lack baselines, so agents can't distinguish normal from anomalous
 - **No topology awareness** — Agents don't know which services are critical, who owns them, or what depends on what
 - **No decision metadata** — Is this operation retryable? Is there a fallback? What's the runbook?
 - **No actionable interface** — Agents can read telemetry but can't query live system state or execute remediation
 
-AgentTel closes these gaps at the instrumentation layer.
+AgentTel closes these gaps at the instrumentation layer — enriching every span with baselines, topology, and decision metadata so AI agents can reason and act autonomously.
 
-## Design Philosophy
+</div>
 
-**Core principle: telemetry should carry enough context for AI agents to reason and act autonomously.**
+---
+
+## How It Works
 
 AgentTel enriches telemetry at three levels — all configurable via YAML, no code changes required:
 
-| Level | Where | What | Example |
-|-------|-------|------|---------|
+```mermaid
+graph LR
+    A["Your Application"] --> B["AgentTel"]
+    B --> C["OpenTelemetry SDK"]
+    C --> D["OTel Collector / Backend"]
+    D --> E["AI Agent"]
+
+    B -->|"Topology<br/>(Resource attrs)"| C
+    B -->|"Baselines + Decisions<br/>(Span attrs)"| C
+    E -->|"MCP Tools<br/>(JSON-RPC)"| B
+
+    style A fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style B fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style C fill:#6366f1,stroke:#818cf8,color:#fff
+    style D fill:#4f46e5,stroke:#6366f1,color:#fff
+    style E fill:#4338ca,stroke:#6366f1,color:#fff
+```
+
+| Level | Where | What It Adds | Example |
+|-------|-------|-------------|---------|
 | **Topology** | OTel Resource (once per service) | Service identity, ownership, dependencies | team, tier, on-call channel |
 | **Baselines** | Span attributes (per operation) | What "normal" looks like | P50/P99 latency, error rate |
 | **Decisions** | Span attributes (per operation) | What an agent is allowed to do | retryable, runbook URL, escalation level |
 
-## What AgentTel Provides
+---
 
-### Enriched Telemetry
+## Key Features
 
-Every span is automatically enriched with agent-actionable attributes:
+<div class="feature-grid" markdown>
 
-| Category | Attributes | Purpose |
-|----------|-----------|---------|
-| **Topology** | `agenttel.topology.team`, `tier`, `domain`, `dependencies` | Service identity and dependency graph |
-| **Baselines** | `agenttel.baseline.latency_p50_ms`, `error_rate`, `source` | What "normal" looks like for each operation |
-| **Decisions** | `agenttel.decision.retryable`, `idempotent`, `runbook_url`, `escalation_level` | What an agent is allowed to do |
-| **Anomalies** | `agenttel.anomaly.detected`, `pattern`, `score` | Real-time deviation detection |
-| **SLOs** | `agenttel.slo.budget_remaining`, `burn_rate` | Error budget consumption tracking |
+<div class="feature-card" markdown>
 
-### Agent Interface Layer
+### Enriched Spans
 
-| Component | Description |
-|-----------|-------------|
-| **MCP Server** | JSON-RPC server implementing the [Model Context Protocol](https://modelcontextprotocol.io) — exposes telemetry as tools AI agents can call |
-| **Health Aggregation** | Real-time service health from span data with operation-level and dependency-level metrics |
-| **Incident Context** | Structured incident packages: what's happening, what changed, what's affected, what to do |
-| **Remediation Framework** | Registry of executable remediation actions with approval workflows |
-| **Action Tracking** | Every agent decision and action recorded as OTel spans for full auditability |
+Every operation span carries baselines (P50/P99 latency, error rate), decision metadata (retryable, idempotent, runbook URL), and anomaly scores — all the context an AI agent needs.
+
+</div>
+
+<div class="feature-card" markdown>
+
+### MCP Server
+
+Built-in [Model Context Protocol](https://modelcontextprotocol.io) server exposes tools like `get_service_health`, `get_incident_context`, and `execute_remediation` over JSON-RPC.
+
+</div>
+
+<div class="feature-card" markdown>
+
+### Zero-Code Mode
+
+Drop-in OTel javaagent extension for any JVM app. No Spring dependency, no code changes — just a YAML config file and a JVM flag.
+
+</div>
+
+<div class="feature-card" markdown>
 
 ### GenAI Instrumentation
 
-| Framework | Approach | Coverage |
-|-----------|----------|----------|
-| **Spring AI** | SpanProcessor enrichment | Framework tag, cost calculation |
-| **LangChain4j** | Decorator-based instrumentation | Chat, embeddings, RAG retrieval |
-| **Anthropic SDK** | Client wrapper | Messages API with token/cost tracking |
-| **OpenAI SDK** | Client wrapper | Chat completions with token/cost tracking |
-| **AWS Bedrock** | Client wrapper | Converse API with token/cost tracking |
+Full observability for LangChain4j, Spring AI, Anthropic SDK, OpenAI SDK, and AWS Bedrock — with token tracking and cost calculation.
 
-## Module Overview
+</div>
+
+<div class="feature-card" markdown>
+
+### Anomaly Detection
+
+Real-time z-score anomaly detection on latency and error rates. Rolling baselines learn from live traffic; static baselines come from config.
+
+</div>
+
+<div class="feature-card" markdown>
+
+### Incident Context
+
+Structured incident packages: what's happening, what changed, what's affected, and what to do — optimized for LLM context windows.
+
+</div>
+
+</div>
+
+---
+
+## Module Architecture
+
+```mermaid
+graph TB
+    subgraph App["Your Application"]
+        YML["application.yml / agenttel.yml"]
+        ANN["@AgentOperation (optional)"]
+    end
+
+    subgraph Integration["Integration Layer"]
+        SBS["agenttel-spring-boot-starter<br/><small>Auto-config, BPP, AOP</small>"]
+        JAE["agenttel-javaagent-extension<br/><small>Zero-code OTel extension</small>"]
+    end
+
+    subgraph Core["Core Libraries"]
+        COR["agenttel-core<br/><small>SpanProcessor, Baselines,<br/>Anomaly Detection, SLO Tracking</small>"]
+        GEN["agenttel-genai<br/><small>LangChain4j, Spring AI,<br/>Anthropic, OpenAI, Bedrock</small>"]
+        AGT["agenttel-agent<br/><small>MCP Server, Health,<br/>Incidents, Remediation</small>"]
+    end
+
+    subgraph Foundation["Foundation"]
+        API["agenttel-api<br/><small>Annotations, Attributes, Models</small>"]
+        OTEL["OpenTelemetry SDK"]
+    end
+
+    App --> Integration
+    SBS --> COR
+    SBS --> GEN
+    SBS --> AGT
+    JAE --> COR
+    COR --> API
+    GEN --> API
+    AGT --> COR
+    API --> OTEL
+
+    style App fill:#1e1b4b,stroke:#4338ca,color:#e0e7ff
+    style Integration fill:#312e81,stroke:#4f46e5,color:#e0e7ff
+    style Core fill:#3730a3,stroke:#6366f1,color:#e0e7ff
+    style Foundation fill:#4338ca,stroke:#818cf8,color:#e0e7ff
+    style SBS fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style JAE fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style COR fill:#6366f1,stroke:#818cf8,color:#fff
+    style GEN fill:#6366f1,stroke:#818cf8,color:#fff
+    style AGT fill:#6366f1,stroke:#818cf8,color:#fff
+    style API fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style OTEL fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+```
+
+---
+
+## What an Agent Sees
+
+When an incident occurs, an AI agent gets structured context via MCP:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Your Application                       │
-│    application.yml config + optional @AgentOperation        │
-├──────────────────────────────┬──────────────────────────────┤
-│  agenttel-spring-boot-starter│  agenttel-javaagent-extension│
-│  Auto-config · BPP · AOP    │  Zero-code OTel javaagent    │
-│  (Spring Boot apps)         │  extension (any JVM app)     │
-├───────────────┬──────────────┴─┬────────────────────────────┤
-│ agenttel-core │  agenttel-genai │     agenttel-agent        │
-│               │                 │                           │
-│ SpanProcessor │ LangChain4j     │ MCP Server (JSON-RPC)     │
-│ Baselines     │ Spring AI       │ Health Aggregation        │
-│  (static +    │ Anthropic SDK   │ Incident Context Builder  │
-│   rolling)    │ OpenAI SDK      │ Remediation Framework     │
-│ Anomaly       │ Bedrock SDK     │ Agent Action Tracker      │
-│  Detection    │ Cost Calculator │ Context Formatters        │
-│ SLO Tracking  │                 │                           │
-│ Pattern       │                 │                           │
-│  Matching     │                 │                           │
-├───────────────┴─────────────────┴───────────────────────────┤
-│                        agenttel-api                          │
-│     @AgentOperation · AgentTelAttributes · Data Models      │
-├─────────────────────────────────────────────────────────────┤
-│                    OpenTelemetry SDK                         │
-└─────────────────────────────────────────────────────────────┘
+=== INCIDENT inc-a3f2b1c4 ===
+SEVERITY: HIGH
+SUMMARY: POST /api/payments experiencing elevated error rate (5.2%)
+
+## WHAT IS HAPPENING
+Error Rate: 5.2% (baseline: 0.1%)
+Latency P50: 312ms (baseline: 45ms)
+Patterns: ERROR_RATE_SPIKE
+
+## WHAT CHANGED
+Last Deploy: v2.1.0 at 2025-01-15T14:30:00Z
+
+## WHAT IS AFFECTED
+Scope: operation_specific
+User-Facing: YES
+Affected Deps: stripe-api
+
+## SUGGESTED ACTIONS
+  - [HIGH] rollback_deployment: Rollback to previous version (NEEDS APPROVAL)
+  - [MEDIUM] enable_circuit_breakers: Circuit break stripe-api
 ```
 
-| Module | Artifact | Description |
-|--------|----------|-------------|
-| `agenttel-api` | `io.agenttel:agenttel-api` | Annotations, attribute constants, enums, data models. Zero runtime dependencies. |
-| `agenttel-core` | `io.agenttel:agenttel-core` | Runtime engine — span enrichment, baselines, anomaly detection, SLO tracking. |
-| `agenttel-genai` | `io.agenttel:agenttel-genai` | GenAI instrumentation — LangChain4j, Spring AI, Anthropic/OpenAI/Bedrock SDKs. |
-| `agenttel-agent` | `io.agenttel:agenttel-agent` | Agent interface layer — MCP server, health, incidents, remediation. |
-| `agenttel-javaagent-extension` | `io.agenttel:agenttel-javaagent-extension` | Zero-code OTel javaagent extension for any JVM app. |
-| `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. |
-| `agenttel-testing` | `io.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
+---
 
 ## Compatibility
 
@@ -122,3 +219,10 @@ Every span is automatically enriched with agent-actionable attributes:
 | Anthropic Java SDK | 2.0.0+ (optional) |
 | OpenAI Java SDK | 4.0.0+ (optional) |
 | AWS Bedrock SDK | 2.30.0+ (optional) |
+
+<div style="text-align: center; margin-top: 3rem;" markdown>
+
+[Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
+[View on GitHub](https://github.com/rrohitramsen/AgentTel){ .md-button }
+
+</div>
