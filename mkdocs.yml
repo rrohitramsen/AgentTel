@@ -1,0 +1,89 @@
+site_name: AgentTel
+site_description: Agent-Ready Telemetry for JVM Applications
+site_url: https://rrohitramsen.github.io/AgentTel
+repo_url: https://github.com/rrohitramsen/AgentTel
+repo_name: rrohitramsen/AgentTel
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Overview: getting-started/overview.md
+    - Quick Start: getting-started/quick-start.md
+    - FAQ: getting-started/faq.md
+  - Concepts:
+    - Architecture: concepts/architecture.md
+    - Semantic Conventions: concepts/semantic-conventions.md
+    - Design Considerations: concepts/design-considerations.md
+  - Guides:
+    - Agent Layer: guides/agent-layer.md
+    - GenAI Instrumentation: guides/genai-instrumentation.md
+    - API Documentation: guides/api-documentation.md
+  - Reference:
+    - API Reference: reference/api-reference.md
+    - Javadoc: reference/javadoc.md
+  - Project:
+    - Roadmap: project/roadmap.md
+    - Contributing: project/contributing.md
+    - Security: project/security.md
+
+validation:
+  links:
+    absolute_links: ignore
+    unrecognized_links: ignore
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/rrohitramsen/AgentTel
