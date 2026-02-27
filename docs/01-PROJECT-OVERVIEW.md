@@ -2,7 +2,7 @@
 
 ## Vision
 
-AgentTel is an open-source Java library and semantic convention extension for [OpenTelemetry](https://opentelemetry.io) that makes application telemetry **natively consumable by AI agents**. It bridges the gap between human-oriented observability and the structured, contextual data that autonomous systems require.
+AgentTel is an open-source JVM library and semantic convention extension for [OpenTelemetry](https://opentelemetry.io) that makes application telemetry **natively consumable by AI agents**. It bridges the gap between human-oriented observability and the structured, contextual data that autonomous systems require.
 
 ## Motivation
 
