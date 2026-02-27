@@ -1,147 +1,120 @@
-# AgentTel — Agent-Ready Telemetry for the JVM
+# Project Overview
 
-> **An open-source library and semantic convention extension that makes JVM services emit telemetry designed for AI agents to consume — not just humans to read.**
+## Vision
 
----
+AgentTel is an open-source Java library and semantic convention extension for [OpenTelemetry](https://opentelemetry.io) that makes application telemetry **natively consumable by AI agents**. It bridges the gap between human-oriented observability and the structured, contextual data that autonomous systems require.
 
-## The Problem
+## Motivation
 
-Modern observability is built for human eyeballs. Services emit logs like:
+### The Observability Gap
 
-```
-2026-02-26 14:03:22 ERROR PaymentService - Payment failed for order-123: timeout connecting to payment-gateway
-```
+Today's observability stack — traces, metrics, logs — is designed for human operators working through dashboards and alert rules. When AI agents are tasked with autonomous incident response, they face fundamental limitations:
 
-And metrics like:
+**Missing Context.** A span showing `POST /api/payments` with 312ms latency tells an agent nothing without knowing the baseline is 45ms, the operation is retryable, the service is Tier 1, and the team to page is `#payments-oncall`.
 
-```
-http_request_duration_seconds{service="payment-svc", endpoint="/pay", status="500"} 4.5
-```
+**No Behavioral Baselines.** Agents cannot distinguish "this is normal for a Tuesday morning" from "this is a 5x latency spike" without baseline data attached to the telemetry itself. External baseline systems add latency and require separate integrations.
 
-A human SRE can look at these, check a dashboard, correlate with their mental model of the system, remember that `payment-gateway` had issues last Tuesday too, and diagnose the problem.
+**No Topology Awareness.** Understanding that `payment-service` depends on `postgres` (required, 5s timeout, circuit breaker enabled) and `stripe-api` (required, fallback to cached pricing) requires knowledge that isn't embedded in today's telemetry.
 
-**An AI agent cannot do any of that.** It sees disconnected strings, unnamed relationships, and zero context about what "normal" looks like, what depends on what, or what to do next.
+**No Decision Metadata.** When an agent detects an anomaly, it needs to know: Can I retry this? Is there a fallback? Should I page someone or auto-remediate? Today, this information lives in runbooks, tribal knowledge, and configuration files — not in the telemetry stream.
 
-The result: AI-powered AIOps tools today spend most of their effort on **data cleaning and context reconstruction** rather than actual reasoning. Telemetry volumes grow ~30% annually, and human teams can't keep pace — but neither can AI agents when the signals they receive weren't designed for them.
+**No Actionable Interface.** Even with enriched telemetry, agents need a structured API to query live system state, understand incidents in context, and execute remediation — not just read historical traces.
 
-## The Insight
+### The Solution
 
-What if services emitted telemetry that was **primarily designed for AI agents** to consume?
+AgentTel enriches telemetry at the instrumentation layer — the earliest and most reliable point in the data pipeline — with five categories of agent-ready context:
 
-Not replacing human-readable signals, but **augmenting** them with structured, semantically rich telemetry that carries:
+1. **Topology** — Service identity, ownership, dependency graph, consumer relationships
+2. **Baselines** — Static and rolling latency/error baselines per operation
+3. **Decision Metadata** — Retryability, idempotency, fallbacks, runbooks, escalation levels
+4. **Anomaly Detection** — Z-score deviation detection with pattern recognition
+5. **SLO Tracking** — Error budget consumption with burn rate alerting
 
-- **Dependency context** — what this service depends on, and who depends on it
-- **Behavioral baselines** — what "normal" looks like, embedded in every signal
-- **Causal hints** — structured links between effects and probable causes
-- **Decision metadata** — is this retryable? is this a known transient issue? what's the runbook?
-- **Severity reasoning** — not just "error" but "anomaly score 0.92, matches pattern: cascade-failure"
+It also provides an **agent interface layer** that packages this telemetry into structured formats AI agents can consume via the Model Context Protocol (MCP), complete with incident context building, remediation execution, and full action auditability.
 
-## What Is AgentTel?
+### Why Now
 
-AgentTel is three things:
+- **OTel GenAI semantic conventions are still in development** — there is an opportunity to influence them before stabilization
+- **JVM GenAI instrumentation is fragmented** — Spring AI has basic Micrometer support, community projects are in SNAPSHOT, and there is no coverage for Anthropic, Bedrock, or OpenAI Java SDKs
+- **Enterprise Java has a massive installed base** but is underserved by the Python-centric AI observability ecosystem
+- **Industry validation** from Logz.io, Mezmo, Sawmills, Splunk, and Datadog confirms that agent-consumable telemetry is the frontier of observability
 
-### 1. A Semantic Convention Extension
-A proposed extension to OpenTelemetry's semantic conventions that defines **agent-ready attributes and event schemas** for any service — not just GenAI systems. These conventions standardize how services communicate context that AI agents need for reasoning.
+## Design Principles
 
-### 2. A JVM Library (Java / Kotlin)
-A lightweight, idiomatic library built on `opentelemetry-java` that makes it trivial for JVM developers to emit agent-ready telemetry from Spring Boot, Micronaut, Quarkus, and other frameworks. Annotations-first API design.
+### Annotations-First API
 
-### 3. A GenAI Instrumentation Enrichment Layer for JVM
-An enrichment layer that builds on top of existing JVM GenAI observability (Spring AI's built-in Micrometer tracing, community projects like `otel-genai-bridges`) to add agent-ready context — cost tracking, prompt template versioning, RAG quality signals, guardrail events — and fills gaps where no instrumentation exists (Anthropic Java SDK, AWS Bedrock SDK, raw OpenAI Java SDK).
-
-> **Note on existing work:** Spring AI already emits basic `gen_ai.*` observations via Micrometer. The community `otel-genai-bridges` project provides SNAPSHOT-quality LangChain4j instrumentation. AgentTel extends and enriches these rather than replacing them, and fills the gaps they don't cover.
-
-## Why Now?
-
-1. **OpenTelemetry's GenAI semantic conventions are still in Development status** — we can influence them before they stabilize
-2. **JVM GenAI instrumentation is fragmented** — Spring AI has basic Micrometer-based tracing; a community SNAPSHOT project (`otel-genai-bridges`) covers LangChain4j; but there's no comprehensive, production-quality, agent-enriched solution and no coverage for Anthropic/Bedrock/OpenAI Java SDKs
-3. **Enterprise Java is a massive installed base** — most enterprise backends run on JVM; they're underserved by the Python-centric AI observability tooling
-4. **Industry validation** — Logz.io, Mezmo, Sawmills, Splunk, and Datadog have all validated that agent-consumable telemetry is the next frontier, but they're building proprietary solutions at the pipeline layer. Nobody is building the open-source **emission** layer
-5. **The agent-ready gap** — current approaches try to retrofit agent-readiness *after* emission (in pipelines). Emitting it at the source is fundamentally better: richer context, lower latency, no information loss
-
-## Project Principles
-
-- **Built on OpenTelemetry** — not a competing standard. AgentTel is an OTel extension, not a replacement
-- **JVM-first, multi-language later** — start with Java/Kotlin; design for eventual Go, .NET, and TypeScript ports
-- **Annotations-driven** — minimize boilerplate; developers annotate, the library instruments
-- **Zero-overhead when unused** — if no OTel collector is configured, AgentTel adds zero runtime cost
-- **Backwards compatible** — enriches existing telemetry; never breaks standard OTel pipelines
-- **Open governance** — Apache 2.0 license; accepting contributions from Day 1
-
-## Target Users
-
-| User | What They Get |
-|------|--------------|
-| **JVM Service Developers** | Annotations and APIs to emit agent-ready telemetry from their Spring Boot / Micronaut / Quarkus services |
-| **AI/ML Platform Teams** | GenAI instrumentation for JVM-based LLM applications (Spring AI, LangChain4j, Bedrock SDK) |
-| **AIOps Agent Builders** | A standardized, structured telemetry format they can rely on for automated reasoning |
-| **SRE / Platform Teams** | Richer signals that make both human dashboards and AI agents more effective |
-
-## Project Status
-
-🟡 **Pre-Alpha / Design Phase**
-
-We are currently defining semantic conventions and designing the library API. See the companion documents for details:
-
-- `02-SEMANTIC-CONVENTIONS.md` — The proposed agent-ready semantic conventions
-- `03-ARCHITECTURE.md` — Library architecture and module design
-- `04-IMPLEMENTATION-ROADMAP.md` — Phased build plan with milestones
-
-## Quick Taste — What Code Will Look Like
+Developers declare operational semantics alongside their code:
 
 ```java
-// Declaring a service with agent-ready context
-@AgentObservable(
-    service = "payment-service",
-    team = "payments-platform",
-    tier = ServiceTier.CRITICAL
-)
-@DeclareDependency(name = "payment-gateway", type = DependencyType.EXTERNAL_API)
-@DeclareDependency(name = "order-service", type = DependencyType.INTERNAL_SERVICE)
-@DeclareConsumer(name = "notification-service")
-@SpringBootApplication
-public class PaymentServiceApplication { ... }
-
-// Emitting agent-ready signals from an endpoint
 @AgentOperation(
-    expectedLatencyP99 = "200ms",
+    expectedLatencyP50 = "45ms",
     retryable = true,
-    runbookUrl = "https://wiki.internal/runbooks/payment-processing"
+    runbookUrl = "https://wiki/runbooks/process-payment"
 )
-@PostMapping("/pay")
-public PaymentResult processPayment(@RequestBody PaymentRequest req) {
-    // AgentTel automatically emits:
-    // - Span with dependency context, baseline, and decision metadata
-    // - Metric with anomaly detection hint if latency exceeds baseline
-    // - Structured event if error occurs, with causal context
-}
 ```
 
-```kotlin
-// GenAI instrumentation for Spring AI
-@AgentObservable(service = "customer-support-agent")
-@RestController
-class SupportController(
-    private val chatClient: ChatClient  // Spring AI — auto-instrumented by AgentTel
-) {
-    @PostMapping("/chat")
-    fun chat(@RequestBody message: String): String {
-        // AgentTel auto-captures: model, tokens, latency, tool calls,
-        // conversation context, confidence scores — all as structured
-        // OTel spans/events following GenAI semantic conventions
-        return chatClient.prompt().user(message).call().content()
-    }
-}
+This keeps context co-located with the code it describes, reviewed in pull requests, and versioned with the application.
+
+### Strict OpenTelemetry Extension
+
+AgentTel is a semantic convention extension to OpenTelemetry, not a replacement. It uses the standard `SpanProcessor` and `SpanExporter` interfaces, adds attributes under the `agenttel.*` namespace, and coexists with all existing OTel conventions. Any OTel-compatible backend can ingest AgentTel-enriched spans.
+
+### Zero-Overhead When Disabled
+
+All enrichment is conditional. When no annotations are present or AgentTel is not configured, the library adds zero overhead. Baseline computation uses lock-free ring buffers. Anomaly detection is O(1) per span.
+
+### Framework-Agnostic Core
+
+The core library depends only on the OpenTelemetry SDK. Spring Boot integration is provided through a separate starter module. The architecture supports future adapters for Quarkus, Micronaut, and other frameworks.
+
+### Optional Dependencies
+
+GenAI instrumentation libraries (Spring AI, LangChain4j, Anthropic SDK, OpenAI SDK, AWS Bedrock SDK) are all `compileOnly` dependencies. They activate only when the corresponding library is present on the classpath. Users are never forced to pull in libraries they don't use.
+
+## Project Structure
+
+```
+agenttel/
+├── agenttel-api/                 # Annotations, attributes, enums (zero dependencies)
+├── agenttel-core/                # Runtime engine (OTel SDK dependency only)
+├── agenttel-genai/               # GenAI instrumentation (optional framework deps)
+├── agenttel-agent/               # Agent interface layer (MCP, health, incidents)
+├── agenttel-spring-boot-starter/ # Spring Boot auto-configuration
+├── agenttel-testing/             # Test utilities
+├── examples/
+│   ├── spring-boot-example/      # Spring Boot + AgentTel demo
+│   └── langchain4j-example/      # LangChain4j + AgentTel demo
+├── dashboards/                   # Grafana dashboard templates
+└── docs/                         # This documentation
 ```
 
-## License
+## Module Summary
 
-Apache License 2.0
+| Module | Artifact | Dependencies | Description |
+|--------|----------|-------------|-------------|
+| `agenttel-api` | `io.agenttel:agenttel-api` | None | Annotations, attribute constants, enums, data models |
+| `agenttel-core` | `io.agenttel:agenttel-core` | OTel SDK, Jackson | Span enrichment, baselines, anomaly detection, SLO tracking, events |
+| `agenttel-genai` | `io.agenttel:agenttel-genai` | OTel SDK + optional GenAI libs | LangChain4j, Spring AI, Anthropic/OpenAI/Bedrock instrumentation |
+| `agenttel-agent` | `io.agenttel:agenttel-agent` | OTel SDK, Jackson | MCP server, health aggregation, incident context, remediation |
+| `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot | Auto-configuration for Spring Boot applications |
+| `agenttel-testing` | `io.agenttel:agenttel-testing` | OTel SDK Testing | Test utilities for verifying span enrichment |
 
-## Contributing
+## Target Audience
 
-We welcome contributions! See `CONTRIBUTING.md` (coming soon).
+- **Platform engineers** building internal developer platforms with AI-assisted incident response
+- **SRE teams** adopting AIOps tooling that needs structured telemetry
+- **Application developers** who want their services to be "agent-ready" with minimal code changes
+- **AI/ML engineers** building autonomous agents that interact with production systems
 
-Join the discussion:
-- GitHub Discussions (coming soon)
-- OpenTelemetry GenAI SIG — `#otel-genai-instrumentation` on CNCF Slack
+## Current Status
+
+AgentTel is in **alpha** (v0.1.0-alpha). The core instrumentation, GenAI support, and agent interface layer are implemented and tested. The API surface may evolve before 1.0.
+
+## Further Reading
+
+- [Semantic Conventions](02-SEMANTIC-CONVENTIONS.md) — Complete attribute and event schema
+- [Architecture](03-ARCHITECTURE.md) — Technical design and data flow
+- [Agent Layer](04-AGENT-LAYER.md) — MCP server, incident context, remediation
+- [GenAI Instrumentation](05-GENAI-INSTRUMENTATION.md) — LLM framework instrumentation
+- [API Reference](06-API-REFERENCE.md) — Full API documentation
+- [Roadmap](07-ROADMAP.md) — Release plan and future work

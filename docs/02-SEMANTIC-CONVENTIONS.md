@@ -1,329 +1,309 @@
-# AgentTel Semantic Conventions
+# Semantic Conventions
 
-> **Proposed extensions to OpenTelemetry semantic conventions for agent-ready telemetry emission from any service.**
+AgentTel defines a set of semantic convention extensions to OpenTelemetry, organized into five categories of agent-ready attributes plus structured events. All attributes use the `agenttel.*` namespace and coexist with standard OTel conventions.
 
----
+## Design Philosophy
 
-## 1. Design Philosophy
-
-Today's OTel semantic conventions answer: **"What happened?"**
-AgentTel conventions additionally answer: **"What does an AI agent need to know to reason about what happened?"**
-
-We achieve this by defining five categories of agent-ready attributes:
-
-| Category | Purpose | Example |
-|----------|---------|---------|
-| **Topology** | Who am I, what do I depend on, who depends on me? | `agenttel.dependency.name`, `agenttel.consumer.name` |
-| **Baselines** | What does "normal" look like? | `agenttel.baseline.latency_p99_ms`, `agenttel.baseline.error_rate` |
-| **Causality** | What probably caused this? | `agenttel.cause.hint`, `agenttel.cause.correlated_event_id` |
-| **Decision** | What can an agent do about this? | `agenttel.decision.retryable`, `agenttel.decision.runbook_url` |
-| **Severity** | How bad is this, really? | `agenttel.severity.anomaly_score`, `agenttel.severity.pattern` |
-
-These are **additive** — they enrich standard OTel spans, metrics, and events without replacing any existing conventions.
+Standard OpenTelemetry conventions answer **"What happened?"** — an HTTP span records the method, URL, status code, and duration. AgentTel adds **"What does an AI agent need to know to reason about and act on this?"** — the behavioral baseline, whether retrying is safe, who to page, and what the dependency graph looks like.
 
 ---
 
-## 2. Namespace
+## 1. Topology Attributes
 
-All AgentTel-specific attributes live under the `agenttel.*` namespace, following OTel conventions:
+Service identity and dependency graph. Set as resource attributes at startup.
 
-```
-agenttel.topology.*     — Service topology and dependency declarations
-agenttel.baseline.*     — Expected behavior baselines
-agenttel.cause.*        — Causal reasoning hints
-agenttel.decision.*     — Actionability metadata
-agenttel.severity.*     — Severity and anomaly scoring
-agenttel.genai.*        — GenAI-specific extensions (supplements gen_ai.*)
-```
+### Service Identity
 
----
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.topology.team` | string | Owning team identifier | `"payments-platform"` |
+| `agenttel.topology.tier` | string | Service criticality tier | `"critical"` |
+| `agenttel.topology.domain` | string | Business domain | `"commerce"` |
+| `agenttel.topology.on_call_channel` | string | Escalation channel | `"#payments-oncall"` |
+| `agenttel.topology.repo_url` | string | Source repository URL | `"https://github.com/org/repo"` |
 
-## 3. Topology Conventions (`agenttel.topology.*`)
+### Service Tiers
 
-### 3.1 Resource Attributes (set once per service instance)
+| Tier | Value | Meaning |
+|------|-------|---------|
+| Critical | `"critical"` | User-facing, revenue-impacting. Pages on-call immediately. |
+| Standard | `"standard"` | Important but not immediately revenue-impacting. |
+| Internal | `"internal"` | Internal tooling and infrastructure. |
+| Experimental | `"experimental"` | Non-production or experimental services. |
 
-These are attached to the OTel `Resource` and describe the service's place in the system.
+### Dependency Graph
 
-| Attribute | Type | Required | Description | Example |
-|-----------|------|----------|-------------|---------|
-| `agenttel.topology.team` | string | Recommended | Owning team name | `"payments-platform"` |
-| `agenttel.topology.tier` | enum | Recommended | Service criticality tier | `critical`, `standard`, `internal`, `experimental` |
-| `agenttel.topology.domain` | string | Optional | Business domain | `"commerce"` |
-| `agenttel.topology.on_call_channel` | string | Optional | Escalation channel | `"#payments-oncall"` |
-| `agenttel.topology.repo_url` | string | Optional | Source repository URL | `"https://github.com/..."` |
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `agenttel.topology.dependencies` | string (JSON) | JSON array of dependency descriptors |
+| `agenttel.topology.consumers` | string (JSON) | JSON array of consumer descriptors |
 
-### 3.2 Dependency Declarations (Resource-level array)
-
-Declared dependencies are emitted as a structured resource attribute, enabling agents to understand the service graph without consulting an external CMDB.
-
-| Attribute | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `agenttel.topology.dependencies` | string[] (JSON) | Recommended | Array of dependency descriptors |
-
-Each dependency descriptor is a JSON object:
+**Dependency Descriptor Schema:**
 
 ```json
 {
-  "name": "payment-gateway",
-  "type": "external_api",          
-  "protocol": "https",
-  "criticality": "required",       
+  "name": "postgres",
+  "type": "database",
+  "criticality": "required",
+  "protocol": "postgresql",
   "timeout_ms": 5000,
   "circuit_breaker": true,
-  "fallback": "cached_response",
-  "health_endpoint": "https://gateway.pay.com/health"
+  "fallback": "Return cached data",
+  "health_endpoint": "/health/postgres"
 }
 ```
 
-**Dependency `type` values:**
-- `internal_service` — Another service owned by the organization
-- `external_api` — Third-party API
-- `database` — Database (SQL/NoSQL)
-- `message_broker` — Kafka, RabbitMQ, etc.
-- `cache` — Redis, Memcached, etc.
-- `object_store` — S3, GCS, etc.
-- `identity_provider` — Auth0, Okta, etc.
+**Dependency Types:** `internal_service`, `external_api`, `database`, `message_broker`, `cache`, `object_store`, `identity_provider`
 
-**Dependency `criticality` values:**
-- `required` — Service cannot function without it
-- `degraded` — Service can function but with reduced capability
-- `optional` — Service can function normally without it
+**Dependency Criticality:**
 
-### 3.3 Consumer Declarations
+| Level | Value | Meaning |
+|-------|-------|---------|
+| Required | `"required"` | Failure causes outage. No fallback. |
+| Degraded | `"degraded"` | Failure causes reduced functionality. Partial fallback available. |
+| Optional | `"optional"` | Failure has no direct user impact. |
 
-| Attribute | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `agenttel.topology.consumers` | string[] (JSON) | Optional | Services that depend on this service |
+**Consumer Descriptor Schema:**
 
 ```json
 {
-  "name": "notification-service",
-  "consumption_pattern": "async",   
-  "sla_latency_ms": 500
+  "name": "checkout-service",
+  "consumption_pattern": "synchronous",
+  "sla_latency_ms": 200
 }
 ```
 
----
-
-## 4. Baseline Conventions (`agenttel.baseline.*`)
-
-Baselines allow an agent to immediately assess whether current behavior is anomalous **without needing historical data**.
-
-### 4.1 Span-Level Baselines
-
-Attached to individual spans to provide operation-level context:
-
-| Attribute | Type | Required | Description | Example |
-|-----------|------|----------|-------------|---------|
-| `agenttel.baseline.latency_p50_ms` | double | Recommended | Expected median latency | `45.0` |
-| `agenttel.baseline.latency_p99_ms` | double | Recommended | Expected p99 latency | `200.0` |
-| `agenttel.baseline.error_rate` | double | Optional | Expected error rate (0.0–1.0) | `0.001` |
-| `agenttel.baseline.throughput_rps` | double | Optional | Expected requests/sec | `1500.0` |
-| `agenttel.baseline.source` | enum | Recommended | How baseline was determined | `static`, `rolling_7d`, `ml_model`, `slo` |
-| `agenttel.baseline.updated_at` | string (ISO 8601) | Optional | When baseline was last computed | `"2026-02-20T00:00:00Z"` |
-
-### 4.2 Resource-Level Baselines (SLO declarations)
-
-| Attribute | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `agenttel.baseline.slo` | string (JSON) | Optional | Service-level objectives |
-
-```json
-{
-  "availability": 0.999,
-  "latency_p99_ms": 300,
-  "error_budget_remaining": 0.45,
-  "error_budget_window": "30d"
-}
-```
+**Consumption Patterns:** `synchronous`, `asynchronous`, `batch`, `streaming`
 
 ---
 
-## 5. Causality Conventions (`agenttel.cause.*`)
+## 2. Baseline Attributes
 
-Causal hints give agents a head start on root cause analysis by encoding probable causes directly in the telemetry.
+What "normal" looks like for each operation. Set as span attributes by the `AgentTelSpanProcessor`.
 
-### 5.1 Span-Level Causal Hints
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.baseline.latency_p50_ms` | double | Expected P50 latency | `45.0` |
+| `agenttel.baseline.latency_p99_ms` | double | Expected P99 latency | `200.0` |
+| `agenttel.baseline.error_rate` | double | Expected error rate (0.0–1.0) | `0.001` |
+| `agenttel.baseline.throughput_rps` | double | Expected requests per second | `150.0` |
+| `agenttel.baseline.source` | string | How the baseline was determined | `"static"` |
 
-| Attribute | Type | Required | Description | Example |
-|-----------|------|----------|-------------|---------|
-| `agenttel.cause.hint` | string | Optional | Human/agent-readable cause description | `"Upstream payment-gateway returning 503 since 14:03 UTC"` |
-| `agenttel.cause.category` | enum | Optional | Broad cause category | `dependency_failure`, `resource_exhaustion`, `config_change`, `deployment`, `traffic_spike`, `data_quality`, `unknown` |
-| `agenttel.cause.dependency` | string | Optional | Name of the dependency implicated | `"payment-gateway"` |
-| `agenttel.cause.correlated_span_id` | string | Optional | Span ID of a causally related span | `"abc123def456"` |
-| `agenttel.cause.correlated_event_id` | string | Optional | Event ID of a causally related event | `"deploy-789"` |
-| `agenttel.cause.started_at` | string (ISO 8601) | Optional | When the causal condition began | `"2026-02-26T14:03:00Z"` |
+### Baseline Sources
 
-### 5.2 Deployment Context Events
+| Source | Value | Description |
+|--------|-------|-------------|
+| Static | `"static"` | From `@AgentOperation` annotation or configuration file |
+| Rolling | `"rolling"` | Computed from a sliding window of observed traffic |
+| Composite | `"composite"` | Static baseline with rolling fallback for gaps |
+| Default | `"default"` | System default when no baseline is available |
 
-Services SHOULD emit a structured event on startup or deployment:
+### Rolling Baseline Metrics
 
-**Event name:** `agenttel.deployment.info`
+The `RollingBaselineProvider` maintains per-operation sliding windows that compute:
+
+| Metric | Description |
+|--------|-------------|
+| P50, P95, P99 | Latency percentiles from observed traffic |
+| Mean, Stddev | Statistical summary for z-score anomaly detection |
+| Error Rate | Observed error rate over the window |
+| Sample Count | Number of observations in the current window |
+
+### Configuration
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `agenttel.baselines.rolling-window-size` | `1000` | Number of observations per sliding window |
+| `agenttel.baselines.rolling-min-samples` | `10` | Minimum samples before a rolling baseline is considered valid |
+
+---
+
+## 3. Decision Attributes
+
+What an AI agent is permitted and equipped to do. Set as span attributes from `@AgentOperation` annotations.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.decision.retryable` | boolean | Whether the operation can be retried | `true` |
+| `agenttel.decision.retry_after_ms` | long | Suggested retry delay in milliseconds | `1000` |
+| `agenttel.decision.idempotent` | boolean | Whether repeated calls produce the same result | `true` |
+| `agenttel.decision.fallback_available` | boolean | Whether a fallback path exists | `true` |
+| `agenttel.decision.fallback_description` | string | Human-readable fallback description | `"Return cached pricing"` |
+| `agenttel.decision.runbook_url` | string | Link to operational runbook | `"https://wiki/..."` |
+| `agenttel.decision.escalation_level` | string | Escalation procedure | `"page_oncall"` |
+| `agenttel.decision.safe_to_restart` | boolean | Whether service restart is safe during this operation | `true` |
+
+### Escalation Levels
+
+| Level | Value | Meaning |
+|-------|-------|---------|
+| Auto-Resolve | `"auto_resolve"` | Agent can handle autonomously without human involvement |
+| Notify Team | `"notify_team"` | Send asynchronous notification to the owning team |
+| Page On-Call | `"page_oncall"` | Page the on-call engineer immediately |
+| Incident Commander | `"incident_commander"` | Escalate to incident management process |
+
+---
+
+## 4. Anomaly Attributes
+
+Real-time deviation detection. Set as span attributes by the `AgentTelSpanProcessor` when anomalous behavior is detected.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.anomaly.detected` | boolean | Whether an anomaly was detected on this span | `true` |
+| `agenttel.anomaly.pattern` | string | Identified incident pattern | `"cascade_failure"` |
+| `agenttel.anomaly.score` | double | Anomaly severity score (0.0–1.0) | `0.85` |
+| `agenttel.anomaly.latency_z_score` | double | Z-score of latency deviation from baseline | `4.2` |
+
+### Incident Patterns
+
+| Pattern | Value | Detection Method | Description |
+|---------|-------|-----------------|-------------|
+| Cascade Failure | `"cascade_failure"` | 3+ dependencies with errors in recent window | Multiple downstream services failing simultaneously |
+| Latency Degradation | `"latency_degradation"` | Current latency > 2x rolling P50 | Sustained latency elevation above baseline |
+| Error Rate Spike | `"error_rate_spike"` | Recent error rate > 5x baseline | Sudden increase in error rate |
+| Memory Leak | `"memory_leak"` | Positive slope in latency linear regression | Monotonically increasing latency trend |
+| Thundering Herd | `"thundering_herd"` | Traffic burst exceeding normal patterns | Sudden traffic spike after recovery |
+| Cold Start | `"cold_start"` | High latency with low request count | Elevated latency on fresh instances |
+
+### Detection Configuration
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `agenttel.anomaly-detection.z-score-threshold` | `3.0` | Z-score above which latency is anomalous |
+| `latencyDegradationThreshold` | `2.0` | Multiplier over P50 to trigger degradation pattern |
+| `errorRateSpikeThreshold` | `5.0` | Multiplier over baseline error rate to trigger spike pattern |
+| `cascadeFailureMinServices` | `3` | Minimum failing dependencies for cascade detection |
+
+---
+
+## 5. SLO Attributes
+
+Error budget consumption tracking. Set as span attributes when SLOs are registered.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.slo.name` | string | SLO identifier | `"payment-availability"` |
+| `agenttel.slo.target` | double | SLO target (0.0–1.0) | `0.999` |
+| `agenttel.slo.budget_remaining` | double | Remaining error budget fraction (0.0–1.0) | `0.85` |
+| `agenttel.slo.burn_rate` | double | Budget consumption rate | `0.15` |
+
+### SLO Types
+
+| Type | Description | Example Target |
+|------|-------------|---------------|
+| `AVAILABILITY` | Percentage of successful (non-error) requests | 99.9% |
+| `LATENCY_P99` | Percentage of requests completing under P99 threshold | 99.0% |
+| `LATENCY_P50` | Percentage of requests completing under P50 threshold | 95.0% |
+| `ERROR_RATE` | Maximum acceptable error rate | 0.1% |
+
+### Alert Thresholds
+
+Budget alerts are emitted when remaining budget crosses these thresholds:
+
+| Remaining Budget | Severity | Action |
+|-----------------|----------|--------|
+| <= 50% | `INFO` | Informational — budget consumption is elevated |
+| <= 25% | `WARNING` | Warning — budget at risk of exhaustion |
+| <= 10% | `CRITICAL` | Critical — budget nearly exhausted, immediate action needed |
+
+---
+
+## 6. GenAI Attributes
+
+Extensions for AI/ML workload observability. Set on spans created by GenAI instrumentation wrappers.
+
+### Standard OTel GenAI Attributes
+
+AgentTel populates the emerging OTel GenAI semantic conventions:
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `agenttel.deployment.id` | string | Deployment identifier |
-| `agenttel.deployment.version` | string | Application version |
-| `agenttel.deployment.commit_sha` | string | Git commit |
-| `agenttel.deployment.previous_version` | string | Version being replaced |
-| `agenttel.deployment.strategy` | enum | `rolling`, `blue_green`, `canary` |
-| `agenttel.deployment.config_changes` | string[] | List of config keys that changed |
-| `agenttel.deployment.timestamp` | string | When deployment started |
+| `gen_ai.operation.name` | string | `"chat"`, `"text_completion"`, `"embeddings"` |
+| `gen_ai.system` | string | Provider: `"openai"`, `"anthropic"`, `"aws_bedrock"` |
+| `gen_ai.request.model` | string | Requested model identifier |
+| `gen_ai.response.model` | string | Actual model used in response |
+| `gen_ai.usage.input_tokens` | long | Input/prompt token count |
+| `gen_ai.usage.output_tokens` | long | Output/completion token count |
+| `gen_ai.response.finish_reasons` | string[] | Completion stop reasons |
+
+### AgentTel GenAI Extensions
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.genai.framework` | string | Instrumentation source | `"langchain4j"`, `"spring_ai"` |
+| `agenttel.genai.cost_usd` | double | Estimated cost in USD | `0.000795` |
+| `agenttel.genai.prompt_template_id` | string | Prompt template identifier | `"customer-support-v2"` |
+| `agenttel.genai.prompt_template_version` | string | Prompt template version | `"1.3"` |
+| `agenttel.genai.rag_source_count` | long | Number of RAG sources retrieved | `5` |
+| `agenttel.genai.rag_relevance_score_avg` | double | Average relevance score | `0.87` |
+| `agenttel.genai.guardrail_triggered` | boolean | Whether a guardrail fired | `false` |
+| `agenttel.genai.guardrail_name` | string | Name of triggered guardrail | `"pii_filter"` |
+| `agenttel.genai.cache_hit` | boolean | Whether a cached response was used | `false` |
 
 ---
 
-## 6. Decision Conventions (`agenttel.decision.*`)
+## 7. Structured Events
 
-Decision metadata tells agents what actions are available and appropriate for a given situation.
+AgentTel emits structured events via the OTel Logs API for significant state changes that agents should react to.
 
-### 6.1 Span-Level Decision Metadata
+### agenttel.anomaly.detected
 
-| Attribute | Type | Required | Description | Example |
-|-----------|------|----------|-------------|---------|
-| `agenttel.decision.retryable` | boolean | Recommended | Whether the operation can be retried | `true` |
-| `agenttel.decision.retry_after_ms` | int | Optional | Suggested wait before retry | `5000` |
-| `agenttel.decision.idempotent` | boolean | Optional | Whether the operation is idempotent | `true` |
-| `agenttel.decision.fallback_available` | boolean | Optional | Whether a fallback path exists | `true` |
-| `agenttel.decision.fallback_description` | string | Optional | What the fallback does | `"Returns cached pricing from last successful call"` |
-| `agenttel.decision.runbook_url` | string | Optional | Link to runbook for this operation | `"https://wiki/runbooks/payment-timeout"` |
-| `agenttel.decision.escalation_level` | enum | Optional | Suggested escalation | `auto_resolve`, `notify_team`, `page_oncall`, `incident_commander` |
-| `agenttel.decision.known_issue_id` | string | Optional | Links to a known issue / JIRA ticket | `"PAY-4521"` |
-| `agenttel.decision.safe_to_restart` | boolean | Optional | Whether the service can be safely restarted | `true` |
-
-### 6.2 Circuit Breaker Events
-
-**Event name:** `agenttel.circuit_breaker.state_change`
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `agenttel.circuit_breaker.name` | string | Name of the circuit breaker |
-| `agenttel.circuit_breaker.previous_state` | enum | `closed`, `open`, `half_open` |
-| `agenttel.circuit_breaker.new_state` | enum | `closed`, `open`, `half_open` |
-| `agenttel.circuit_breaker.failure_count` | int | Number of failures that triggered the transition |
-| `agenttel.circuit_breaker.dependency` | string | The dependency being protected |
-
----
-
-## 7. Severity Conventions (`agenttel.severity.*`)
-
-Goes beyond simple log levels to provide nuanced severity assessment.
-
-| Attribute | Type | Required | Description | Example |
-|-----------|------|----------|-------------|---------|
-| `agenttel.severity.anomaly_score` | double | Optional | 0.0 (normal) to 1.0 (highly anomalous) | `0.92` |
-| `agenttel.severity.pattern` | string | Optional | Matched incident pattern name | `"cascade-failure"`, `"memory-leak"`, `"thundering-herd"` |
-| `agenttel.severity.impact_scope` | enum | Optional | Blast radius | `single_request`, `single_user`, `subset_users`, `all_users`, `multi_service` |
-| `agenttel.severity.business_impact` | enum | Optional | Business impact level | `none`, `degraded_experience`, `feature_unavailable`, `revenue_impacting`, `data_loss` |
-| `agenttel.severity.user_facing` | boolean | Optional | Whether the issue is visible to end users | `true` |
-
----
-
-## 8. GenAI Extensions (`agenttel.genai.*`)
-
-These supplement the existing `gen_ai.*` OTel semantic conventions with additional agent-ready attributes specific to JVM GenAI applications.
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `agenttel.genai.framework` | string | JVM framework used (`spring_ai`, `langchain4j`, `bedrock_sdk`) |
-| `agenttel.genai.prompt_template_id` | string | Identifier of the prompt template used |
-| `agenttel.genai.prompt_template_version` | string | Version of the prompt template |
-| `agenttel.genai.rag_source_count` | int | Number of RAG documents retrieved |
-| `agenttel.genai.rag_relevance_score_avg` | double | Average relevance score of retrieved docs |
-| `agenttel.genai.guardrail_triggered` | boolean | Whether a safety guardrail was activated |
-| `agenttel.genai.guardrail_name` | string | Name of the triggered guardrail |
-| `agenttel.genai.cost_usd` | double | Estimated cost of the GenAI operation in USD |
-| `agenttel.genai.cache_hit` | boolean | Whether a cached response was used |
-
----
-
-## 9. Structured Event Schemas
-
-Beyond span attributes, AgentTel defines structured **OTel Log Events** for key operational moments. These use OTel's `LogRecord` with structured body payloads.
-
-### 9.1 `agenttel.anomaly.detected`
-
-Emitted when the library detects behavior outside baselines.
+Emitted when a span's behavior deviates significantly from baseline.
 
 ```json
 {
   "event.name": "agenttel.anomaly.detected",
+  "severity": "WARN",
   "body": {
-    "metric": "latency_p99",
-    "current_value": 4500,
-    "baseline_value": 200,
-    "deviation_factor": 22.5,
-    "anomaly_score": 0.97,
-    "probable_cause": {
-      "category": "dependency_failure",
-      "dependency": "payment-gateway",
-      "evidence": "payment-gateway health check failing since 14:03 UTC"
-    },
-    "suggested_actions": [
-      { "action": "check_dependency_health", "target": "payment-gateway" },
-      { "action": "activate_fallback", "description": "Enable cached pricing" },
-      { "action": "notify_team", "channel": "#payments-oncall" }
-    ]
+    "operation": "POST /api/payments",
+    "pattern": "latency_degradation",
+    "anomaly_score": 0.85,
+    "z_score": 4.2,
+    "current_latency_ms": 312.0,
+    "baseline_p50_ms": 45.0
   }
 }
 ```
 
-### 9.2 `agenttel.dependency.state_change`
+### agenttel.slo.budget_alert
 
-Emitted when a dependency's perceived state changes.
-
-```json
-{
-  "event.name": "agenttel.dependency.state_change",
-  "body": {
-    "dependency": "payment-gateway",
-    "previous_state": "healthy",
-    "new_state": "degraded",
-    "evidence": "5xx rate exceeded 10% threshold over 60s window",
-    "started_at": "2026-02-26T14:03:00Z",
-    "affected_operations": ["/pay", "/refund"],
-    "circuit_breaker_state": "half_open"
-  }
-}
-```
-
-### 9.3 `agenttel.slo.budget_alert`
-
-Emitted when error budget consumption crosses a threshold.
+Emitted when an SLO's error budget crosses a threshold (50%, 25%, 10%).
 
 ```json
 {
   "event.name": "agenttel.slo.budget_alert",
+  "severity": "WARN",
   "body": {
     "slo_name": "payment-availability",
-    "target": 0.999,
-    "current": 0.9975,
-    "error_budget_remaining": 0.15,
-    "burn_rate": 3.2,
-    "projected_exhaustion": "2026-03-01T00:00:00Z",
-    "window": "30d"
+    "severity": "WARNING",
+    "budget_remaining": 0.22,
+    "burn_rate": 0.78
+  }
+}
+```
+
+### agenttel.dependency.state_change
+
+Emitted when a dependency's observed health transitions.
+
+```json
+{
+  "event.name": "agenttel.dependency.state_change",
+  "severity": "WARN",
+  "body": {
+    "dependency": "postgres",
+    "previous_state": "healthy",
+    "current_state": "degraded",
+    "error_rate": 0.15
   }
 }
 ```
 
 ---
 
-## 10. Relationship to Existing Standards
+## Relationship to OpenTelemetry
 
-| Standard | Relationship |
-|----------|-------------|
-| **OpenTelemetry Semantic Conventions** | AgentTel is a strict extension — all OTel conventions remain intact and are required |
-| **OTel GenAI Semantic Conventions** (`gen_ai.*`) | AgentTel's `agenttel.genai.*` supplements but never replaces `gen_ai.*` attributes |
-| **OTel Resource Conventions** | AgentTel adds topology attributes to `Resource` alongside standard `service.*` attributes |
-| **OpenTelemetry Collector** | AgentTel telemetry flows through standard OTel pipelines with no special processing required |
-| **OCSF / ECS** | AgentTel is complementary — can coexist when telemetry is exported to security platforms |
+AgentTel is a **strict extension** of OpenTelemetry. All attributes use the `agenttel.*` namespace (or the emerging `gen_ai.*` conventions for GenAI). AgentTel-enriched spans remain fully compatible with any OTel backend — Jaeger, Zipkin, Grafana Tempo, Datadog, Splunk, New Relic, and others.
 
----
-
-## 11. Versioning
-
-AgentTel semantic conventions follow the same versioning approach as OTel:
-- **Experimental** attributes may change between minor versions
-- **Stable** attributes follow OTel's stability guarantees
-- All attributes start as Experimental and are promoted after community validation
-
-Current status: **All conventions are Experimental (v0.1.0-alpha)**
+The library implements standard OTel interfaces (`SpanProcessor`, `SpanExporter`, `Resource`) and composes cleanly with any other OTel instrumentation.
