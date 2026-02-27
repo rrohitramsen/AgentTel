@@ -1,475 +1,361 @@
-# AgentTel — Architecture & Module Design
+# Architecture
 
-> **Technical architecture for the AgentTel JVM library.**
+This document describes the technical architecture of AgentTel, including module design, data flow, key components, and extension points.
 
 ---
 
-## 1. High-Level Architecture
+## High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Your JVM Application                         │
-│                                                                     │
-│  ┌──────────────┐  ┌───────────────────┐  ┌─────────────────────┐  │
-│  │ @AgentTel    │  │ Auto-Instrumented │  │ Manual AgentTel     │  │
-│  │ Annotations  │  │ Libraries         │  │ API Calls           │  │
-│  │              │  │ (Spring AI, etc.) │  │                     │  │
-│  └──────┬───────┘  └────────┬──────────┘  └──────────┬──────────┘  │
-│         │                   │                        │             │
-│         └───────────────────┼────────────────────────┘             │
-│                             ▼                                       │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                    AgentTel Core Engine                       │  │
-│  │                                                              │  │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌────────────────────┐  │  │
-│  │  │ Topology    │  │ Baseline     │  │ Anomaly Detection  │  │  │
-│  │  │ Registry    │  │ Manager      │  │ (lightweight)      │  │  │
-│  │  └─────────────┘  └──────────────┘  └────────────────────┘  │  │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌────────────────────┐  │  │
-│  │  │ Causality   │  │ Decision     │  │ Event Emitter      │  │  │
-│  │  │ Tracker     │  │ Enricher     │  │                    │  │  │
-│  │  └─────────────┘  └──────────────┘  └────────────────────┘  │  │
-│  └──────────────────────────┬───────────────────────────────────┘  │
-│                             ▼                                       │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │              OpenTelemetry Java SDK                           │  │
-│  │         (Traces, Metrics, Logs — standard OTLP)              │  │
-│  └──────────────────────────┬───────────────────────────────────┘  │
-└─────────────────────────────┼───────────────────────────────────────┘
-                              ▼
-                   ┌─────────────────────┐
-                   │  OTel Collector /   │
-                   │  Any OTLP Backend   │
-                   └─────────────────────┘
+                        ┌────────────────────────────────┐
+                        │         AI Agent / LLM          │
+                        │   (Claude, GPT, custom agent)   │
+                        └────────────┬───────────────────┘
+                                     │ MCP (JSON-RPC)
+                        ┌────────────▼───────────────────┐
+                        │       agenttel-agent            │
+                        │  MCP Server · Health Aggregator │
+                        │  Incident Context · Remediation │
+                        └────────────┬───────────────────┘
+                                     │ reads from
+┌──────────────────┐    ┌────────────▼───────────────────┐
+│  Your Application │───▶│       agenttel-core            │
+│  @AgentOperation  │    │  SpanProcessor · Baselines     │
+│  business logic   │    │  Anomaly Detection · SLOs      │
+└──────────────────┘    │  Pattern Matching · Events     │
+                        └────────────┬───────────────────┘
+                                     │ enriched spans
+                        ┌────────────▼───────────────────┐
+                        │     OpenTelemetry SDK           │
+                        │   OTLP Export to Backend        │
+                        └────────────┬───────────────────┘
+                                     │
+                        ┌────────────▼───────────────────┐
+                        │   Observability Backend         │
+                        │  Jaeger / Tempo / Datadog / ... │
+                        └────────────────────────────────┘
 ```
 
 ---
 
-## 2. Module Structure
+## Module Architecture
 
-The project is organized as a multi-module Gradle build (Kotlin DSL):
+### agenttel-api
+
+**Zero-dependency module** containing the public API surface.
+
+| Component | Description |
+|-----------|-------------|
+| `@AgentOperation` | Method-level annotation declaring operational semantics |
+| `@AgentObservable` | Service-level annotation for topology metadata |
+| `@DeclareDependency` | Annotation for declaring service dependencies |
+| `@DeclareConsumer` | Annotation for declaring downstream consumers |
+| `AgentTelAttributes` | String constants for all `agenttel.*` attribute keys |
+| Enums | `ServiceTier`, `DependencyType`, `DependencyCriticality`, `EscalationLevel`, etc. |
+| Descriptors | `DependencyDescriptor`, `ConsumerDescriptor` records |
+
+**Design decision:** The API module has zero runtime dependencies. It can be added to any project without pulling in OpenTelemetry, Spring, or any other framework.
+
+### agenttel-core
+
+**Runtime engine** that enriches spans and maintains operational state.
 
 ```
-agenttel/
-├── build.gradle.kts                         # Root build
-├── settings.gradle.kts
-├── gradle/
-│   └── libs.versions.toml                   # Version catalog
-│
-├── agenttel-api/                            # Module 1: Core API
-│   └── src/main/java/io/agenttel/api/
-│       ├── annotations/                     # @AgentObservable, @DeclareDependency, etc.
-│       ├── attributes/                      # AgentTelAttributes constants
-│       ├── events/                          # Structured event builders
-│       ├── baseline/                        # Baseline interfaces
-│       ├── topology/                        # Topology model
-│       └── decision/                        # Decision metadata model
-│
-├── agenttel-core/                           # Module 2: Core Engine
-│   └── src/main/java/io/agenttel/core/
-│       ├── engine/                          # AgentTelEngine (main orchestrator)
-│       ├── topology/                        # TopologyRegistry implementation
-│       ├── baseline/                        # BaselineManager (static + rolling)
-│       ├── anomaly/                         # Lightweight anomaly detection
-│       ├── causality/                       # CausalityTracker
-│       ├── enrichment/                      # Span/metric enrichment processors
-│       └── events/                          # Structured event emission
-│
-├── agenttel-spring-boot-starter/            # Module 3: Spring Boot Auto-Config
-│   └── src/main/java/io/agenttel/spring/
-│       ├── autoconfigure/                   # Auto-configuration classes
-│       ├── annotations/                     # Spring-specific annotation processors
-│       └── actuator/                        # Actuator endpoint for topology export
-│
-├── agenttel-genai/                          # Module 4: GenAI Instrumentation
-│   └── src/main/java/io/agenttel/genai/
-│       ├── conventions/                     # gen_ai.* + agenttel.genai.* constants
-│       ├── springai/                        # Spring AI auto-instrumentation
-│       ├── langchain4j/                     # LangChain4j auto-instrumentation
-│       ├── bedrock/                         # AWS Bedrock SDK instrumentation
-│       ├── anthropic/                       # Anthropic Java SDK instrumentation
-│       └── openai/                          # OpenAI Java SDK instrumentation
-│
-├── agenttel-micrometer-bridge/              # Module 5: Micrometer Bridge
-│   └── src/main/java/io/agenttel/micrometer/
-│       └── AgentTelMicrometerBridge.java    # Bridge for Micrometer-based apps
-│
-├── agenttel-testing/                        # Module 6: Test Utilities
-│   └── src/main/java/io/agenttel/testing/
-│       ├── AgentTelAssertions.java          # Assertion helpers
-│       └── InMemoryAgentTelCollector.java   # In-memory collector for tests
-│
-└── examples/
-    ├── spring-boot-example/                 # Example Spring Boot app
-    ├── spring-ai-example/                   # Example with Spring AI + GenAI instrumentation
-    └── quarkus-example/                     # Example Quarkus app
+agenttel-core/
+├── baseline/
+│   ├── BaselineProvider (interface)
+│   ├── StaticBaselineProvider        # From @AgentOperation annotations
+│   ├── RollingBaselineProvider       # Lock-free ring buffer sliding window
+│   └── CompositeBaselineProvider     # Chains providers with fallback
+├── anomaly/
+│   ├── AnomalyDetector              # Z-score based anomaly detection
+│   ├── PatternMatcher               # Incident pattern recognition
+│   └── IncidentPattern (enum)       # CASCADE_FAILURE, MEMORY_LEAK, etc.
+├── slo/
+│   ├── SloDefinition                # SLO target configuration
+│   └── SloTracker                   # Error budget tracking with alerts
+├── topology/
+│   ├── TopologyRegistry             # Service dependency graph
+│   └── AnnotationTopologyScanner    # Reads topology from annotations
+├── enrichment/
+│   └── AgentTelSpanProcessor        # Main SpanProcessor — enriches every span
+├── engine/
+│   └── AgentTelEngine               # Orchestrator — wires all components
+├── events/
+│   ├── AgentTelEventEmitter         # Structured events via OTel Logs API
+│   └── DeploymentEventEmitter       # Deployment tracking events
+└── resource/
+    └── AgentTelResourceProvider      # Resource attributes for topology
+```
+
+#### AgentTelSpanProcessor
+
+The central component. Implements `SpanProcessor` with two phases:
+
+**`onStart(Context, ReadWriteSpan)`** — Mutable enrichment phase:
+- Resolves `@AgentOperation` metadata for the current span
+- Sets topology attributes (`team`, `tier`, `domain`)
+- Sets baseline attributes from `CompositeBaselineProvider`
+- Sets decision attributes (`retryable`, `idempotent`, `runbook_url`, etc.)
+
+**`onEnd(ReadableSpan)`** — Read-only analysis phase:
+- Feeds observed latency into `RollingBaselineProvider`
+- Runs `AnomalyDetector` to compute z-score deviation
+- Runs `PatternMatcher` to identify incident patterns
+- Records success/failure in `SloTracker`
+- Emits `agenttel.anomaly.detected` events via `AgentTelEventEmitter`
+- Emits `agenttel.slo.budget_alert` events when thresholds are crossed
+
+> **Note:** Because `ReadableSpan` is immutable in `onEnd()`, anomaly attributes are emitted as structured events rather than span attributes. The `CostEnrichingSpanExporter` demonstrates the delegation pattern for cases where span data must be modified at export time.
+
+#### RollingWindow
+
+Lock-free ring buffer for per-operation latency tracking:
+
+```java
+RollingWindow window = new RollingWindow(1000); // 1000-sample window
+window.record(45.0);    // Record a latency observation
+window.recordError();   // Record an error
+
+RollingWindow.Snapshot snapshot = window.snapshot();
+// snapshot.p50(), snapshot.p99(), snapshot.mean(), snapshot.stddev(), snapshot.errorRate()
+```
+
+- Thread-safe via `AtomicLong` for counters and `synchronized` blocks for array access
+- O(1) recording, O(n log n) snapshot computation (sort for percentiles)
+- Configurable minimum samples before baseline is considered valid
+
+#### CompositeBaselineProvider
+
+Chains multiple baseline sources with fallback:
+
+```
+Static → Rolling → Default
+```
+
+The first provider that returns a non-empty baseline for an operation wins. This ensures:
+- Explicitly annotated operations use their declared baselines
+- Operations without annotations get rolling baselines from observed traffic
+- New operations with insufficient data get safe defaults
+
+### agenttel-genai
+
+**GenAI instrumentation module** with optional compile-time dependencies.
+
+```
+agenttel-genai/
+├── conventions/
+│   ├── GenAiAttributes              # gen_ai.* attribute constants
+│   ├── AgentTelGenAiAttributes      # agenttel.genai.* constants
+│   └── GenAiOperationName           # CHAT, EMBEDDINGS, etc.
+├── cost/
+│   ├── ModelCostCalculator          # Per-model cost computation
+│   └── ModelPricing                 # Pricing data for known models
+├── trace/
+│   └── GenAiSpanBuilder             # Shared span creation utility
+├── springai/
+│   ├── SpringAiSpanEnricher         # SpanProcessor enriching Spring AI spans
+│   └── CostEnrichingSpanExporter    # SpanExporter adding cost_usd
+├── langchain4j/
+│   ├── TracingChatLanguageModel     # Decorator for ChatLanguageModel
+│   ├── TracingStreamingChatLanguageModel
+│   ├── TracingEmbeddingModel
+│   ├── TracingContentRetriever      # RAG retrieval instrumentation
+│   └── LangChain4jInstrumentation   # Static factory for wrapping models
+├── anthropic/
+│   └── TracingAnthropicClient       # Anthropic SDK wrapper
+├── openai/
+│   └── TracingOpenAIClient          # OpenAI SDK wrapper
+└── bedrock/
+    └── TracingBedrockRuntimeClient  # AWS Bedrock SDK wrapper
+```
+
+**Key design decisions:**
+
+1. **Spring AI: Enrich, don't replace.** Spring AI already emits `gen_ai.*` spans via Micrometer. AgentTel adds `agenttel.genai.framework` and `agenttel.genai.cost_usd` to existing spans rather than creating new ones.
+
+2. **LangChain4j: Full instrumentation.** LangChain4j has no built-in OTel tracing, so AgentTel provides complete instrumentation via the decorator pattern.
+
+3. **Provider SDKs: Client wrappers.** Direct instrumentation for Anthropic, OpenAI, and AWS Bedrock Java SDKs via client wrapper classes.
+
+4. **Cost calculation at export time.** Since token counts are only available after model response, cost is computed in a `SpanExporter` wrapper using a delegating `SpanData` pattern.
+
+### agenttel-agent
+
+**Agent interface layer** — everything an AI agent needs to interact with the system.
+
+```
+agenttel-agent/
+├── health/
+│   └── ServiceHealthAggregator      # Real-time health from span data
+├── incident/
+│   ├── IncidentContext               # Structured incident package
+│   └── IncidentContextBuilder        # Builds context from live state
+├── remediation/
+│   ├── RemediationAction             # Action definition with approval flag
+│   ├── RemediationRegistry           # Registry of available actions
+│   └── RemediationExecutor           # Executes actions with tracking
+├── action/
+│   └── AgentActionTracker            # Records agent decisions as OTel spans
+├── context/
+│   ├── ContextFormatter              # Prompt-optimized output formatters
+│   └── AgentContextProvider          # Single entry point for agent queries
+└── mcp/
+    ├── McpServer                     # JSON-RPC HTTP server
+    ├── McpToolDefinition             # Tool schema definition
+    ├── McpToolHandler                # Tool execution interface
+    └── AgentTelMcpServerBuilder      # Builder with pre-registered tools
+```
+
+See [Agent Layer](04-AGENT-LAYER.md) for detailed documentation.
+
+### agenttel-spring-boot-starter
+
+**Auto-configuration** that wires everything together for Spring Boot applications.
+
+| Component | Description |
+|-----------|-------------|
+| `AgentTelAutoConfiguration` | Creates and configures `AgentTelEngine`, all providers, and SLO tracker |
+| `AgentTelProperties` | Type-safe configuration binding for `agenttel.*` properties |
+| `AgentTelAnnotationBeanPostProcessor` | Scans beans for `@AgentOperation` and registers metadata |
+| `AgentTelHealthIndicator` | Spring Boot Actuator health endpoint integration |
+
+---
+
+## Data Flow
+
+### Span Enrichment Flow
+
+```
+1. HTTP Request arrives
+   │
+2. Spring AOP intercepts @AgentOperation method
+   │
+3. AgentTelSpanProcessor.onStart()
+   ├── Read @AgentOperation metadata
+   ├── Set topology attributes
+   ├── Set baseline attributes (static → rolling → default)
+   └── Set decision attributes
+   │
+4. Application code executes
+   ├── GenAI calls auto-instrumented (if using LangChain4j/Spring AI)
+   ├── Dependency calls tracked
+   └── Errors captured
+   │
+5. AgentTelSpanProcessor.onEnd()
+   ├── Feed latency to RollingBaselineProvider
+   ├── Run AnomalyDetector (z-score computation)
+   ├── Run PatternMatcher (cascade, leak, spike detection)
+   ├── Record in SloTracker
+   ├── Emit anomaly events (if anomalous)
+   └── Emit SLO budget alerts (if thresholds crossed)
+   │
+6. SpanExporter exports enriched span
+   ├── CostEnrichingSpanExporter adds cost_usd (for GenAI spans)
+   └── OTLP export to backend
+```
+
+### Agent Query Flow
+
+```
+1. AI Agent calls MCP tool (e.g., get_incident_context)
+   │
+2. McpServer routes JSON-RPC request to handler
+   │
+3. AgentContextProvider assembles context
+   ├── ServiceHealthAggregator → current operation/dependency metrics
+   ├── IncidentContextBuilder → structured incident package
+   ├── PatternMatcher → detected patterns
+   └── RemediationRegistry → available actions
+   │
+4. ContextFormatter produces prompt-optimized output
+   │
+5. MCP response returned to agent
 ```
 
 ---
 
-## 3. Module Details
+## Extension Points
 
-### 3.1 `agenttel-api` — Core API (Zero Dependencies)
+| Extension Point | Interface | Description |
+|----------------|-----------|-------------|
+| Baseline Provider | `BaselineProvider` | Custom baseline sources (ML models, external systems) |
+| MCP Tools | `McpToolHandler` | Register custom tools on the MCP server |
+| Remediation Actions | `RemediationAction` | Register domain-specific remediation actions |
+| Span Processing | `SpanProcessor` | Additional span enrichment via standard OTel API |
+| Event Handling | `AgentTelEventEmitter` | Custom structured event emission |
 
-**Purpose:** Annotation definitions and attribute constants. This module has **zero dependencies** beyond the JDK so it can be used anywhere.
-
-**Key Classes:**
-
-```java
-// Annotations
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AgentObservable {
-    String service() default "";
-    String team() default "";
-    ServiceTier tier() default ServiceTier.STANDARD;
-    String domain() default "";
-    String onCallChannel() default "";
-}
-
-@Repeatable(DeclareDependencies.class)
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DeclareDependency {
-    String name();
-    DependencyType type();
-    DependencyCriticality criticality() default DependencyCriticality.REQUIRED;
-    String protocol() default "";
-    int timeoutMs() default 0;
-    boolean circuitBreaker() default false;
-}
-
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AgentOperation {
-    String expectedLatencyP99() default "";
-    String expectedLatencyP50() default "";
-    double expectedErrorRate() default -1.0;
-    boolean retryable() default false;
-    boolean idempotent() default false;
-    String runbookUrl() default "";
-    String fallbackDescription() default "";
-    EscalationLevel escalationLevel() default EscalationLevel.NOTIFY_TEAM;
-}
-
-// Attribute constants (mirrors OTel SemanticAttributes pattern)
-public final class AgentTelAttributes {
-    // Topology
-    public static final AttributeKey<String> TOPOLOGY_TEAM =
-        AttributeKey.stringKey("agenttel.topology.team");
-    public static final AttributeKey<String> TOPOLOGY_TIER =
-        AttributeKey.stringKey("agenttel.topology.tier");
-    // ... all attributes from the semantic conventions
-}
-```
-
-### 3.2 `agenttel-core` — Core Engine
-
-**Purpose:** The runtime that reads annotations, manages baselines, detects anomalies, and enriches OTel signals.
-
-**Key Components:**
+### Adding a Custom Baseline Provider
 
 ```java
-// Main engine — initialized once per application
-public class AgentTelEngine {
-    private final TopologyRegistry topology;
-    private final BaselineManager baselines;
-    private final AnomalyDetector anomalyDetector;
-    private final CausalityTracker causality;
-    private final AgentTelEventEmitter events;
-    private final OpenTelemetry otel;
-
-    // Enriches a span with agent-ready attributes
-    public void enrichSpan(Span span, AgentOperationContext context) { ... }
-
-    // Emits a structured agent-ready event
-    public void emitAnomalyEvent(AnomalyContext context) { ... }
-
-    // Registers dependency state change
-    public void reportDependencyStateChange(String dependency,
-                                             DependencyState newState,
-                                             String evidence) { ... }
-}
-```
-
-**Baseline Manager:**
-
-```java
-public interface BaselineProvider {
-    Optional<OperationBaseline> getBaseline(String operationName);
-}
-
-// Static baselines from annotations
-public class AnnotationBaselineProvider implements BaselineProvider { ... }
-
-// Rolling baselines computed from recent data (optional)
-public class RollingBaselineProvider implements BaselineProvider {
-    // Maintains a lightweight sliding window (e.g., P50/P99 over last 7 days)
-    // Uses OTel metrics internally — no external dependency
-}
-
-// Composite: check static first, fall back to rolling
-public class CompositeBaselineProvider implements BaselineProvider { ... }
-```
-
-**Lightweight Anomaly Detection:**
-
-```java
-// NOT a full ML system — just simple statistical detection
-public class AnomalyDetector {
-    // Z-score based detection against baselines
-    public AnomalyResult evaluate(String metric, double currentValue,
-                                   OperationBaseline baseline) {
-        double zScore = (currentValue - baseline.mean()) / baseline.stddev();
-        double anomalyScore = Math.min(1.0, Math.abs(zScore) / 4.0);
-        return new AnomalyResult(anomalyScore, zScore > 3.0);
+public class MlBaselineProvider implements BaselineProvider {
+    @Override
+    public Optional<OperationBaseline> getBaseline(String operationName) {
+        // Query your ML model for predicted baselines
+        return Optional.of(new OperationBaseline(predictedP50, predictedP99, predictedErrorRate));
     }
 }
+
+// Wire into composite chain
+CompositeBaselineProvider composite = new CompositeBaselineProvider(
+    staticProvider, mlProvider, rollingProvider
+);
 ```
 
-### 3.3 `agenttel-spring-boot-starter` — Spring Boot Integration
-
-**Purpose:** Auto-configuration that wires everything up with zero code for Spring Boot apps.
+### Adding a Custom MCP Tool
 
 ```java
-@AutoConfiguration
-@ConditionalOnClass(OpenTelemetry.class)
-@EnableConfigurationProperties(AgentTelProperties.class)
-public class AgentTelAutoConfiguration {
+McpServer server = new AgentTelMcpServerBuilder()
+    .contextProvider(contextProvider)
+    .build();
 
-    @Bean
-    @ConditionalOnMissingBean
-    public AgentTelEngine agentTelEngine(OpenTelemetry otel,
-                                          AgentTelProperties props) {
-        return AgentTelEngine.builder()
-            .openTelemetry(otel)
-            .baselineProvider(new CompositeBaselineProvider(...))
-            .anomalyDetectionEnabled(props.isAnomalyDetectionEnabled())
-            .build();
-    }
-
-    @Bean
-    public AgentTelSpanProcessor agentTelSpanProcessor(AgentTelEngine engine) {
-        return new AgentTelSpanProcessor(engine);
-    }
-}
-```
-
-**Configuration via `application.yml`:**
-
-```yaml
-agenttel:
-  enabled: true
-  topology:
-    team: "payments-platform"
-    tier: critical
-    domain: "commerce"
-    on-call-channel: "#payments-oncall"
-  baselines:
-    source: static            # static | rolling | composite
-    rolling-window: 7d
-  anomaly-detection:
-    enabled: true
-    z-score-threshold: 3.0
-  dependencies:
-    - name: payment-gateway
-      type: external_api
-      criticality: required
-      timeout-ms: 5000
-      circuit-breaker: true
-    - name: order-service
-      type: internal_service
-      criticality: required
-  consumers:
-    - name: notification-service
-      pattern: async
-```
-
-### 3.4 `agenttel-genai` — GenAI Instrumentation Enrichment
-
-**Purpose:** Enriches existing JVM GenAI observability with agent-ready context, and fills instrumentation gaps for SDKs that have no tracing today.
-
-**Relationship to existing work:**
-- **Spring AI** already emits `gen_ai.client.operation` observations via Micrometer. AgentTel does **not** replace this — it enriches those spans with `agenttel.genai.*` attributes (cost, prompt template tracking, RAG quality, guardrails) via a `SpanProcessor`.
-- **`otel-genai-bridges`** (community project) provides SNAPSHOT-quality LangChain4j instrumentation. AgentTel can coexist or provide a more robust alternative.
-- **Anthropic Java SDK, OpenAI Java SDK, AWS Bedrock SDK** have no GenAI tracing — AgentTel provides full instrumentation for these.
-
-**Auto-instrumentation targets:**
-
-| Library | Approach |
-|---------|----------|
-| **Spring AI** | `SpanProcessor` that enriches existing Micrometer-generated spans with `agenttel.genai.*` attributes |
-| **LangChain4j** | `ChatLanguageModel`, `EmbeddingModel`, `ContentRetriever` wrapping (full instrumentation) |
-| **AWS Bedrock SDK** | `BedrockRuntimeClient` interceptor (full instrumentation) |
-| **Anthropic Java SDK** | `AnthropicClient` wrapper (full instrumentation) |
-| **OpenAI Java SDK** | `OpenAIClient` wrapper (full instrumentation) |
-
-**What gets captured (per OTel GenAI semconv + AgentTel extensions):**
-
-```java
-// Standard gen_ai.* attributes (OTel semconv)
-gen_ai.operation.name = "chat"
-gen_ai.provider.name = "anthropic"
-gen_ai.request.model = "claude-sonnet-4-5-20250929"
-gen_ai.usage.input_tokens = 1523
-gen_ai.usage.output_tokens = 847
-gen_ai.response.finish_reason = "stop"
-
-// AgentTel extensions
-agenttel.genai.framework = "spring_ai"
-agenttel.genai.cost_usd = 0.0089
-agenttel.genai.prompt_template_id = "customer-support-v3"
-agenttel.genai.rag_source_count = 5
-agenttel.genai.rag_relevance_score_avg = 0.82
-agenttel.genai.cache_hit = false
-
-// Plus standard AgentTel enrichments
-agenttel.baseline.latency_p99_ms = 3000
-agenttel.decision.retryable = true
-```
-
-**Spring AI Enrichment (not replacement):**
-
-```java
-@Configuration
-public class GenAiEnrichmentConfig {
-
-    @Bean
-    public AgentTelSpringAiEnricher agentTelEnricher(AgentTelEngine engine) {
-        return new AgentTelSpringAiEnricher(engine);
-        // Detects Spring AI's existing Micrometer spans and enriches them
-        // with agenttel.genai.* attributes — does NOT replace Spring AI tracing
-    }
-}
-```
-
-### 3.5 `agenttel-testing` — Test Utilities
-
-```java
-@ExtendWith(AgentTelTestExtension.class)
-class PaymentServiceTest {
-
-    @Inject
-    InMemoryAgentTelCollector collector;
-
-    @Test
-    void shouldEmitAgentReadyTelemetry() {
-        // ... invoke your service ...
-
-        // Assert agent-ready attributes are present
-        AgentTelAssertions.assertThat(collector.getSpans())
-            .hasSpanWithName("POST /pay")
-            .hasAttribute(AgentTelAttributes.BASELINE_LATENCY_P99_MS)
-            .hasAttribute(AgentTelAttributes.DECISION_RETRYABLE, true)
-            .hasAttribute(AgentTelAttributes.TOPOLOGY_TEAM, "payments-platform");
-
-        // Assert structured events were emitted
-        AgentTelAssertions.assertThat(collector.getEvents())
-            .hasEventWithName("agenttel.deployment.info")
-            .hasBodyField("version", "2.3.1");
-    }
-}
+server.registerTool(
+    new McpToolDefinition("query_logs", "Search recent logs",
+        Map.of("query", new ParameterDefinition("string", "Log search query")),
+        List.of("query")),
+    args -> logService.search(args.get("query"))
+);
 ```
 
 ---
 
-## 4. Dependencies
+## Performance Characteristics
 
-### Minimum Requirements
+| Operation | Complexity | Notes |
+|-----------|-----------|-------|
+| Span enrichment (onStart) | O(1) | HashMap lookups for annotations and baselines |
+| Latency recording | O(1) | Ring buffer write |
+| Baseline snapshot | O(n log n) | Sort for percentiles (n = window size) |
+| Anomaly detection | O(1) | Z-score computation from pre-computed stats |
+| Pattern matching | O(k) | k = number of tracked dependencies |
+| SLO tracking | O(m) | m = number of registered SLOs |
+| Health aggregation | O(1) per span | ConcurrentHashMap + AtomicLong |
 
-| Requirement | Version |
-|-------------|---------|
-| Java | 17+ (LTS) |
-| OpenTelemetry Java SDK | 1.55+ |
-| OpenTelemetry Semantic Conventions | 1.36+ |
+**Memory footprint per operation:**
+- Rolling window: ~8KB per operation (1000 doubles)
+- Latency trend: ~800B per operation (50 doubles + 50 booleans)
+- Health aggregation: ~16KB per operation (1000 recent latencies)
 
-### Optional Dependencies
-
-| Dependency | Module | Purpose |
-|------------|--------|---------|
-| Spring Boot | `agenttel-spring-boot-starter` | Auto-configuration |
-| Spring AI | `agenttel-genai` | GenAI instrumentation |
-| LangChain4j | `agenttel-genai` | GenAI instrumentation |
-| AWS Bedrock SDK | `agenttel-genai` | GenAI instrumentation |
-| Micrometer | `agenttel-micrometer-bridge` | Bridge for Micrometer users |
-
----
-
-## 5. Data Flow
-
-### 5.1 Request Processing Flow
-
-```
-1. HTTP Request arrives at Spring Boot controller
-
-2. @AgentOperation annotation detected by AgentTelSpanProcessor
-   → Creates OTel Span with standard attributes
-   → Enriches with topology from TopologyRegistry
-   → Attaches baseline from BaselineManager
-
-3. Request processed by application code
-   → If GenAI calls made: agenttel-genai wraps and instruments
-   → If dependency calls made: standard OTel HTTP/DB spans created
-
-4. Response returned
-   → AgentTelSpanProcessor calculates actual latency
-   → AnomalyDetector compares against baseline
-   → If anomalous: emits agenttel.anomaly.detected event
-   → If dependency error: CausalityTracker adds cause hints
-   → Decision metadata attached from annotations
-
-5. Span, metrics, and events exported via standard OTLP
-   → Any OTel Collector / backend receives enriched telemetry
-   → AI agents consuming this data get structured context
-```
-
-### 5.2 Startup Flow
-
-```
-1. Application starts with agenttel-spring-boot-starter
-
-2. AgentTelAutoConfiguration reads:
-   → @AgentObservable annotation on main class
-   → @DeclareDependency annotations
-   → application.yml agenttel.* properties
-
-3. TopologyRegistry populated with dependency graph
-
-4. BaselineManager initialized:
-   → Static baselines from @AgentOperation annotations
-   → Rolling baselines start collecting (if enabled)
-
-5. Deployment event emitted: agenttel.deployment.info
-
-6. Resource attributes set:
-   → agenttel.topology.team, tier, domain, etc.
-   → agenttel.topology.dependencies (JSON)
-   → agenttel.topology.consumers (JSON)
-```
+All data structures are bounded with configurable limits to prevent unbounded growth.
 
 ---
 
-## 6. Extension Points
+## Thread Safety
 
-AgentTel is designed to be extensible:
+All components are designed for concurrent access:
 
-| Extension Point | Interface | Purpose |
-|----------------|-----------|---------|
-| Custom baseline sources | `BaselineProvider` | Plug in ML-based baselines, SLO platforms, etc. |
-| Custom anomaly detection | `AnomalyDetector` | Replace Z-score with custom algorithms |
-| Custom causality | `CausalityHintProvider` | Plug in correlation engines |
-| Custom events | `AgentTelEventEmitter` | Add custom structured events |
-| Custom enrichment | `SpanEnrichmentProcessor` | Add domain-specific attributes |
-| Framework integration | `AgentTelFrameworkAdapter` | Support non-Spring frameworks |
+- `TopologyRegistry`: `ConcurrentHashMap` + `volatile` fields. Written at startup, read concurrently.
+- `RollingWindow`: `AtomicLong` counters + `synchronized` array access.
+- `ServiceHealthAggregator`: `ConcurrentHashMap` with `AtomicLong` counters per operation.
+- `SloTracker`: `ConcurrentHashMap` with `AtomicLong` counters per SLO.
+- `AgentActionTracker`: `ConcurrentLinkedDeque` for bounded history.
+- Bounded collections use `Collections.synchronizedList` with periodic pruning.
 
 ---
 
-## 7. Performance Considerations
+## Security Considerations
 
-- **Annotations are read once at startup** — no reflection at request time
-- **Baselines use lock-free data structures** — concurrent reads during request processing
-- **Anomaly detection is O(1)** — simple Z-score comparison, not ML inference
-- **Structured events use object pooling** — minimize GC pressure
-- **All enrichment is async** — uses OTel's SpanProcessor pipeline, not in the request path
-- **Configurable sampling** — anomaly events can be sampled to reduce volume
-- **No-op when disabled** — if `agenttel.enabled=false`, all processors are no-ops
+- **No secrets in telemetry.** AgentTel does not capture request/response bodies, headers, or any PII. Only operational metadata is recorded.
+- **MCP server authentication.** The built-in MCP server does not include authentication. In production, deploy behind a reverse proxy or API gateway with appropriate auth.
+- **Remediation approval workflow.** Actions marked `requiresApproval = true` cannot be executed without explicit approval, preventing unauthorized automated changes.
+- **Action audit trail.** All agent actions are recorded as OTel spans, providing a complete audit log of what any agent did and why.
