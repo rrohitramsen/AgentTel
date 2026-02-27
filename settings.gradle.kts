@@ -6,6 +6,7 @@ include(
     "agenttel-api",
     "agenttel-core",
     "agenttel-genai",
+    "agenttel-agent",
     "agenttel-spring-boot-starter",
     "agenttel-testing",
     "examples:spring-boot-example",
