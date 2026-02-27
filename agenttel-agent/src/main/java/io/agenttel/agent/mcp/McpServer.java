@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
  * <p>Endpoints:
  * <ul>
  *   <li>POST /mcp — JSON-RPC 2.0 endpoint for tool listing and invocation</li>
+ *   <li>GET /mcp/docs — HTML documentation page for all registered tools</li>
  *   <li>GET /health — Server health check</li>
  * </ul>
  *
@@ -63,6 +64,7 @@ public class McpServer {
         httpServer.setExecutor(Executors.newFixedThreadPool(4));
 
         httpServer.createContext("/mcp", this::handleMcpRequest);
+        httpServer.createContext("/mcp/docs", this::handleDocs);
         httpServer.createContext("/health", this::handleHealthCheck);
 
         httpServer.start();
@@ -84,6 +86,20 @@ public class McpServer {
      */
     public int getPort() {
         return port;
+    }
+
+    private void handleDocs(HttpExchange exchange) throws IOException {
+        if (!"GET".equals(exchange.getRequestMethod())) {
+            sendResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            return;
+        }
+        String html = McpDocsHandler.generateHtml(toolDefinitions.values());
+        byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
     }
 
     private void handleHealthCheck(HttpExchange exchange) throws IOException {

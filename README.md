@@ -316,6 +316,7 @@ Affected Deps: stripe-api
 | [API Reference](docs/06-API-REFERENCE.md) | Annotations, programmatic API, and configuration reference |
 | [Roadmap](docs/07-ROADMAP.md) | Implementation phases and release plan |
 | [Design Considerations](docs/08-DESIGN-CONSIDERATIONS.md) | Trade-offs, evolution path, and future direction |
+| [API Documentation](docs/09-API-DOCUMENTATION.md) | Swagger UI, MCP tool docs, and aggregated Javadoc |
 
 ## Examples
 
