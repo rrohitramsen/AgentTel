@@ -19,6 +19,7 @@ import io.agenttel.core.resource.AgentTelGlobalState;
 import io.agenttel.core.slo.SloTracker;
 import io.agenttel.core.topology.TopologyRegistry;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -157,7 +158,23 @@ public class AgentTelAutoConfiguration {
     }
 
     @Bean
-    public AgentTelSpanProcessor agentTelSpanProcessor(AgentTelEngine engine) {
-        return engine.createSpanProcessor();
+    public AgentTelSpanProcessor agentTelSpanProcessor(TopologyRegistry topology,
+                                                        StaticBaselineProvider baselines,
+                                                        OperationContextRegistry operationContexts,
+                                                        AnomalyDetector anomalyDetector,
+                                                        PatternMatcher patternMatcher,
+                                                        RollingBaselineProvider rollingBaselines,
+                                                        SloTracker sloTracker) {
+        return new AgentTelSpanProcessor(
+                topology, baselines, operationContexts,
+                anomalyDetector, patternMatcher, rollingBaselines, sloTracker, null);
+    }
+
+    @Bean
+    public AutoConfigurationCustomizerProvider agentTelOtelCustomizer(AgentTelSpanProcessor spanProcessor) {
+        // Register AgentTelSpanProcessor with the OTel SDK via the customizer API.
+        // This ensures the processor is added during SDK initialization.
+        return customizer -> customizer.addTracerProviderCustomizer(
+                (builder, config) -> builder.addSpanProcessor(spanProcessor));
     }
 }

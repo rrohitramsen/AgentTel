@@ -8,7 +8,7 @@ plugins {
 // Centralized version properties
 extra["otelVersion"] = "1.59.0"
 extra["otelSemconvVersion"] = "1.40.0"
-extra["otelInstrumentationVersion"] = "2.24.0"
+extra["otelInstrumentationVersion"] = "2.25.0"
 extra["springBootVersion"] = "3.4.3"
 extra["jacksonVersion"] = "2.17.2"
 extra["junitVersion"] = "5.11.4"

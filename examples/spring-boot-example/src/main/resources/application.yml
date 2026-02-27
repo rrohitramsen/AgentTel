@@ -2,12 +2,15 @@ spring:
   application:
     name: payment-service
 
-# OTel configuration
+# OTel configuration — use logging exporter by default for the demo.
+# Switch to otlp when running with the OTel Collector (see docker/ directory).
 otel:
-  exporter:
-    otlp:
-      endpoint: http://localhost:4318
-      protocol: http/protobuf
+  traces:
+    exporter: logging
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
   resource:
     attributes:
       service.name: payment-service
@@ -22,7 +25,7 @@ agenttel:
     on-call-channel: "#payments-oncall"
   dependencies:
     - name: payment-gateway
-      type: rest_api
+      type: external_api
       criticality: required
       timeout-ms: 5000
       circuit-breaker: true
@@ -33,7 +36,7 @@ agenttel:
       timeout-ms: 3000
   consumers:
     - name: notification-service
-      pattern: asynchronous
+      pattern: async
   baselines:
     rolling-window-size: 1000
     rolling-min-samples: 10

@@ -6,11 +6,18 @@ plugins {
 
 description = "AgentTel Spring Boot Example - Demo payment service"
 
+// Override Spring Boot's managed OTel versions — Spring Boot 3.4.x ships with OTel 1.43.0
+// but we need 1.59.0+ for the instrumentation starter 2.25.0
+dependencyManagement {
+    imports {
+        mavenBom("io.opentelemetry:opentelemetry-bom:${rootProject.extra["otelVersion"]}")
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${rootProject.extra["otelInstrumentationVersion"]}")
+    }
+}
+
 dependencies {
     implementation(project(":agenttel-spring-boot-starter"))
 
-    implementation(platform("io.opentelemetry:opentelemetry-bom:${rootProject.extra["otelVersion"]}"))
-    implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${rootProject.extra["otelInstrumentationVersion"]}"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
