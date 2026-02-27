@@ -8,6 +8,7 @@
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
   <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/JDK-17%2B-orange.svg" alt="JDK 17+"></a>
   <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-1.59.0-blueviolet.svg" alt="OpenTelemetry"></a>
+  <a href="https://rrohitramsen.github.io/AgentTel"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Documentation"></a>
 </p>
 
 ---
@@ -305,6 +306,8 @@ Affected Deps: stripe-api
 | `agenttel-testing` | `io.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
 
 ## Documentation
+
+**Full documentation site: [rrohitramsen.github.io/AgentTel](https://rrohitramsen.github.io/AgentTel)**
 
 | Document | Description |
 |----------|-------------|
