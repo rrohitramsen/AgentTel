@@ -1,0 +1,13 @@
+# Docker profile — overrides exporter config for containerized deployment.
+# Activated via SPRING_PROFILES_ACTIVE=docker in docker-compose.yml.
+otel:
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: otlp
+  logs:
+    exporter: otlp
+  exporter:
+    otlp:
+      endpoint: http://otel-collector:4318
+      protocol: http/protobuf

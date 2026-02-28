@@ -16,7 +16,7 @@ autonomously diagnose, reason about, and resolve production incidents.
 </p>
 
 [Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
-[Architecture](concepts/architecture.md){ .md-button }
+[Try the Docker Demo](getting-started/quick-start.md#try-the-docker-demo){ .md-button }
 
 </div>
 

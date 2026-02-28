@@ -1,0 +1,8 @@
+.git
+.github
+docs
+site
+**/.gradle
+**/build
+!**/build.gradle.kts
+!**/settings.gradle.kts

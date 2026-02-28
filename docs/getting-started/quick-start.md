@@ -2,6 +2,33 @@
 
 Get up and running with AgentTel in minutes.
 
+## Try the Docker Demo
+
+The fastest way to see AgentTel in action — starts a demo payment service with OTel Collector and Jaeger:
+
+```bash
+cd examples/spring-boot-example
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Or run the guided demo script (generates traffic and queries all MCP tools):
+
+```bash
+./docker-demo.sh
+```
+
+| Dashboard | URL |
+|-----------|-----|
+| Jaeger (traces) | [http://localhost:16686](http://localhost:16686) |
+| Swagger UI | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) |
+| MCP Tool Docs | [http://localhost:8081/mcp/docs](http://localhost:8081/mcp/docs) |
+
+Teardown: `docker compose -f docker/docker-compose.yml down -v`
+
+---
+
+## Integrate into Your App
+
 ## 1. Add Dependencies
 
 === "Maven"
@@ -216,7 +243,7 @@ The extension reads configuration from `agenttel.yml` (same YAML format as above
 
 | Example | Description | Run Command |
 |---------|-------------|-------------|
-| [Spring Boot Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `./gradlew :examples:spring-boot-example:bootRun` |
+| [Spring Boot Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `docker compose -f docker/docker-compose.yml up --build` |
 | [LangChain4j Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
 
 ## Next Steps
