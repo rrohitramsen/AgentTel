@@ -11,6 +11,11 @@ The Spring Boot example ships with [springdoc-openapi](https://springdoc.org/), 
 ### Running
 
 ```bash
+# Docker (recommended — includes OTel Collector + Jaeger):
+cd examples/spring-boot-example
+docker compose -f docker/docker-compose.yml up --build
+
+# Or local:
 ./gradlew :examples:spring-boot-example:bootRun
 ```
 
@@ -48,6 +53,11 @@ The MCP server exposes an HTML documentation page at `/mcp/docs` that lists all 
 Start the example application (the MCP server runs on port 8081 by default):
 
 ```bash
+# Docker (recommended):
+cd examples/spring-boot-example
+docker compose -f docker/docker-compose.yml up --build
+
+# Or local:
 ./gradlew :examples:spring-boot-example:bootRun
 ```
 
