@@ -57,6 +57,7 @@ nav:
     - Javadoc: reference/javadoc.md
   - Project:
     - Roadmap: project/roadmap.md
+    - Full-Stack Vision: project/full-stack-vision.md
     - Contributing: project/contributing.md
     - Security: project/security.md
 

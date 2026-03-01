@@ -331,6 +331,7 @@ Affected Deps: stripe-api
 | [Roadmap](docs/07-ROADMAP.md) | Implementation phases and release plan |
 | [Design Considerations](docs/08-DESIGN-CONSIDERATIONS.md) | Trade-offs, evolution path, and future direction |
 | [API Documentation](docs/09-API-DOCUMENTATION.md) | Swagger UI, MCP tool docs, and aggregated Javadoc |
+| [Full-Stack Vision](docs/10-FULL-STACK-VISION.md) | Client telemetry, monitoring agent, and ecosystem roadmap |
 
 ## Examples
 
