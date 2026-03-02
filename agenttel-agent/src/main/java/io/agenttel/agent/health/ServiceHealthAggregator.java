@@ -98,19 +98,19 @@ public class ServiceHealthAggregator {
             }
         }
 
-        // Any operation with >10% error rate = DEGRADED
+        // Any operation with >10% error rate = CRITICAL, >1% = DEGRADED
         for (var op : ops) {
-            if (op.totalRequests() > 100 && op.errorRate() > 0.10) {
+            if (op.totalRequests() >= 5 && op.errorRate() > 0.10) {
                 return HealthStatus.CRITICAL;
             }
-            if (op.totalRequests() > 100 && op.errorRate() > 0.01) {
+            if (op.totalRequests() >= 5 && op.errorRate() > 0.01) {
                 return HealthStatus.DEGRADED;
             }
         }
 
         // Any dependency down = DEGRADED
         for (var dep : deps) {
-            if (dep.totalCalls() > 10 && dep.errorRate() > 0.50) {
+            if (dep.totalCalls() >= 3 && dep.errorRate() > 0.50) {
                 return HealthStatus.DEGRADED;
             }
         }

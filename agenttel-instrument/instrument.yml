@@ -1,0 +1,13 @@
+server:
+  host: 0.0.0.0
+  port: 8082
+
+backend_mcp:
+  host: localhost
+  port: 8081
+  timeout_seconds: 30.0
+
+tracing:
+  enabled: true
+  otlp_endpoint: http://localhost:4318
+  service_name: agenttel.instrument

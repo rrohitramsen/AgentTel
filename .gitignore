@@ -19,6 +19,14 @@ Thumbs.db
 # MkDocs build output
 site/
 
+# Node.js
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
 # Secrets
 .env
 *.key
