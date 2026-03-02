@@ -1,6 +1,13 @@
 # Quick Start
 
-Get up and running with AgentTel in minutes.
+Get up and running with AgentTel in minutes. Choose your integration path:
+
+| Path | Best For | Effort |
+|------|----------|--------|
+| [Spring Boot Starter](#backend-spring-boot) | Spring Boot applications | Add dependency + YAML config |
+| [JavaAgent Extension](#zero-code-mode-javaagent-extension) | Any JVM app (no code changes) | JVM flag + YAML config |
+| [Frontend SDK](#frontend-browser-sdk) | Browser / SPA applications | `npm install` + init call |
+| [Instrument Agent](#instrument-agent-ide-tooling) | AI-assisted setup in your IDE | Run MCP server, ask your agent |
 
 ## Try the Docker Demo
 
@@ -27,9 +34,9 @@ Teardown: `docker compose -f docker/docker-compose.yml down -v`
 
 ---
 
-## Integrate into Your App
+## Backend: Spring Boot
 
-## 1. Add Dependencies
+### 1. Add Dependencies
 
 === "Maven"
 
@@ -88,7 +95,7 @@ Teardown: `docker compose -f docker/docker-compose.yml down -v`
     }
     ```
 
-## 2. Configure Your Service
+### 2. Configure Your Service
 
 All enrichment is driven by YAML configuration — no code changes needed:
 
@@ -146,7 +153,7 @@ agenttel:
     z-score-threshold: 3.0
 ```
 
-## 3. Optional: Annotate for IDE Support
+### 3. Optional: Annotate for IDE Support
 
 Annotations are optional — YAML config above is sufficient. Use `@AgentOperation` when you want IDE autocomplete and compile-time validation:
 
@@ -161,7 +168,7 @@ public ResponseEntity<PaymentResult> processPayment(@RequestBody PaymentRequest 
 !!! info
     When both YAML config and annotations define the same operation, YAML config takes priority. Per-operation values override profile defaults.
 
-## 4. Start the MCP Server (Optional)
+### 4. Start the MCP Server (Optional)
 
 ```java
 // Expose telemetry to AI agents via MCP
@@ -175,7 +182,7 @@ mcp.start();
 
 AI agents can now call tools like `get_service_health`, `get_incident_context`, `list_remediation_actions`, and `execute_remediation` over JSON-RPC.
 
-## 5. What You Get
+### 5. What You Get
 
 **Resource attributes** (set once per service, associated with all telemetry):
 
@@ -226,6 +233,8 @@ Affected Deps: stripe-api
   - [MEDIUM] enable_circuit_breakers: Circuit break stripe-api
 ```
 
+---
+
 ## Zero-Code Mode (JavaAgent Extension)
 
 For applications where you cannot add a library dependency, use the javaagent extension. No code changes, no Spring dependency:
@@ -239,12 +248,184 @@ java -javaagent:opentelemetry-javaagent.jar \
 
 The extension reads configuration from `agenttel.yml` (same YAML format as above), system properties (`-Dagenttel.topology.team=payments`), or environment variables (`AGENTTEL_TOPOLOGY_TEAM=payments`).
 
+---
+
+## Frontend: Browser SDK
+
+Add agent-ready telemetry to your browser application with `@agenttel/web`.
+
+### 1. Install
+
+```bash
+npm install @agenttel/web
+```
+
+### 2. Initialize
+
+```typescript
+import { AgentTelWeb } from '@agenttel/web';
+
+AgentTelWeb.init({
+  appName: 'checkout-web',
+  appVersion: '1.0.0',
+  environment: 'production',
+  collectorEndpoint: '/otlp',
+
+  // Per-route baselines and decision metadata
+  routes: {
+    '/checkout/:step': {
+      businessCriticality: 'revenue',
+      baseline: {
+        pageLoadP50Ms: 800,
+        pageLoadP99Ms: 2000,
+        apiCallP50Ms: 300,
+      },
+      decision: {
+        escalationLevel: 'page_oncall',
+        runbookUrl: 'https://wiki/runbooks/checkout',
+      },
+    },
+    '/products': {
+      businessCriticality: 'engagement',
+      baseline: { pageLoadP50Ms: 500 },
+    },
+  },
+
+  // Multi-step user journey tracking
+  journeys: {
+    checkout: {
+      steps: ['/products', '/cart', '/checkout/shipping', '/checkout/payment', '/confirmation'],
+      baseline: { completionRate: 0.65, avgDurationS: 300 },
+    },
+  },
+
+  // Client-side anomaly detection
+  anomalyDetection: {
+    rageClickThreshold: 3,
+    rageClickWindowMs: 2000,
+    apiFailureCascadeThreshold: 3,
+    errorLoopThreshold: 5,
+    errorLoopWindowMs: 30000,
+  },
+});
+```
+
+### 3. What You Get
+
+The SDK **automatically instruments** — no further code changes needed:
+
+| Category | What's Captured |
+|----------|----------------|
+| **Page Loads** | DOM load time, TTFB, transfer size via Navigation Timing API |
+| **Navigation** | SPA route changes with timing |
+| **API Calls** | `fetch` and `XMLHttpRequest` interception with response status and duration |
+| **Interactions** | Clicks and form submits with semantic target identification |
+| **Errors** | JavaScript errors with error loop detection |
+| **Journeys** | Step completion, abandonment, funnel drop-off rates |
+| **Anomalies** | Rage clicks, API failure cascades, slow page loads, error loops |
+| **Correlation** | W3C Trace Context (`traceparent`) injected on all outgoing requests for backend linking |
+
+**Span attributes** emitted by the SDK:
+
+```
+agenttel.client.page.route              = "/checkout/payment"
+agenttel.client.page.business_criticality = "revenue"
+agenttel.client.baseline.page_load_p50_ms = 800
+agenttel.client.decision.escalation_level = "page_oncall"
+agenttel.client.anomaly.detected        = true
+agenttel.client.anomaly.pattern         = "rage_click"
+agenttel.client.correlation.backend_trace_id = "abc123..."
+```
+
+### 4. Manual API (Optional)
+
+```typescript
+const agenttel = AgentTelWeb.getInstance();
+
+// Track custom interactions
+agenttel.trackInteraction('custom', {
+  target: 'button#submit',
+  outcome: 'success',
+  durationMs: 150,
+});
+
+// Control journeys manually
+agenttel.startJourney('checkout');
+agenttel.advanceJourney('checkout');
+agenttel.completeJourney('checkout');
+
+// Flush and shutdown
+await agenttel.flush();
+agenttel.shutdown();
+```
+
+!!! tip
+    The SDK uses `data-agenttel-target` attributes to identify interaction targets without capturing PII. Add `data-agenttel-target="pay-button"` to your HTML elements for clean span names.
+
+---
+
+## Instrument Agent (IDE Tooling)
+
+The instrument agent is a Python MCP server that helps AI assistants in your IDE (Cursor, Claude Code, VS Code) analyze your codebase and generate AgentTel configuration automatically.
+
+### 1. Install
+
+```bash
+pip install agenttel-instrument
+```
+
+### 2. Configure
+
+```yaml
+# instrument.yml
+server:
+  host: 0.0.0.0
+  port: 8082
+backend_mcp:
+  host: localhost
+  port: 8081
+  timeout_seconds: 30.0
+```
+
+### 3. Run
+
+```bash
+agenttel-instrument --config instrument.yml
+```
+
+### 4. Use with Your IDE Agent
+
+Once running, add it as an MCP server in your IDE and ask your AI assistant:
+
+| Prompt | What Happens |
+|--------|-------------|
+| *"Analyze my codebase and generate AgentTel config"* | Scans endpoints, detects dependencies, generates `agenttel.yml` |
+| *"Instrument the frontend"* | Detects React routes, infers criticality, generates SDK config |
+| *"Validate my instrumentation"* | Cross-references config against source code, finds gaps |
+| *"Suggest improvements"* | Finds missing baselines, uncovered endpoints, stale thresholds |
+| *"Apply low-risk improvements"* | Auto-calibrates baselines from live health data |
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `analyze_codebase` | Scan Java/Spring Boot source — detect endpoints, dependencies, framework |
+| `instrument_backend` | Generate backend config — dependencies, annotations, agenttel.yml |
+| `instrument_frontend` | Generate frontend config — React route detection, SDK initialization |
+| `validate_instrumentation` | Validate agenttel.yml completeness against source code |
+| `suggest_improvements` | Detect missing baselines, uncovered endpoints, missing runbooks |
+| `apply_improvements` | Auto-apply low-risk improvements using live health data |
+| `apply_single` | Apply a single specific improvement |
+
+---
+
 ## Examples
 
 | Example | Description | Run Command |
 |---------|-------------|-------------|
 | [Spring Boot Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `docker compose -f docker/docker-compose.yml up --build` |
 | [LangChain4j Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
+| [React Checkout Example](https://github.com/rrohitramsen/AgentTel/tree/main/agenttel-web/examples/react-checkout) | React SPA with frontend telemetry — journey tracking, anomaly detection, cross-stack correlation | `cd agenttel-web/examples/react-checkout && npm start` |
 
 ## Next Steps
 
