@@ -8,6 +8,10 @@ import io.agenttel.agent.mcp.AgentTelMcpServerBuilder;
 import io.agenttel.agent.mcp.McpServer;
 import io.agenttel.agent.remediation.RemediationExecutor;
 import io.agenttel.agent.remediation.RemediationRegistry;
+import io.agenttel.agent.reporting.CrossStackContextBuilder;
+import io.agenttel.agent.reporting.ExecutiveSummaryBuilder;
+import io.agenttel.agent.reporting.SloReportGenerator;
+import io.agenttel.agent.reporting.TrendAnalyzer;
 import io.agenttel.core.anomaly.PatternMatcher;
 import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.enrichment.AgentTelSpanProcessor;
@@ -70,6 +74,38 @@ public class AgentTelAgentAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public SloReportGenerator agentTelSloReportGenerator(SloTracker sloTracker) {
+        return new SloReportGenerator(sloTracker);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public TrendAnalyzer agentTelTrendAnalyzer(ServiceHealthAggregator healthAggregator,
+                                                 TopologyRegistry topology) {
+        return new TrendAnalyzer(healthAggregator, topology.getTeam());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ExecutiveSummaryBuilder agentTelExecutiveSummaryBuilder(
+            ServiceHealthAggregator healthAggregator,
+            SloTracker sloTracker,
+            TrendAnalyzer trendAnalyzer,
+            TopologyRegistry topology) {
+        return new ExecutiveSummaryBuilder(healthAggregator, sloTracker, trendAnalyzer, topology.getTeam());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public CrossStackContextBuilder agentTelCrossStackContextBuilder(
+            ServiceHealthAggregator healthAggregator,
+            SloTracker sloTracker,
+            TopologyRegistry topology) {
+        return new CrossStackContextBuilder(healthAggregator, sloTracker, topology.getTeam());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public AgentContextProvider agentTelContextProvider(
             ServiceHealthAggregator healthAggregator,
             IncidentContextBuilder incidentContextBuilder,
@@ -77,10 +113,17 @@ public class AgentTelAgentAutoConfiguration {
             TopologyRegistry topology,
             PatternMatcher patternMatcher,
             RollingBaselineProvider rollingBaselines,
-            AgentActionTracker actionTracker) {
-        return new AgentContextProvider(
+            AgentActionTracker actionTracker,
+            SloReportGenerator sloReportGenerator,
+            TrendAnalyzer trendAnalyzer,
+            ExecutiveSummaryBuilder executiveSummaryBuilder,
+            CrossStackContextBuilder crossStackContextBuilder) {
+        AgentContextProvider provider = new AgentContextProvider(
                 healthAggregator, incidentContextBuilder, remediationRegistry,
                 topology, patternMatcher, rollingBaselines, actionTracker);
+        provider.setReportingComponents(sloReportGenerator, trendAnalyzer,
+                executiveSummaryBuilder, crossStackContextBuilder);
+        return provider;
     }
 
     @Bean

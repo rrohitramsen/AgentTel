@@ -8,11 +8,11 @@ hide:
 
 # AgentTel
 
-<p class="hero-tagline">Agent-Ready Telemetry for JVM Applications</p>
+<p class="hero-tagline">Agent-Ready Telemetry</p>
 
 <p class="hero-description">
-Enrich OpenTelemetry spans with the structured context AI agents need to
-autonomously diagnose, reason about, and resolve production incidents.
+Enrich OpenTelemetry telemetry — backend and frontend — with the structured context
+AI agents need to autonomously diagnose, reason about, and resolve production incidents.
 </p>
 
 [Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
@@ -36,7 +36,7 @@ Modern observability tools generate massive volumes of telemetry — traces, met
 - **No decision metadata** — Is this operation retryable? Is there a fallback? What's the runbook?
 - **No actionable interface** — Agents can read telemetry but can't query live system state or execute remediation
 
-AgentTel closes these gaps at the instrumentation layer — enriching every span with baselines, topology, and decision metadata so AI agents can reason and act autonomously.
+AgentTel closes these gaps at the instrumentation layer — enriching every span across the full stack (JVM backends and browser frontends) with baselines, topology, and decision metadata so AI agents can reason and act autonomously.
 
 </div>
 
@@ -110,9 +110,17 @@ Full observability for LangChain4j, Spring AI, Anthropic SDK, OpenAI SDK, and AW
 
 <div class="feature-card" markdown>
 
+### Frontend Telemetry
+
+Browser SDK (`@agenttel/web`) with auto-instrumentation of page loads, navigation, API calls, and errors — plus journey tracking, anomaly detection, and W3C cross-stack correlation.
+
+</div>
+
+<div class="feature-card" markdown>
+
 ### Anomaly Detection
 
-Real-time z-score anomaly detection on latency and error rates. Rolling baselines learn from live traffic; static baselines come from config.
+Real-time z-score anomaly detection on latency and error rates — backend and frontend. Rolling baselines learn from live traffic; static baselines come from config.
 
 </div>
 
@@ -120,7 +128,15 @@ Real-time z-score anomaly detection on latency and error rates. Rolling baseline
 
 ### Incident Context
 
-Structured incident packages: what's happening, what changed, what's affected, and what to do — optimized for LLM context windows.
+Structured incident packages: what's happening, what changed, what's affected, and what to do — with cross-stack context linking frontend and backend telemetry.
+
+</div>
+
+<div class="feature-card" markdown>
+
+### Instrumentation Agent
+
+IDE MCP server that analyzes your codebase, generates AgentTel config, validates instrumentation, and auto-applies improvements — for both backend and frontend.
 
 </div>
 
@@ -137,6 +153,10 @@ graph TB
         ANN["@AgentOperation (optional)"]
     end
 
+    subgraph Frontend["Frontend"]
+        WEB["agenttel-web<br/><small>Browser SDK (TypeScript)<br/>Auto-instrumentation, Journeys,<br/>Anomaly Detection, Correlation</small>"]
+    end
+
     subgraph Integration["Integration Layer"]
         SBS["agenttel-spring-boot-starter<br/><small>Auto-config, BPP, AOP</small>"]
         JAE["agenttel-javaagent-extension<br/><small>Zero-code OTel extension</small>"]
@@ -145,7 +165,11 @@ graph TB
     subgraph Core["Core Libraries"]
         COR["agenttel-core<br/><small>SpanProcessor, Baselines,<br/>Anomaly Detection, SLO Tracking</small>"]
         GEN["agenttel-genai<br/><small>LangChain4j, Spring AI,<br/>Anthropic, OpenAI, Bedrock</small>"]
-        AGT["agenttel-agent<br/><small>MCP Server, Health,<br/>Incidents, Remediation</small>"]
+        AGT["agenttel-agent<br/><small>MCP Server, Health, Incidents,<br/>Remediation, Reporting</small>"]
+    end
+
+    subgraph Tooling["IDE Tooling"]
+        INS["agenttel-instrument<br/><small>MCP Server (Python)<br/>Codebase Analysis, Config Gen,<br/>Validation, Auto-Improvements</small>"]
     end
 
     subgraph Foundation["Foundation"]
@@ -162,13 +186,19 @@ graph TB
     GEN --> API
     AGT --> COR
     API --> OTEL
+    WEB --> OTEL
+    INS -.->|"generates config"| App
 
     style App fill:#1e1b4b,stroke:#4338ca,color:#e0e7ff
+    style Frontend fill:#312e81,stroke:#4f46e5,color:#e0e7ff
     style Integration fill:#312e81,stroke:#4f46e5,color:#e0e7ff
     style Core fill:#3730a3,stroke:#6366f1,color:#e0e7ff
+    style Tooling fill:#3730a3,stroke:#6366f1,color:#e0e7ff
     style Foundation fill:#4338ca,stroke:#818cf8,color:#e0e7ff
     style SBS fill:#7c3aed,stroke:#a78bfa,color:#fff
     style JAE fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style WEB fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style INS fill:#6366f1,stroke:#818cf8,color:#fff
     style COR fill:#6366f1,stroke:#818cf8,color:#fff
     style GEN fill:#6366f1,stroke:#818cf8,color:#fff
     style AGT fill:#6366f1,stroke:#818cf8,color:#fff
@@ -209,6 +239,8 @@ Affected Deps: stripe-api
 
 ## Compatibility
 
+**Backend (JVM)**
+
 | Component | Supported Versions |
 |-----------|--------------------|
 | Java | 17, 21 |
@@ -219,6 +251,19 @@ Affected Deps: stripe-api
 | Anthropic Java SDK | 2.0.0+ (optional) |
 | OpenAI Java SDK | 4.0.0+ (optional) |
 | AWS Bedrock SDK | 2.30.0+ (optional) |
+
+**Frontend (Browser)**
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| TypeScript | 4.7+ |
+| Modern browsers | Chrome, Firefox, Safari, Edge (ES2020+) |
+
+**Tooling**
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Python (instrument agent) | 3.11+ |
 
 <div style="text-align: center; margin-top: 3rem;" markdown>
 

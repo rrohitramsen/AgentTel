@@ -2,7 +2,7 @@
 
 ## Vision
 
-AgentTel is an open-source JVM library and semantic convention extension for [OpenTelemetry](https://opentelemetry.io) that makes application telemetry **natively consumable by AI agents**. It bridges the gap between human-oriented observability and the structured, contextual data that autonomous systems require.
+AgentTel is an open-source telemetry library and semantic convention extension for [OpenTelemetry](https://opentelemetry.io) that makes application telemetry **natively consumable by AI agents**. It works across the full stack — JVM backends (Java, Kotlin, Scala) and browser frontends (TypeScript/JavaScript) — bridging the gap between human-oriented observability and the structured, contextual data that autonomous systems require.
 
 ## Motivation
 
@@ -65,7 +65,7 @@ All enrichment is conditional. When no annotations are present or AgentTel is no
 
 ### Framework-Agnostic Core
 
-The core library depends only on the OpenTelemetry SDK. Spring Boot integration is provided through a separate starter module. The architecture supports future adapters for Quarkus, Micronaut, and other frameworks.
+The core library depends only on the OpenTelemetry SDK. Spring Boot integration is provided through a separate starter module. Frontend telemetry is provided through a standalone TypeScript SDK. The architecture supports future adapters for Quarkus, Micronaut, and other frameworks.
 
 ### Optional Dependencies
 
@@ -78,8 +78,11 @@ agenttel/
 ├── agenttel-api/                 # Annotations, attributes, enums (zero dependencies)
 ├── agenttel-core/                # Runtime engine (OTel SDK dependency only)
 ├── agenttel-genai/               # GenAI instrumentation (optional framework deps)
-├── agenttel-agent/               # Agent interface layer (MCP, health, incidents)
+├── agenttel-agent/               # Agent interface layer (MCP, health, incidents, reporting)
 ├── agenttel-spring-boot-starter/ # Spring Boot auto-configuration
+├── agenttel-javaagent-extension/ # Zero-code OTel javaagent extension
+├── agenttel-web/                 # Browser SDK (TypeScript) — frontend telemetry
+├── agenttel-instrument/          # IDE MCP server (Python) — instrumentation automation
 ├── agenttel-testing/             # Test utilities
 ├── examples/
 │   ├── spring-boot-example/      # Spring Boot + AgentTel demo
@@ -95,15 +98,19 @@ agenttel/
 | `agenttel-api` | `io.agenttel:agenttel-api` | None | Annotations, attribute constants, enums, data models |
 | `agenttel-core` | `io.agenttel:agenttel-core` | OTel SDK, Jackson | Span enrichment, baselines, anomaly detection, SLO tracking, events |
 | `agenttel-genai` | `io.agenttel:agenttel-genai` | OTel SDK + optional GenAI libs | LangChain4j, Spring AI, Anthropic/OpenAI/Bedrock instrumentation |
-| `agenttel-agent` | `io.agenttel:agenttel-agent` | OTel SDK, Jackson | MCP server, health aggregation, incident context, remediation |
+| `agenttel-agent` | `io.agenttel:agenttel-agent` | OTel SDK, Jackson | MCP server, health aggregation, incident context, remediation, trend analysis, SLO reports, executive summaries, cross-stack context |
 | `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot | Auto-configuration for Spring Boot applications |
+| `agenttel-javaagent-extension` | `io.agenttel:agenttel-javaagent-extension` | OTel Javaagent | Zero-code enrichment for any JVM app — no Spring dependency |
+| `agenttel-web` | `@agenttel/web` (npm) | TypeScript, ES2020+ | Browser telemetry SDK — page loads, navigation, API calls, journeys, anomaly detection, cross-stack correlation |
+| `agenttel-instrument` | `agenttel-instrument` (pip) | Python 3.11+ | IDE MCP server — codebase analysis, config generation, validation, auto-improvements |
 | `agenttel-testing` | `io.agenttel:agenttel-testing` | OTel SDK Testing | Test utilities for verifying span enrichment |
 
 ## Target Audience
 
 - **Platform engineers** building internal developer platforms with AI-assisted incident response
 - **SRE teams** adopting AIOps tooling that needs structured telemetry
-- **Application developers** who want their services to be "agent-ready" with minimal code changes
+- **Backend developers** who want their JVM services to be "agent-ready" with minimal code changes
+- **Frontend developers** who want browser telemetry with journey tracking, anomaly detection, and cross-stack correlation
 - **AI/ML engineers** building autonomous agents that interact with production systems
 
 ## Current Status

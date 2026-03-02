@@ -1,19 +1,20 @@
 <p align="center">
   <strong>AgentTel</strong><br/>
-  <em>Agent-Ready Telemetry for JVM Applications</em>
+  <em>Agent-Ready Telemetry</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/rrohitramsen/AgentTel/actions"><img src="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
   <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/JDK-17%2B-orange.svg" alt="JDK 17+"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-4.7%2B-blue.svg" alt="TypeScript"></a>
   <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-1.59.0-blueviolet.svg" alt="OpenTelemetry"></a>
   <a href="https://rrohitramsen.github.io/AgentTel"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Documentation"></a>
 </p>
 
 ---
 
-AgentTel is a JVM library that enriches [OpenTelemetry](https://opentelemetry.io) spans with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards. Works with Java, Kotlin, Scala, and any JVM language.
+AgentTel enriches [OpenTelemetry](https://opentelemetry.io) telemetry with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards. Works across the full stack: JVM backends (Java, Kotlin, Scala) and browser frontends (TypeScript/JavaScript).
 
 Standard observability answers *"What happened?"* AgentTel adds *"What does an AI agent need to know to act on this?"*
 
@@ -80,6 +81,32 @@ A complete toolkit for AI agent interaction with production systems:
 | **Action Tracking** | Every agent decision and action recorded as OTel spans for full auditability |
 | **Context Formatters** | Prompt-optimized output formats (compact, full, JSON) tuned for LLM context windows |
 
+### Frontend Telemetry (agenttel-web)
+
+Browser SDK for agent-ready frontend observability:
+
+| Feature | Description |
+|---------|-------------|
+| **Auto-Instrumentation** | Page loads (Navigation Timing API), SPA navigation, `fetch`/`XMLHttpRequest` interception, click/submit interactions, JavaScript errors |
+| **Journey Tracking** | Multi-step user funnel tracking with completion rates, abandonment detection, and duration baselines |
+| **Anomaly Detection** | Client-side pattern detection — rage clicks, API failure cascades, slow page loads, error loops, funnel drop-offs |
+| **Cross-Stack Correlation** | W3C Trace Context injection on all outgoing requests; backend trace ID extraction from responses |
+| **Route Baselines** | Per-route configuration of expected page load times, API response times, error rates, and business criticality |
+| **Decision Metadata** | Escalation levels, runbook URLs, retry policies, and fallback pages per route |
+
+### Instrumentation Agent (agenttel-instrument)
+
+IDE-integrated MCP server for automated instrumentation setup:
+
+| Tool | Description |
+|------|-------------|
+| `analyze_codebase` | Scans Java/Spring Boot source code — detects endpoints, dependencies, and framework |
+| `instrument_backend` | Generates backend config — Gradle/Maven dependencies, annotations, agenttel.yml |
+| `instrument_frontend` | Generates frontend config — React route detection, criticality inference, SDK initialization |
+| `validate_instrumentation` | Validates agenttel.yml completeness against source code |
+| `suggest_improvements` | Analyzes config and suggests fixes — missing baselines, uncovered endpoints, stale thresholds |
+| `apply_improvements` | Auto-applies low-risk improvements using live health data; flags high-risk items for review |
+
 ### GenAI Instrumentation (agenttel-genai)
 
 Full observability for AI/ML workloads on the JVM:
@@ -94,7 +121,18 @@ Full observability for AI/ML workloads on the JVM:
 
 ## Quick Start
 
-### 1. Add Dependencies
+AgentTel supports multiple integration paths — pick what fits your stack:
+
+| Path | Best For | Effort |
+|------|----------|--------|
+| Spring Boot Starter | Spring Boot applications | Add dependency + YAML config |
+| JavaAgent Extension | Any JVM app (no code changes) | JVM flag + YAML config |
+| Web SDK | Browser/SPA applications | `npm install` + init call |
+| Instrument Agent | IDE-assisted setup | Run MCP server in IDE |
+
+### Backend: Spring Boot
+
+#### 1. Add Dependencies
 
 **Maven:**
 
@@ -139,7 +177,7 @@ dependencies {
 }
 ```
 
-### 2. Configure Your Service
+#### 2. Configure Your Service
 
 All enrichment is driven by YAML configuration -- no code changes needed:
 
@@ -197,7 +235,7 @@ agenttel:
     z-score-threshold: 3.0
 ```
 
-### 3. Optional: Annotate for IDE Support
+#### 3. Optional: Annotate for IDE Support
 
 Annotations are optional -- YAML config above is sufficient. Use `@AgentOperation` when you want IDE autocomplete and compile-time validation. Reference profiles to avoid repeating values:
 
@@ -211,7 +249,7 @@ public ResponseEntity<PaymentResult> processPayment(@RequestBody PaymentRequest 
 
 > When both YAML config and annotations define the same operation, YAML config takes priority. Per-operation values override profile defaults.
 
-### 4. Start the MCP Server (Optional)
+#### 4. Start the MCP Server (Optional)
 
 ```java
 // Expose telemetry to AI agents via MCP
@@ -225,7 +263,7 @@ mcp.start();
 
 AI agents can now call tools like `get_service_health`, `get_incident_context`, `list_remediation_actions`, and `execute_remediation` over JSON-RPC.
 
-### 5. What You Get
+#### 5. What You Get
 
 **Resource attributes** (set once per service, associated with all telemetry):
 
@@ -276,34 +314,88 @@ Affected Deps: stripe-api
   - [MEDIUM] enable_circuit_breakers: Circuit break stripe-api
 ```
 
+### Frontend: Browser SDK
+
+```bash
+npm install @agenttel/web
+```
+
+```typescript
+import { AgentTelWeb } from '@agenttel/web';
+
+AgentTelWeb.init({
+  appName: 'checkout-web',
+  appVersion: '1.0.0',
+  environment: 'production',
+  collectorEndpoint: '/otlp',
+
+  routes: {
+    '/checkout/:step': {
+      businessCriticality: 'revenue',
+      baseline: { pageLoadP50Ms: 800, apiCallP50Ms: 300 },
+      decision: { escalationLevel: 'page_oncall', runbookUrl: 'https://wiki/runbooks/checkout' },
+    },
+  },
+
+  journeys: {
+    checkout: {
+      steps: ['/products', '/cart', '/checkout/shipping', '/checkout/payment', '/confirmation'],
+      baseline: { completionRate: 0.65, avgDurationS: 300 },
+    },
+  },
+
+  anomalyDetection: {
+    rageClickThreshold: 3,
+    apiFailureCascadeThreshold: 3,
+    errorLoopThreshold: 5,
+  },
+});
+```
+
+The SDK automatically instruments page loads, SPA navigation, API calls, clicks, and errors — with cross-stack correlation via W3C Trace Context headers.
+
+### IDE: Instrument Agent
+
+Run the instrument agent as an MCP server in your IDE (Cursor, VS Code, etc.):
+
+```bash
+pip install agenttel-instrument
+agenttel-instrument --config instrument.yml
+```
+
+Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configuration"* — it will scan your endpoints, detect dependencies, and generate a complete `agenttel.yml`.
+
 ## Module Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Your Application                       │
-│    application.yml config + optional @AgentOperation        │
-├──────────────────────────────┬──────────────────────────────┤
-│  agenttel-spring-boot-starter│  agenttel-javaagent-extension│
-│  Auto-config · BPP · AOP    │  Zero-code OTel javaagent    │
-│  (Spring Boot apps)         │  extension (any JVM app)     │
-├───────────────┬──────────────┴─┬────────────────────────────┤
-│ agenttel-core │  agenttel-genai │     agenttel-agent        │
-│               │                 │                           │
-│ SpanProcessor │ LangChain4j     │ MCP Server (JSON-RPC)     │
-│ Baselines     │ Spring AI       │ Health Aggregation        │
-│  (static +    │ Anthropic SDK   │ Incident Context Builder  │
-│   rolling)    │ OpenAI SDK      │ Remediation Framework     │
-│ Anomaly       │ Bedrock SDK     │ Agent Action Tracker      │
-│  Detection    │ Cost Calculator │ Context Formatters        │
-│ SLO Tracking  │                 │                           │
-│ Pattern       │                 │                           │
-│  Matching     │                 │                           │
-├───────────────┴─────────────────┴───────────────────────────┤
-│                        agenttel-api                          │
-│     @AgentOperation · AgentTelAttributes · Data Models      │
-├─────────────────────────────────────────────────────────────┤
-│                    OpenTelemetry SDK                         │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Your Application                            │
+│    Backend: application.yml + @AgentOperation                       │
+│    Frontend: AgentTelWeb.init(config)                               │
+├──────────────────────────┬──────────────────┬───────────────────────┤
+│  agenttel-spring-boot-   │  agenttel-       │  agenttel-web         │
+│  starter                 │  javaagent-      │  (@agenttel/web)      │
+│  Auto-config · BPP · AOP │  extension       │  Browser SDK          │
+│  (Spring Boot apps)      │  (any JVM app)   │  (TypeScript/JS)      │
+├──────────────┬───────────┴──┬───────────────┴───────────────────────┤
+│agenttel-core │agenttel-genai│     agenttel-agent                    │
+│              │              │                                       │
+│ SpanProcessor│ LangChain4j  │ MCP Server (JSON-RPC)                 │
+│ Baselines    │ Spring AI    │ Health Aggregation                    │
+│ Anomaly      │ Anthropic SDK│ Incident Context + Reporting          │
+│  Detection   │ OpenAI SDK   │ Remediation Framework                 │
+│ SLO Tracking │ Bedrock SDK  │ Trend Analysis · SLO Reports          │
+│ Pattern      │ Cost Calc    │ Executive Summaries                   │
+│  Matching    │              │ Cross-Stack Context                   │
+├──────────────┴──────────────┴───────────────────────────────────────┤
+│                          agenttel-api                                │
+│       @AgentOperation · AgentTelAttributes · Data Models            │
+├─────────────────────────────────────────────────────────────────────┤
+│                      OpenTelemetry SDK                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+  agenttel-instrument (IDE MCP Server — Python)
+  Codebase analysis · Config generation · Validation · Auto-improvements
 ```
 
 | Module | Artifact | Description |
@@ -311,9 +403,11 @@ Affected Deps: stripe-api
 | `agenttel-api` | `io.agenttel:agenttel-api` | Annotations, attribute constants, enums, data models. Zero runtime dependencies. |
 | `agenttel-core` | `io.agenttel:agenttel-core` | Runtime engine — span enrichment, static + rolling baselines, z-score anomaly detection, pattern matching, SLO tracking, structured events. |
 | `agenttel-genai` | `io.agenttel:agenttel-genai` | GenAI instrumentation — LangChain4j wrappers, Spring AI enrichment, Anthropic/OpenAI/Bedrock SDK instrumentation, cost calculation. |
-| `agenttel-agent` | `io.agenttel:agenttel-agent` | Agent interface layer — MCP server, real-time health aggregation, incident context builder, remediation framework, agent action tracking. |
+| `agenttel-agent` | `io.agenttel:agenttel-agent` | Agent interface layer — MCP server, health aggregation, incident context, remediation, trend analysis, SLO reports, executive summaries, cross-stack context. |
 | `agenttel-javaagent-extension` | `io.agenttel:agenttel-javaagent-extension` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
 | `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
+| `agenttel-web` | `@agenttel/web` (npm) | Browser telemetry SDK — auto-instrumentation of page loads, navigation, API calls, errors, Web Vitals, journey tracking, anomaly detection, W3C trace propagation. |
+| `agenttel-instrument` | `agenttel-instrument` (pip) | IDE MCP server — codebase analysis, config generation, validation, improvement suggestions, and auto-apply for both backend and frontend instrumentation. |
 | `agenttel-testing` | `io.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
 
 ## Documentation
@@ -340,10 +434,13 @@ Working examples to get you started quickly:
 |---------|-------------|-------------|
 | [Spring Boot Example](examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `./gradlew :examples:spring-boot-example:bootRun` |
 | [LangChain4j Example](examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
+| [React Checkout Example](agenttel-web/examples/react-checkout) | React SPA with frontend telemetry — journey tracking, anomaly detection, cross-stack correlation | `cd agenttel-web/examples/react-checkout && npm start` |
 
 Each example includes a README with step-by-step instructions and curl commands to exercise the instrumentation.
 
 ## Compatibility
+
+### Backend (JVM)
 
 | Component | Supported Versions |
 |-----------|--------------------|
@@ -355,6 +452,20 @@ Each example includes a README with step-by-step instructions and curl commands 
 | Anthropic Java SDK | 2.0.0+ (optional) |
 | OpenAI Java SDK | 4.0.0+ (optional) |
 | AWS Bedrock SDK | 2.30.0+ (optional) |
+
+### Frontend (Browser)
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| TypeScript | 4.7+ |
+| Modern browsers | Chrome, Firefox, Safari, Edge (ES2020+) |
+| React (example) | 18+ |
+
+### Tooling
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Python (instrument agent) | 3.11+ |
 
 ## Build Tool Support
 
@@ -384,15 +495,29 @@ implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 
 ### All Available Artifacts
 
+**Maven/Gradle (JVM):**
+
 | Group ID | Artifact ID | Description |
 |----------|------------|-------------|
 | `io.agenttel` | `agenttel-api` | Annotations and constants (zero dependencies) |
 | `io.agenttel` | `agenttel-core` | Runtime engine |
 | `io.agenttel` | `agenttel-genai` | GenAI instrumentation |
-| `io.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents) |
+| `io.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents, reporting) |
 | `io.agenttel` | `agenttel-javaagent-extension` | Zero-code OTel javaagent extension |
 | `io.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
 | `io.agenttel` | `agenttel-testing` | Test utilities |
+
+**npm (Browser):**
+
+| Package | Description |
+|---------|-------------|
+| `@agenttel/web` | Browser telemetry SDK with auto-instrumentation |
+
+**pip (Tooling):**
+
+| Package | Description |
+|---------|-------------|
+| `agenttel-instrument` | IDE MCP server for instrumentation automation |
 
 ## Zero-Code Mode (JavaAgent Extension)
 
