@@ -59,6 +59,26 @@ Complete toolkit for AI agent interaction with production systems.
 - [x] `agenttel-agent` — `AgentTelMcpServerBuilder` with 5 pre-registered tools
 - [x] Full test coverage for all agent layer components
 
+#### Phase 4: Frontend Telemetry & Tooling
+
+Full-stack telemetry and developer experience.
+
+- [x] `agenttel-web` — TypeScript browser SDK (`@agenttel/web`) with auto-instrumentation of page loads, SPA navigation, API calls, clicks, and errors
+- [x] `agenttel-web` — Journey tracking with multi-step funnel detection, completion rates, and abandonment analysis
+- [x] `agenttel-web` — Client-side anomaly detection: rage clicks, API failure cascades, slow page loads, error loops, funnel drop-offs
+- [x] `agenttel-web` — W3C Trace Context injection and backend trace ID correlation for cross-stack linking
+- [x] `agenttel-web` — Per-route baselines and decision metadata (escalation levels, runbooks, fallbacks)
+- [x] `agenttel-web` — React checkout example application
+- [x] `agenttel-instrument` — Python MCP server for IDE-based instrumentation automation
+- [x] `agenttel-instrument` — `analyze_codebase` tool for Java/Spring Boot source scanning
+- [x] `agenttel-instrument` — `instrument_backend` and `instrument_frontend` config generation
+- [x] `agenttel-instrument` — `validate_instrumentation` with source code cross-referencing
+- [x] `agenttel-instrument` — `suggest_improvements` and `apply_improvements` with live health data integration
+- [x] `agenttel-agent` — `TrendAnalyzer` for operation metric trend analysis
+- [x] `agenttel-agent` — `SloReportGenerator` for LLM-optimized SLO compliance reports
+- [x] `agenttel-agent` — `ExecutiveSummaryBuilder` for high-level service status summaries
+- [x] `agenttel-agent` — `CrossStackContextBuilder` for correlated frontend-backend context
+
 ---
 
 ## Planned: v0.2.0-alpha
@@ -136,11 +156,13 @@ Complete toolkit for AI agent interaction with production systems.
 
 - [ ] Grafana plugin for AgentTel-specific visualizations
 - [ ] VS Code extension for `@AgentOperation` annotation assistance
-- [ ] CLI tool for validating AgentTel configuration
+- [x] ~~CLI tool for validating AgentTel configuration~~ — implemented as `agenttel-instrument` MCP server with `validate_instrumentation` and `suggest_improvements` tools
 
 ---
 
 ## Compatibility Matrix
+
+**Backend (JVM)**
 
 | AgentTel Version | Java | OTel SDK | Spring Boot | LangChain4j | Spring AI |
 |-----------------|------|----------|-------------|-------------|-----------|
@@ -148,3 +170,15 @@ Complete toolkit for AI agent interaction with production systems.
 | 0.2.0-alpha (planned) | 17, 21 | 1.60.0+ | 3.4.x, 3.5.x | 1.0.0+ | 1.0.0+ |
 | 0.3.0-beta (planned) | 17, 21, 25 | 1.62.0+ | 3.x | 1.x | 1.x |
 | 1.0.0 (planned) | 17+ | 1.x | 3.x | 1.x | 1.x |
+
+**Frontend (Browser)**
+
+| AgentTel Version | TypeScript | Browsers |
+|-----------------|------------|----------|
+| 0.1.0-alpha | 4.7+ | Chrome, Firefox, Safari, Edge (ES2020+) |
+
+**Tooling**
+
+| AgentTel Version | Python (instrument agent) |
+|-----------------|---------------------------|
+| 0.1.0-alpha | 3.11+ |
