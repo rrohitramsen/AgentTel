@@ -11,8 +11,8 @@ hide:
 <p class="hero-tagline">Agent-Ready Telemetry</p>
 
 <p class="hero-description">
-Enrich OpenTelemetry telemetry — backend and frontend — with the structured context
-AI agents need to autonomously diagnose, reason about, and resolve production incidents.
+Enrich OpenTelemetry spans — backend and frontend — with the structured context
+AI agents need to autonomously diagnose and resolve production incidents.
 </p>
 
 [Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
