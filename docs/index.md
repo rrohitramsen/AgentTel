@@ -11,8 +11,8 @@ hide:
 <p class="hero-tagline">Agent-Ready Telemetry</p>
 
 <p class="hero-description">
-Enrich OpenTelemetry telemetry — backend and frontend — with the structured context
-AI agents need to autonomously diagnose, reason about, and resolve production incidents.
+Enrich OpenTelemetry spans — backend and frontend — with the structured context
+AI agents need to autonomously diagnose and resolve production incidents.
 </p>
 
 [Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
@@ -44,21 +44,26 @@ AgentTel closes these gaps at the instrumentation layer — enriching every span
 
 ## How It Works
 
-AgentTel enriches telemetry at three levels — all configurable via YAML, no code changes required:
+AgentTel enriches telemetry across the full stack — all configurable via YAML or code, no manual instrumentation required:
 
 ```mermaid
 graph LR
-    A["Your Application"] --> B["AgentTel"]
-    B --> C["OpenTelemetry SDK"]
+    B1["Your Backend<br/>(JVM)"] --> AT1["AgentTel Core"]
+    B2["Your Frontend<br/>(Browser)"] --> AT2["AgentTel Web SDK"]
+    AT1 --> C["OpenTelemetry SDK"]
+    AT2 --> C
     C --> D["OTel Collector / Backend"]
     D --> E["AI Agent"]
 
-    B -->|"Topology<br/>(Resource attrs)"| C
-    B -->|"Baselines + Decisions<br/>(Span attrs)"| C
-    E -->|"MCP Tools<br/>(JSON-RPC)"| B
+    AT1 -->|"Topology + Baselines<br/>+ Decisions"| C
+    AT2 -->|"Journeys + Anomalies<br/>+ Correlation"| C
+    E -->|"MCP Tools<br/>(9 tools)"| AT1
+    B2 -->|"W3C Trace Context"| B1
 
-    style A fill:#4a1d96,stroke:#7c3aed,color:#fff
-    style B fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style B1 fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style B2 fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style AT1 fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style AT2 fill:#7c3aed,stroke:#a78bfa,color:#fff
     style C fill:#6366f1,stroke:#818cf8,color:#fff
     style D fill:#4f46e5,stroke:#6366f1,color:#fff
     style E fill:#4338ca,stroke:#6366f1,color:#fff
@@ -67,8 +72,11 @@ graph LR
 | Level | Where | What It Adds | Example |
 |-------|-------|-------------|---------|
 | **Topology** | OTel Resource (once per service) | Service identity, ownership, dependencies | team, tier, on-call channel |
-| **Baselines** | Span attributes (per operation) | What "normal" looks like | P50/P99 latency, error rate |
+| **Baselines** | Span attributes (per operation) | What "normal" looks like — backend and frontend | P50/P99 latency, error rate, page load time |
 | **Decisions** | Span attributes (per operation) | What an agent is allowed to do | retryable, runbook URL, escalation level |
+| **Journeys** | Frontend spans (per user flow) | Multi-step funnel tracking | checkout completion rate, step abandonment |
+| **Anomalies** | Both backend and frontend spans | Real-time deviation detection | z-score spikes, rage clicks, error loops |
+| **Correlation** | Cross-stack span linking | Frontend-to-backend trace linking | W3C Trace Context, backend trace IDs |
 
 ---
 

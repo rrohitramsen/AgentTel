@@ -10,8 +10,9 @@ The `agenttel-agent` module provides the interface layer between AI agents and y
 graph TB
     Agent["AI Agent / LLM<br/><small>Claude, GPT, custom agent</small>"]
 
-    subgraph MCP["MCP Server"]
-        Tools["get_service_health · get_incident_context<br/>list_remediation_actions · execute_remediation<br/>get_recent_agent_actions"]
+    subgraph MCP["MCP Server (9 tools)"]
+        Tools1["get_service_health · get_incident_context<br/>list_remediation_actions · execute_remediation<br/>get_recent_agent_actions"]
+        Tools2["get_slo_report · get_executive_summary<br/>get_trend_analysis · get_cross_stack_context"]
     end
 
     ACP["AgentContextProvider<br/><small>Single entry point for all agent queries</small>"]
@@ -24,6 +25,13 @@ graph TB
         CF["Context<br/>Formatter"]
     end
 
+    subgraph Reporting["Reporting"]
+        SLO["SLO Report<br/>Generator"]
+        TR["Trend<br/>Analyzer"]
+        ES["Executive<br/>Summary"]
+        CS["Cross-Stack<br/>Context"]
+    end
+
     Agent -->|"JSON-RPC (MCP Protocol)"| MCP
     MCP --> ACP
     ACP --> HA
@@ -31,16 +39,25 @@ graph TB
     ACP --> RR
     ACP --> AT
     ACP --> CF
+    ACP --> SLO
+    ACP --> TR
+    ACP --> ES
+    ACP --> CS
 
     style Agent fill:#4338ca,stroke:#6366f1,color:#fff
     style MCP fill:#6366f1,stroke:#818cf8,color:#fff
     style ACP fill:#7c3aed,stroke:#a78bfa,color:#fff
     style Components fill:#1e1b4b,stroke:#4338ca,color:#e0e7ff
+    style Reporting fill:#1e1b4b,stroke:#4338ca,color:#e0e7ff
     style HA fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style IC fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style RR fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style AT fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style CF fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style SLO fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style TR fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style ES fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style CS fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
 ```
 
 ---
@@ -174,6 +191,125 @@ Executes a remediation action. Actions requiring approval need the `approved_by`
 #### get_recent_agent_actions
 
 Returns the audit trail of recent agent decisions and actions.
+
+#### get_slo_report
+
+Returns SLO compliance report across all tracked operations — budget remaining, burn rate, and compliance status.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `format` | string | No | `"text"` (default) or `"json"` |
+
+**Example text output:**
+
+```
+=== SLO REPORT ===
+Generated: 2025-01-15T14:30:00Z
+Total SLOs: 2
+
+SUMMARY: 1 healthy, 1 at risk, 0 violated
+
+  [HEALTHY] payment-availability
+    Target: 99.90%  Actual: 99.95%  Budget: 50.0%  Burn: 0.5x  Requests: 10000  Failed: 5
+  [AT_RISK] payment-latency-p99
+    Target: 200ms  Actual: 312ms  Budget: 22.0%  Burn: 0.8x  Requests: 10000  Failed: 520
+```
+
+#### get_executive_summary
+
+Returns a high-level executive summary of service health (~300 tokens), optimized for LLM context windows.
+
+**Parameters:** None.
+
+**Example output:**
+
+```
+=== EXECUTIVE SUMMARY ===
+Service: payment-service | Status: DEGRADED | 2025-01-15T14:30:00Z
+
+STATUS: 1 operation degraded. POST /api/payments error rate elevated (5.2%).
+
+TOP ISSUES:
+  1. POST /api/payments: err=5.2% (baseline 0.1%), p50=312ms (baseline 45ms)
+
+SLO BUDGET: 1/2 healthy, 1 at risk (payment-latency-p99: 22% remaining)
+
+OPERATIONS: 2 tracked, 10,000 total requests
+```
+
+#### get_trend_analysis
+
+Returns latency, error rate, and throughput trends for an operation over a time window with direction indicators.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `operation_name` | string | Yes | Operation name to analyze trends for |
+| `window_minutes` | string | No | Time window in minutes (default: `"30"`) |
+
+**Example output:**
+
+```
+=== TREND ANALYSIS: POST /api/payments ===
+Window: 30 minutes | Samples: 12
+
+LATENCY P50: 45ms → 312ms  ↑ RISING (+593%)
+LATENCY P99: 200ms → 1200ms  ↑ RISING (+500%)
+ERROR RATE: 0.1% → 5.2%  ↑ RISING (+5100%)
+THROUGHPUT: 180 rpm → 165 rpm  ↓ FALLING (-8%)
+
+ASSESSMENT: Operation is degrading. Latency and error rate are both rising sharply.
+```
+
+#### get_cross_stack_context
+
+Returns correlated frontend and backend context for an operation — traces the full user-to-database path when `agenttel-web` is connected.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `operation_name` | string | Yes | Backend operation name to get cross-stack context for |
+
+**Example output (with frontend connected):**
+
+```
+=== CROSS-STACK CONTEXT: POST /api/payments ===
+
+## FRONTEND (User Experience)
+  Route: /checkout/payment
+  Page Load P50: 850ms (baseline: 800ms)
+  API Call P50: 520ms (baseline: 300ms)
+  Journey: checkout (step 4/5)
+  Funnel Health: 62% completion (baseline: 65%)
+  Anomalies: slow_page_load
+  Affected Users: ~120 in last 15 min
+
+## BACKEND (payment-service)
+  Operation: POST /api/payments
+  Error Rate: 5.2% (baseline: 0.1%)
+  Latency P50: 312ms (baseline: 45ms)
+  Deviation: ELEVATED
+
+## SLO STATUS
+  payment-availability: 99.95% (target: 99.9%) budget=50.0%
+  payment-latency-p99: 312ms (target: 200ms) budget=22.0%
+
+## CORRELATION
+  Frontend → Backend trace linking: active
+  Browser trace IDs correlated with backend spans via W3C Trace Context
+```
+
+**Example output (without frontend):**
+
+```
+## FRONTEND (User Experience)
+  Status: No frontend telemetry connected
+  Note: Connect agenttel-web SDK to enable cross-stack correlation.
+```
 
 ### Registering Custom Tools
 
@@ -431,7 +567,7 @@ String json = ContextFormatter.formatHealthAsJson(healthSummary);
 
 ## AgentContextProvider
 
-The single entry point for all agent queries. Wires together all components.
+The single entry point for all agent queries. Wires together all components, including the reporting layer.
 
 ```java
 AgentContextProvider provider = new AgentContextProvider(
@@ -444,11 +580,25 @@ AgentContextProvider provider = new AgentContextProvider(
     actionTracker
 );
 
-// Text summaries for LLM prompts
+// Wire in reporting components
+provider.setReportingComponents(
+    sloReportGenerator,
+    trendAnalyzer,
+    executiveSummaryBuilder,
+    crossStackContextBuilder
+);
+
+// Core queries
 String health = provider.getHealthSummary();
 String incident = provider.getIncidentContext("POST /api/payments");
 String actions = provider.getAvailableActions("POST /api/payments");
 String audit = provider.getRecentActions();
+
+// Reporting queries
+String sloReport = provider.getSloReport();
+String trends = provider.getTrendAnalysis("POST /api/payments", 30);
+String executive = provider.getExecutiveSummary();
+String crossStack = provider.getCrossStackContext("POST /api/payments");
 
 // JSON for structured tool results
 String healthJson = provider.getHealthSummaryJson();
