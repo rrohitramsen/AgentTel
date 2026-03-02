@@ -9,22 +9,36 @@ This document describes the technical architecture of AgentTel, including module
 ```mermaid
 graph TB
     Agent["AI Agent / LLM<br/><small>Claude, GPT, custom agent</small>"]
-    AGT["agenttel-agent<br/><small>MCP Server · Health Aggregator<br/>Incident Context · Remediation</small>"]
-    APP["Your Application<br/><small>@AgentOperation · business logic</small>"]
+    IDE["IDE Agent<br/><small>Cursor, Claude Code, VS Code</small>"]
+    AGT["agenttel-agent<br/><small>MCP Server · Health · Incidents<br/>Remediation · Reporting</small>"]
+    INS["agenttel-instrument<br/><small>Codebase Analysis · Config Gen<br/>Validation · Auto-Improvements</small>"]
+    APP["Your Backend<br/><small>@AgentOperation · business logic</small>"]
+    WEB["Your Frontend<br/><small>AgentTelWeb.init() · SPA</small>"]
     CORE["agenttel-core<br/><small>SpanProcessor · Baselines<br/>Anomaly Detection · SLOs<br/>Pattern Matching · Events</small>"]
+    WEBSDK["agenttel-web<br/><small>Page Loads · Navigation · API Calls<br/>Journeys · Anomaly Detection</small>"]
     OTEL["OpenTelemetry SDK<br/><small>OTLP Export to Backend</small>"]
     BACKEND["Observability Backend<br/><small>Jaeger / Tempo / Datadog / ...</small>"]
 
     Agent -->|"MCP (JSON-RPC)"| AGT
+    IDE -->|"MCP (JSON-RPC)"| INS
+    INS -.->|"generates config"| APP
+    INS -.->|"generates config"| WEB
     AGT -->|"reads from"| CORE
     APP -->|"instrumented by"| CORE
+    WEB -->|"instrumented by"| WEBSDK
     CORE -->|"enriched spans"| OTEL
+    WEBSDK -->|"enriched spans"| OTEL
     OTEL -->|"export"| BACKEND
+    WEBSDK -->|"W3C Trace Context"| APP
 
     style Agent fill:#4338ca,stroke:#6366f1,color:#fff
+    style IDE fill:#4338ca,stroke:#6366f1,color:#fff
     style AGT fill:#6366f1,stroke:#818cf8,color:#fff
+    style INS fill:#6366f1,stroke:#818cf8,color:#fff
     style APP fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style WEB fill:#4a1d96,stroke:#7c3aed,color:#fff
     style CORE fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style WEBSDK fill:#7c3aed,stroke:#a78bfa,color:#fff
     style OTEL fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style BACKEND fill:#a5b4fc,stroke:#c7d2fe,color:#1e1b4b
 ```
@@ -199,14 +213,111 @@ agenttel-agent/
 ├── context/
 │   ├── ContextFormatter              # Prompt-optimized output formatters
 │   └── AgentContextProvider          # Single entry point for agent queries
+├── reporting/
+│   ├── TrendAnalyzer                 # Operation metric trends over rolling window
+│   ├── SloReportGenerator            # SLO compliance reports (text + JSON)
+│   ├── ExecutiveSummaryBuilder       # ~300 token LLM-optimized service overview
+│   └── CrossStackContextBuilder      # Correlated frontend-backend context
 └── mcp/
     ├── McpServer                     # JSON-RPC HTTP server
     ├── McpToolDefinition             # Tool schema definition
     ├── McpToolHandler                # Tool execution interface
-    └── AgentTelMcpServerBuilder      # Builder with pre-registered tools
+    └── AgentTelMcpServerBuilder      # Builder with 9 pre-registered tools
 ```
 
+**MCP Tools** (9 total):
+
+| Tool | Description |
+|------|-------------|
+| `get_service_health` | Operation metrics, dependency status, SLO budget |
+| `get_incident_context` | Structured incident package: what's happening, what changed, what's affected, what to do |
+| `list_remediation_actions` | Available remediation actions for an operation |
+| `execute_remediation` | Execute a remediation action with approval workflow |
+| `get_recent_agent_actions` | Audit trail of recent agent decisions |
+| `get_slo_report` | SLO compliance report across all tracked operations |
+| `get_executive_summary` | High-level service status summary (~300 tokens) |
+| `get_trend_analysis` | Latency, error rate, and throughput trends for an operation |
+| `get_cross_stack_context` | Correlated frontend-backend context for an operation |
+
 See [Agent Layer](04-AGENT-LAYER.md) for detailed documentation.
+
+### agenttel-web
+
+**Browser telemetry SDK** (TypeScript) — agent-ready frontend observability.
+
+```
+agenttel-web/
+├── core/
+│   ├── AgentTelWeb                   # Singleton entry point — init(), getInstance()
+│   ├── SpanFactory                   # Creates OTel-compatible spans with enrichment
+│   ├── AttributeKeys                 # agenttel.client.* attribute constants
+│   └── Resource                      # Frontend resource attributes
+├── trackers/
+│   ├── PageTracker                   # Page load metrics via Navigation Timing API
+│   ├── NavigationTracker             # SPA route change tracking
+│   ├── ApiTracker                    # fetch/XMLHttpRequest interception
+│   ├── InteractionTracker            # Click/submit event tracking
+│   └── ErrorTracker                  # JavaScript error + error loop detection
+├── enrichment/
+│   ├── AnomalyDetector               # Rage clicks, API cascades, slow loads, error loops
+│   ├── JourneyTracker                # Multi-step funnel tracking with abandonment
+│   ├── RouteMatcher                  # Parameterized route matching (/checkout/:step)
+│   └── CorrelationEngine             # W3C Trace Context injection + backend trace extraction
+├── transport/
+│   ├── OtlpExporter                  # OTLP HTTP exporter for browser
+│   └── BatchProcessor                # Batched span export with configurable flush
+├── config/
+│   ├── Types                         # AgentTelWebConfig interface
+│   └── Defaults                      # Default configuration values
+└── types/
+    ├── Span, Journey, Anomaly, Baseline
+```
+
+**Key design decisions:**
+
+1. **Auto-instrumentation by default.** Page loads, navigation, API calls, clicks, and errors are captured automatically — no manual code changes needed.
+
+2. **Route-aware enrichment.** Each route can have its own baselines (page load P50/P99, API call P50) and decision metadata (escalation level, runbook URL, business criticality).
+
+3. **Cross-stack correlation.** W3C Trace Context (`traceparent`) is injected on all outgoing `fetch`/`XMLHttpRequest` calls, and backend trace IDs are extracted from response headers — enabling full browser-to-database trace linking.
+
+4. **PII safety.** Interaction targets use `data-agenttel-target` attributes rather than CSS selectors or text content, avoiding accidental PII capture.
+
+### agenttel-instrument
+
+**IDE MCP server** (Python) — AI-assisted instrumentation automation.
+
+```
+agenttel-instrument/
+├── mcp/
+│   ├── Server                        # JSON-RPC 2.0 HTTP server (aiohttp)
+│   └── Models                        # MCP request/response types
+├── tools/
+│   ├── AnalyzeCodebase               # Java/Spring Boot source scanner
+│   ├── InstrumentBackend             # Backend config generator
+│   ├── InstrumentFrontend            # Frontend config generator (React route detection)
+│   ├── Validate                      # Config validation against source code
+│   ├── Suggest                       # Improvement detection engine
+│   ├── ApplyImprovements             # Batch auto-apply with live health data
+│   └── ApplySingle                   # Single improvement application
+├── feedback/
+│   ├── Engine                        # Detects missing baselines, stale configs, gaps
+│   ├── Applier                       # Safe config file modification
+│   └── Models                        # FeedbackEvent, FeedbackType, RiskLevel
+└── config/
+    ├── Config                        # Server + backend MCP connection settings
+    └── Types                         # Configuration data classes
+```
+
+**Key design decisions:**
+
+1. **MCP-native.** Designed as an MCP server so any MCP-compatible AI assistant (Cursor, Claude Code, VS Code Copilot) can use it directly.
+
+2. **Read-then-propose.** Tools like `instrument_backend` and `instrument_frontend` return proposed changes without modifying files — the IDE agent decides what to apply.
+
+3. **Risk-based auto-apply.** `apply_improvements` only auto-applies low-risk changes (e.g., baseline calibration from observed data). Medium and high-risk changes are flagged for human review.
+
+4. **Live health integration.** Connects to the backend MCP server to fetch real health/SLO data for baseline calibration, rather than using arbitrary defaults.
 
 ### agenttel-spring-boot-starter
 
@@ -276,6 +387,59 @@ flowchart TD
     style C fill:#7c3aed,stroke:#a78bfa,color:#fff
     style D fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style E fill:#4338ca,stroke:#6366f1,color:#fff
+```
+
+### Frontend Telemetry Flow
+
+```mermaid
+flowchart TD
+    A["1. User interacts with SPA"] --> B["2. Trackers fire automatically"]
+    B --> B1["PageTracker: load metrics"]
+    B --> B2["NavigationTracker: route changes"]
+    B --> B3["ApiTracker: fetch/XHR intercept"]
+    B --> B4["InteractionTracker: clicks/submits"]
+    B --> B5["ErrorTracker: JS errors"]
+    B5 --> C["3. SpanFactory creates enriched spans"]
+    C --> C1["Route baselines from config"]
+    C --> C2["Decision metadata from config"]
+    C --> C3["Journey step tracking"]
+    C3 --> D["4. AnomalyDetector runs"]
+    D --> D1["Rage click detection"]
+    D --> D2["API failure cascade"]
+    D --> D3["Slow page load"]
+    D --> D4["Error loop detection"]
+    D4 --> E["5. CorrelationEngine"]
+    E --> E1["Inject traceparent on outgoing requests"]
+    E --> E2["Extract backend trace ID from responses"]
+    E2 --> F["6. BatchProcessor → OtlpExporter"]
+    F --> F1["OTLP HTTP export to collector"]
+
+    style A fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style B fill:#4a1d96,stroke:#7c3aed,color:#fff
+    style C fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style D fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style E fill:#6366f1,stroke:#818cf8,color:#fff
+    style F fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+```
+
+### Cross-Stack Correlation Flow
+
+```mermaid
+flowchart LR
+    Browser["Browser<br/><small>agenttel-web</small>"] -->|"traceparent header"| Backend["Backend<br/><small>agenttel-core</small>"]
+    Backend -->|"X-Trace-Id response header"| Browser
+    Browser -->|"OTLP spans"| Collector["OTel Collector"]
+    Backend -->|"OTLP spans"| Collector
+    Collector --> Jaeger["Observability Backend"]
+    Agent["AI Agent"] -->|"get_cross_stack_context"| MCP["agenttel-agent<br/><small>MCP Server</small>"]
+    MCP -->|"correlated context"| Agent
+
+    style Browser fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style Backend fill:#6366f1,stroke:#818cf8,color:#fff
+    style Collector fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style Jaeger fill:#a5b4fc,stroke:#c7d2fe,color:#1e1b4b
+    style Agent fill:#4338ca,stroke:#6366f1,color:#fff
+    style MCP fill:#6366f1,stroke:#818cf8,color:#fff
 ```
 
 ---
