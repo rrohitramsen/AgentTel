@@ -1,6 +1,6 @@
 # Semantic Conventions
 
-AgentTel defines a set of semantic convention extensions to OpenTelemetry, organized into five categories of agent-ready attributes plus structured events. All attributes use the `agenttel.*` namespace and coexist with standard OTel conventions.
+AgentTel defines a set of semantic convention extensions to OpenTelemetry, organized into categories of agent-ready attributes plus structured events. Backend attributes use the `agenttel.*` namespace and frontend attributes use the `agenttel.client.*` namespace. All coexist with standard OTel conventions.
 
 ## Design Philosophy
 
@@ -243,7 +243,135 @@ AgentTel populates the emerging OTel GenAI semantic conventions:
 
 ---
 
-## 7. Structured Events
+## 7. Frontend Attributes
+
+Client-side telemetry from `agenttel-web` (browser SDK). Set on spans emitted by the browser and exported via OTLP.
+
+### Resource Attributes
+
+Set once per browser application at initialization.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.app.name` | string | Application name | `"checkout-web"` |
+| `agenttel.client.app.version` | string | Application version | `"1.0.0"` |
+| `agenttel.client.app.platform` | string | Platform identifier | `"browser"` |
+| `agenttel.client.app.environment` | string | Deployment environment | `"production"` |
+| `agenttel.client.topology.team` | string | Owning team | `"checkout-frontend"` |
+| `agenttel.client.topology.domain` | string | Business domain | `"commerce"` |
+
+### Page & Route Attributes
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.page.url` | string | Current page URL (path only, no query/hash) | `"/checkout/payment"` |
+| `agenttel.client.page.route` | string | Matched route pattern | `"/checkout/:step"` |
+| `agenttel.client.page.title` | string | Document title | `"Checkout - Payment"` |
+| `agenttel.client.page.business_criticality` | string | Route business criticality | `"revenue"` |
+
+**Business Criticality Values:** `revenue`, `engagement`, `internal`
+
+### Baseline Attributes
+
+Per-route baselines for frontend operations.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.baseline.page_load_p50_ms` | double | Expected page load P50 | `800.0` |
+| `agenttel.client.baseline.page_load_p99_ms` | double | Expected page load P99 | `2000.0` |
+| `agenttel.client.baseline.api_call_p50_ms` | double | Expected API response P50 | `300.0` |
+| `agenttel.client.baseline.error_rate` | double | Expected error rate (0.0–1.0) | `0.01` |
+
+### Decision Attributes
+
+Per-route decision metadata for agent reasoning.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.decision.escalation_level` | string | Escalation procedure | `"page_oncall"` |
+| `agenttel.client.decision.runbook_url` | string | Operational runbook | `"https://wiki/runbooks/checkout"` |
+| `agenttel.client.decision.fallback_page` | string | Fallback route on failure | `"/maintenance"` |
+| `agenttel.client.decision.retry_on_failure` | boolean | Whether to retry failed page loads | `true` |
+
+### Anomaly Attributes
+
+Client-side anomaly detection results.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.anomaly.detected` | boolean | Whether a client-side anomaly was detected | `true` |
+| `agenttel.client.anomaly.pattern` | string | Detected anomaly pattern | `"rage_click"` |
+| `agenttel.client.anomaly.score` | double | Anomaly severity (0.0–1.0) | `0.75` |
+
+**Client-Side Anomaly Patterns:**
+
+| Pattern | Value | Detection | Description |
+|---------|-------|-----------|-------------|
+| Rage Click | `"rage_click"` | N+ clicks on same element within time window | User frustration — UI is unresponsive |
+| API Failure Cascade | `"api_failure_cascade"` | N+ API failures within time window | Backend instability visible to user |
+| Slow Page Load | `"slow_page_load"` | Load time exceeds baseline by multiplier | Performance degradation on route |
+| Error Loop | `"error_loop"` | N+ errors on same route within time window | Repeating failure preventing user progress |
+| Funnel Drop-off | `"funnel_dropoff"` | Journey abandonment above baseline | User journey failing at specific step |
+
+### Journey Attributes
+
+Multi-step user journey tracking.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.journey.name` | string | Journey identifier | `"checkout"` |
+| `agenttel.client.journey.step` | int | Current step index (0-based) | `3` |
+| `agenttel.client.journey.step_name` | string | Step route/name | `"/checkout/payment"` |
+| `agenttel.client.journey.status` | string | Journey status | `"in_progress"` |
+| `agenttel.client.journey.duration_ms` | double | Time since journey start | `45000.0` |
+
+**Journey Status Values:** `in_progress`, `completed`, `abandoned`
+
+### Correlation Attributes
+
+Cross-stack trace linking between frontend and backend.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.correlation.backend_trace_id` | string | Backend trace ID from response | `"abc123def456"` |
+| `agenttel.client.correlation.traceparent` | string | W3C Trace Context header sent | `"00-abc...-01"` |
+
+### Page Load Attributes
+
+Captured from the Navigation Timing API on page load spans.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.page_load.dom_load_ms` | double | DOM content loaded time | `450.0` |
+| `agenttel.client.page_load.ttfb_ms` | double | Time to first byte | `120.0` |
+| `agenttel.client.page_load.transfer_size_bytes` | long | Page transfer size | `245000` |
+
+### API Call Attributes
+
+Captured from intercepted `fetch` and `XMLHttpRequest` calls.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.client.api.method` | string | HTTP method | `"POST"` |
+| `agenttel.client.api.url` | string | Request URL (path only) | `"/api/payments"` |
+| `agenttel.client.api.status_code` | int | Response status code | `200` |
+| `agenttel.client.api.duration_ms` | double | Response time | `312.0` |
+
+### Anomaly Detection Configuration
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `rageClickThreshold` | `3` | Clicks on same element to trigger rage click |
+| `rageClickWindowMs` | `2000` | Time window for rage click detection |
+| `apiFailureCascadeThreshold` | `3` | API failures to trigger cascade |
+| `apiFailureCascadeWindowMs` | `10000` | Time window for cascade detection |
+| `slowPageLoadMultiplier` | `2.0` | Multiplier over baseline P50 to trigger slow load |
+| `errorLoopThreshold` | `5` | Errors on same route to trigger error loop |
+| `errorLoopWindowMs` | `30000` | Time window for error loop detection |
+
+---
+
+## 8. Structured Events
 
 AgentTel emits structured events via the OTel Logs API for significant state changes that agents should react to.
 
@@ -304,6 +432,6 @@ Emitted when a dependency's observed health transitions.
 
 ## Relationship to OpenTelemetry
 
-AgentTel is a **strict extension** of OpenTelemetry. All attributes use the `agenttel.*` namespace (or the emerging `gen_ai.*` conventions for GenAI). AgentTel-enriched spans remain fully compatible with any OTel backend — Jaeger, Zipkin, Grafana Tempo, Datadog, Splunk, New Relic, and others.
+AgentTel is a **strict extension** of OpenTelemetry. Backend attributes use the `agenttel.*` namespace, frontend attributes use `agenttel.client.*`, and GenAI attributes use the emerging `gen_ai.*` conventions. AgentTel-enriched spans remain fully compatible with any OTel backend — Jaeger, Zipkin, Grafana Tempo, Datadog, Splunk, New Relic, and others.
 
-The library implements standard OTel interfaces (`SpanProcessor`, `SpanExporter`, `Resource`) and composes cleanly with any other OTel instrumentation.
+The backend library implements standard OTel interfaces (`SpanProcessor`, `SpanExporter`, `Resource`) and composes cleanly with any other OTel instrumentation. The frontend SDK exports spans via OTLP HTTP to any OTel-compatible collector.
