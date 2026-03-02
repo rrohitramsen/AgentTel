@@ -5,6 +5,10 @@ import io.agenttel.agent.health.ServiceHealthAggregator;
 import io.agenttel.agent.incident.IncidentContext;
 import io.agenttel.agent.incident.IncidentContextBuilder;
 import io.agenttel.agent.remediation.RemediationRegistry;
+import io.agenttel.agent.reporting.CrossStackContextBuilder;
+import io.agenttel.agent.reporting.ExecutiveSummaryBuilder;
+import io.agenttel.agent.reporting.SloReportGenerator;
+import io.agenttel.agent.reporting.TrendAnalyzer;
 import io.agenttel.core.anomaly.IncidentPattern;
 import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.baseline.RollingWindow;
@@ -29,6 +33,12 @@ public class AgentContextProvider {
     private final RollingBaselineProvider rollingBaselines;
     private final AgentActionTracker actionTracker;
 
+    // Reporting components (nullable for backward compatibility)
+    private SloReportGenerator sloReportGenerator;
+    private TrendAnalyzer trendAnalyzer;
+    private ExecutiveSummaryBuilder executiveSummaryBuilder;
+    private CrossStackContextBuilder crossStackContextBuilder;
+
     public AgentContextProvider(ServiceHealthAggregator healthAggregator,
                                  IncidentContextBuilder incidentContextBuilder,
                                  RemediationRegistry remediationRegistry,
@@ -43,6 +53,19 @@ public class AgentContextProvider {
         this.patternMatcher = patternMatcher;
         this.rollingBaselines = rollingBaselines;
         this.actionTracker = actionTracker;
+    }
+
+    /**
+     * Configures reporting components. Called after construction by auto-configuration.
+     */
+    public void setReportingComponents(SloReportGenerator sloReportGenerator,
+                                        TrendAnalyzer trendAnalyzer,
+                                        ExecutiveSummaryBuilder executiveSummaryBuilder,
+                                        CrossStackContextBuilder crossStackContextBuilder) {
+        this.sloReportGenerator = sloReportGenerator;
+        this.trendAnalyzer = trendAnalyzer;
+        this.executiveSummaryBuilder = executiveSummaryBuilder;
+        this.crossStackContextBuilder = crossStackContextBuilder;
     }
 
     /**
@@ -140,5 +163,42 @@ public class AgentContextProvider {
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    // --- Reporting Methods ---
+
+    /**
+     * Returns an SLO compliance report across all tracked operations.
+     */
+    public String getSloReport(String format) {
+        if (sloReportGenerator == null) return "SLO reporting not configured.";
+        if ("json".equals(format)) {
+            return sloReportGenerator.generateReportJson();
+        }
+        return sloReportGenerator.generateReport();
+    }
+
+    /**
+     * Returns trend analysis for a specific operation over a time window.
+     */
+    public String getTrendAnalysis(String operationName, int windowMinutes) {
+        if (trendAnalyzer == null) return "Trend analysis not configured.";
+        return trendAnalyzer.analyzeTrend(operationName, windowMinutes);
+    }
+
+    /**
+     * Returns a high-level executive summary optimized for LLM context.
+     */
+    public String getExecutiveSummary() {
+        if (executiveSummaryBuilder == null) return "Executive summary not configured.";
+        return executiveSummaryBuilder.buildSummary();
+    }
+
+    /**
+     * Returns correlated cross-stack context for an operation.
+     */
+    public String getCrossStackContext(String operationName) {
+        if (crossStackContextBuilder == null) return "Cross-stack context not configured.";
+        return crossStackContextBuilder.buildContext(operationName);
     }
 }

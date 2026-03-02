@@ -1,0 +1,18 @@
+service: payment-service
+team: payments-platform
+tier: critical
+domain: commerce
+operations:
+- name: POST /api/payments
+  profile: critical-write
+  baseline:
+    p50: 10
+    p99: 50
+  expected_error_rate: 0.001
+  runbook_url: https://wiki.example.com/runbooks/payment-processing
+- name: GET /api/payments/{id}
+  profile: read-only
+  baseline:
+    p50: 12.0
+    p99: 25
+  runbook_url: https://wiki.example.com/runbooks/payment-l

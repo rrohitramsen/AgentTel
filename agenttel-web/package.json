@@ -1,0 +1,46 @@
+{
+  "name": "@agenttel/web",
+  "version": "0.1.0-alpha",
+  "description": "Agent-ready telemetry for browser applications — baselines, anomaly detection, user journeys, and cross-stack correlation",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "rollup -c rollup.config.mjs",
+    "dev": "rollup -c rollup.config.mjs --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist/"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "rollup": "^4.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "tslib": "^2.6.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0"
+  },
+  "keywords": [
+    "telemetry",
+    "observability",
+    "opentelemetry",
+    "agent",
+    "ai",
+    "browser",
+    "frontend"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rrohitramsen/AgentTel"
+  }
+}

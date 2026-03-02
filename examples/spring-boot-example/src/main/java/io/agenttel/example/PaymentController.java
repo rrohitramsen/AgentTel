@@ -33,6 +33,14 @@ public class PaymentController {
     public ResponseEntity<PaymentResult> processPayment(@RequestBody PaymentRequest request) {
         // Simulate processing latency
         simulateLatency(30, 80);
+
+        // Invalid amount triggers a server error (used by error injection in traffic generator).
+        // Throwing produces HTTP 500 which OTel marks as StatusCode.ERROR, feeding the
+        // health aggregator so the Command Center and Monitor Agent detect the degradation.
+        if (request.amount() <= 0) {
+            throw new RuntimeException("Payment processing failed: invalid amount " + request.amount());
+        }
+
         String txnId = "txn-" + UUID.randomUUID().toString().substring(0, 8);
         return ResponseEntity.ok(new PaymentResult(txnId, "SUCCESS", request.amount()));
     }

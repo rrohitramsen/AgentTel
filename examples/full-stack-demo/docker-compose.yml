@@ -1,0 +1,91 @@
+services:
+  # ---------- Backend ----------
+  payment-service:
+    build:
+      context: ../..
+      dockerfile: examples/spring-boot-example/docker/Dockerfile
+    ports:
+      - "8080:8080"   # REST API
+      - "8081:8081"   # MCP server
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: payment-service
+    depends_on:
+      - otel-collector
+
+  # ---------- Frontend ----------
+  checkout-web:
+    build:
+      context: ../..
+      dockerfile: agenttel-web/examples/react-checkout/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - payment-service
+      - otel-collector
+
+  # ---------- Observability ----------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    command: ["--config", "/etc/otel/config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel/config.yml:ro
+    ports:
+      - "4317:4317"   # gRPC (backend SDK)
+      - "4318:4318"   # HTTP  (browser SDK)
+      - "13133:13133" # Health check
+
+  # ---------- Instrumentation Agent ----------
+  agenttel-instrument:
+    build:
+      context: ../..
+      dockerfile: agenttel-instrument/Dockerfile
+    ports:
+      - "8082:8082"   # Instrumentation MCP server
+    environment:
+      MCP_HOST: payment-service
+      MCP_PORT: "8081"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    volumes:
+      - ./agenttel.yml:/app/agenttel.yml
+    depends_on:
+      - payment-service
+      - otel-collector
+
+  # ---------- Dashboard ----------
+  agenttel-dashboard:
+    build:
+      context: ../../agenttel-dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"   # Dashboard UI
+    depends_on:
+      - payment-service
+      - agenttel-instrument
+
+  # ---------- Agent Manager (start/stop monitor, generate frontend telemetry) ----------
+  agenttel-manager:
+    build:
+      context: ../..
+      dockerfile: agenttel-manager/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      MCP_HOST: payment-service
+      MCP_PORT: "8081"
+      INSTRUMENT_HOST: agenttel-instrument
+      INSTRUMENT_PORT: "8082"
+      OTEL_COLLECTOR_URL: http://otel-collector:4318
+      PAYMENT_SERVICE_URL: http://payment-service:8080
+    depends_on:
+      - payment-service
+      - otel-collector
+
+  # ---------- Trace Backend ----------
+  jaeger:
+    image: jaegertracing/jaeger:2.4.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4417:4317"   # Jaeger OTLP gRPC (mapped to 4417 to avoid conflict)

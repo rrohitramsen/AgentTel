@@ -58,6 +58,8 @@ nav:
   - Project:
     - Roadmap: project/roadmap.md
     - Full-Stack Vision: project/full-stack-vision.md
+    - Autonomous Loop: project/autonomous-loop.md
+    - User Journeys: project/user-journeys.md
     - Contributing: project/contributing.md
     - Security: project/security.md
 

@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BOLD="\033[1m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+DIM="\033[2m"
+RESET="\033[0m"
+
+echo -e "${BOLD}${CYAN}"
+echo "  ╔══════════════════════════════════════════════╗"
+echo "  ║        AgentTel Command Center               ║"
+echo "  ║        Agent-Ready Telemetry Demo             ║"
+echo "  ╚══════════════════════════════════════════════╝"
+echo -e "${RESET}"
+
+echo -e "${BOLD}Starting services...${RESET}"
+echo ""
+docker compose up --build -d
+
+echo ""
+echo -e "${GREEN}${BOLD}All services started!${RESET}"
+echo ""
+echo -e "  ${BOLD}${GREEN}▸ Open http://localhost:3001${RESET}  — AgentTel Command Center"
+echo ""
+echo -e "  ${DIM}Everything is accessible from the Command Center:${RESET}"
+echo -e "  ${DIM}  • Fleet health, SLO compliance, trends${RESET}"
+echo -e "  ${DIM}  • Traffic generator (click to send requests)${RESET}"
+echo -e "  ${DIM}  • Jaeger traces (linked from sidebar)${RESET}"
+echo -e "  ${DIM}  • Coverage gaps and improvement suggestions${RESET}"
+echo -e "  ${DIM}  • Monitor agent decisions and reasoning${RESET}"
+echo -e "  ${DIM}  • Agent Management: start/stop monitor, configure API key${RESET}"
+echo -e "  ${DIM}  • Frontend telemetry: generate browser spans for demos${RESET}"
+echo ""
+echo -e "  ${BOLD}Other services:${RESET}"
+echo -e "  ${DIM}Checkout App:     http://localhost:3000  (standalone React demo)${RESET}"
+echo -e "  ${DIM}Jaeger UI:        http://localhost:16686 (direct access)${RESET}"
+echo -e "  ${DIM}Payment API:      http://localhost:8080/api/payments${RESET}"
+echo -e "  ${DIM}Backend MCP:      http://localhost:8081  (9 telemetry tools)${RESET}"
+echo -e "  ${DIM}Instrument MCP:   http://localhost:8082  (5 instrumentation tools)${RESET}"
+echo -e "  ${DIM}Agent Manager:    http://localhost:8083  (agent lifecycle control)${RESET}"
+echo ""
+echo -e "${BOLD}To stop:${RESET} docker compose down"

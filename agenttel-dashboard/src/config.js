@@ -1,0 +1,21 @@
+export const config = {
+    mcpBaseUrl: '/mcp',
+    instrumentBaseUrl: '/instrument',
+    apiBaseUrl: '/api',
+    adminBaseUrl: '/admin',
+    jaegerApiUrl: '/jaeger/api',
+    jaegerExternalUrl: 'http://localhost:16686',
+    pollIntervals: {
+        fleetOverview: 10000,
+        sloCompliance: 30000,
+        executiveSummary: 60000,
+        trendAnalysis: 30000,
+        monitorDecisions: 15000,
+        incidentContext: 10000,
+        crossStackView: 30000,
+        coverageGaps: 60000,
+        suggestions: 60000,
+        commandCenter: 10000,
+        agentStatus: 5000,
+    },
+};

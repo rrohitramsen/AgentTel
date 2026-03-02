@@ -11,15 +11,16 @@ This document extends that vision to the **full stack** — from the user's brow
 ```
          Today's Observability                    Agent-Ready (AgentTel Vision)
 ┌──────────────────────────────────┐    ┌──────────────────────────────────┐
-│  Frontend: Datadog RUM / Sentry  │    │  Frontend: agenttel-web          │
+│  Frontend: RUM tools             │    │  Frontend: agenttel-web          │
 │  → page loads, JS errors, clicks │    │  → baselines, user journeys,     │
 │  → designed for human dashboards │    │    business context, decisions    │
 │  → no agent context              │    │  → designed for AI agents        │
 ├──────────────────────────────────┤    ├──────────────────────────────────┤
-│  Backend: OTel + AgentTel SDK    │    │  Backend: AgentTel SDK           │
-│  → enriched spans ✅             │    │  → enriched spans ✅             │
+│  Backend: OpenTelemetry          │    │  Backend: OTel + AgentTel SDK    │
+│  → raw spans, no baselines       │    │  → enriched spans with baselines │
+│  → no decision metadata          │    │    topology, decisions, anomalies│
 ├──────────────────────────────────┤    ├──────────────────────────────────┤
-│  Monitoring: PagerDuty / Grafana │    │  AgentTel Monitor                │
+│  Monitoring: Alerting tools      │    │  AgentTel Monitor                │
 │  → threshold-based alerts        │    │  → AI agent consuming full-stack │
 │  → human-in-the-loop             │    │    telemetry, reasoning, acting  │
 ├──────────────────────────────────┤    ├──────────────────────────────────┤
@@ -554,16 +555,31 @@ Expose the implementation helper as an MCP server that IDE agents (Cursor, Claud
 
 ---
 
-## Implementation Priority
+## Phase 5: The Autonomous Loop
 
-| Phase | What | Depends On | Estimated Effort |
-|-------|------|-----------|-----------------|
-| **Phase 1** | Full-stack conventions | Nothing | Design only — this document |
-| **Phase 2** | `agenttel-web` SDK | Phase 1 conventions | Large (new language, browser APIs) |
-| **Phase 3** | AgentTel Monitor | Phase 2 for full-stack, but can start with backend-only | Medium |
-| **Phase 4** | AgentTel Agent | Nothing (standalone tool) | Medium |
+Phases 1-4 provide individual capabilities. Phase 5 connects them into a **self-feeding system** where instrumentation, detection, reporting, remediation, and improvement happen continuously without human intervention.
 
-Phases 3 and 4 can start in parallel with Phase 2 since they work with backend telemetry today.
+The key innovation is the **feedback loop from reporting back to instrumentation**. The Dashboard does not just display data — it identifies what is missing and triggers the Instrumentation Agent to fill gaps automatically.
+
+See [The Autonomous Loop](autonomous-loop.md) for the full architecture and [User Journeys](user-journeys.md) for persona-driven walkthroughs.
+
+```
+INSTRUMENT ──▶ COLLECT ──▶ DETECT ──▶ REPORT ──▶ FIX ──▶ IMPROVE ──┐
+    ▲                                                                │
+    └────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Implementation Status
+
+| Phase | What | Status | What Was Built |
+|-------|------|--------|---------------|
+| **Phase 1** | Full-stack conventions | COMPLETE | `agenttel.client.*` attributes defined and implemented |
+| **Phase 2** | `agenttel-web` SDK | COMPLETE | TypeScript SDK, 6.3KB gzipped, 5 trackers, 4 enrichment modules |
+| **Phase 3** | AgentTel Monitor | COMPLETE | Python AI agent, Watch-Reason-Act loop, Claude-powered diagnosis |
+| **Phase 4** | AgentTel CLI | COMPLETE | Python CLI, codebase scanner, config generator, validator |
+| **Phase 5** | Autonomous Loop | DESIGNED | Architecture documented, Dashboard + Instrumentation Agent planned |
 
 ---
 
@@ -574,21 +590,33 @@ agenttel/
 ├── agenttel-api                    # Java — annotations, constants, models
 ├── agenttel-core                   # Java — span enrichment, baselines, anomaly detection
 ├── agenttel-genai                  # Java — GenAI instrumentation
-├── agenttel-agent                  # Java — MCP server, health, incidents, remediation
-├── agenttel-javaagent-extension    # Java — zero-code OTel extension
+├── agenttel-agent                  # Java — MCP server (9 tools), health, incidents, reporting
 ├── agenttel-spring-boot-starter    # Java — Spring Boot auto-config
 ├── agenttel-testing                # Java — test utilities
-├── agenttel-web/                   # TypeScript — browser SDK (Phase 2)
-│   ├── packages/
-│   │   ├── core/                   #   auto-instrumentation, enrichment
-│   │   ├── react/                  #   React integration
-│   │   ├── vue/                    #   Vue integration
-│   │   └── angular/                #   Angular integration
+├── agenttel-web/                   # TypeScript — browser SDK (6.3KB gzipped)
+│   ├── src/
+│   │   ├── core/                   #   span factory, attribute keys, resource
+│   │   ├── trackers/               #   page, navigation, api, interaction, error
+│   │   ├── enrichment/             #   anomaly detector, journey tracker, correlation
+│   │   ├── transport/              #   OTLP exporter, batch processor
+│   │   └── config/                 #   types, defaults
 │   └── examples/
-│       └── react-checkout/         #   example React app
-├── agenttel-mobile/                # Future — React Native / Swift / Kotlin
-├── agenttel-monitor/               # Python or Java — AI monitoring agent (Phase 3)
-└── agenttel-cli/                   # Go or Java — implementation helper CLI (Phase 4)
+│       └── react-checkout/         #   5-page checkout app demo
+├── agenttel-monitor/               # Python — AI monitoring agent
+│   └── src/agenttel_monitor/
+│       ├── loop/                   #   watcher, investigator, reasoner, actor, verifier, learner
+│       ├── mcp/                    #   MCP JSON-RPC client
+│       └── llm/                    #   Claude-powered reasoning
+├── agenttel-cli/                   # Python — codebase scanner + config generator
+│   └── src/agenttel_cli/
+│       ├── analyze/                #   scanner, endpoint detector, dependency detector
+│       ├── validate/               #   config validator, gap detector
+│       └── baseline/               #   MCP baseline client
+├── agenttel-instrument/            # PLANNED — MCP server for AI-driven instrumentation
+├── agenttel-dashboard/             # PLANNED — React dashboard with feedback loop
+└── examples/
+    ├── spring-boot-example/        #   Payment service demo
+    └── full-stack-demo/            #   Docker Compose: 4-service full-stack demo
 ```
 
 ---

@@ -18,6 +18,10 @@ import java.util.Map;
  *   <li>{@code list_remediation_actions} — Available fixes</li>
  *   <li>{@code execute_remediation} — Execute an approved fix</li>
  *   <li>{@code get_recent_agent_actions} — Agent action audit trail</li>
+ *   <li>{@code get_slo_report} — SLO compliance report</li>
+ *   <li>{@code get_trend_analysis} — Operation trend analysis</li>
+ *   <li>{@code get_executive_summary} — High-level executive summary</li>
+ *   <li>{@code get_cross_stack_context} — Correlated frontend + backend context</li>
  * </ul>
  */
 public class AgentTelMcpServerBuilder {
@@ -150,6 +154,81 @@ public class AgentTelMcpServerBuilder {
                         List.of()
                 ),
                 args -> contextProvider.getRecentActions()
+        );
+
+        // --- Reporting Tools ---
+
+        // Tool: get_slo_report
+        server.registerTool(
+                new McpToolDefinition(
+                        "get_slo_report",
+                        "Get SLO status report across all tracked operations including budget remaining, burn rate, and compliance",
+                        Map.of("format", new McpToolDefinition.ParameterDefinition("string",
+                                "Output format: 'text' (default) or 'json'")),
+                        List.of()
+                ),
+                args -> {
+                    String format = args.getOrDefault("format", "text");
+                    return contextProvider.getSloReport(format);
+                }
+        );
+
+        // Tool: get_trend_analysis
+        Map<String, McpToolDefinition.ParameterDefinition> trendParams = new LinkedHashMap<>();
+        trendParams.put("operation_name", new McpToolDefinition.ParameterDefinition("string",
+                "Operation name to analyze trends for"));
+        trendParams.put("window_minutes", new McpToolDefinition.ParameterDefinition("string",
+                "Time window in minutes (default: 30)"));
+
+        server.registerTool(
+                new McpToolDefinition(
+                        "get_trend_analysis",
+                        "Get trend analysis for an operation over a time window — latency, error rate, and throughput trends with direction indicators",
+                        trendParams,
+                        List.of("operation_name")
+                ),
+                args -> {
+                    String opName = args.get("operation_name");
+                    if (opName == null || opName.isEmpty()) {
+                        return "Error: operation_name is required";
+                    }
+                    int windowMinutes;
+                    try {
+                        windowMinutes = Integer.parseInt(args.getOrDefault("window_minutes", "30"));
+                    } catch (NumberFormatException e) {
+                        windowMinutes = 30;
+                    }
+                    return contextProvider.getTrendAnalysis(opName, windowMinutes);
+                }
+        );
+
+        // Tool: get_executive_summary
+        server.registerTool(
+                new McpToolDefinition(
+                        "get_executive_summary",
+                        "Get a high-level executive summary of service health, top issues, and SLO status — optimized for LLM context windows (~300 tokens)",
+                        Map.of(),
+                        List.of()
+                ),
+                args -> contextProvider.getExecutiveSummary()
+        );
+
+        // Tool: get_cross_stack_context
+        server.registerTool(
+                new McpToolDefinition(
+                        "get_cross_stack_context",
+                        "Get correlated frontend and backend context for an operation — traces the full user-to-database path when agenttel-web is connected",
+                        Map.of("operation_name", new McpToolDefinition.ParameterDefinition("string",
+                                "Backend operation name to get cross-stack context for")),
+                        List.of("operation_name")
+                ),
+                args -> {
+                    String opName = args.get("operation_name");
+                    if (opName == null || opName.isEmpty()) {
+                        return "Error: operation_name is required";
+                    }
+                    return contextProvider.getCrossStackContext(opName);
+                }
         );
     }
 }

@@ -71,6 +71,64 @@
   text-align: center;
 }
 
+/* Vision pillars grid */
+.md-typeset .vision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.2rem;
+  margin: 2rem 0;
+}
+
+.md-typeset .vision-card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 8px;
+  padding: 1.2rem;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.md-typeset .vision-card:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.md-typeset .vision-card .vision-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.md-typeset .vision-card h4 {
+  margin: 0.5rem 0 0.3rem;
+  font-size: 0.95rem;
+}
+
+.md-typeset .vision-card p {
+  font-size: 0.82rem;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+.md-typeset .vision-card .vision-status {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  margin-top: 0.6rem;
+  font-weight: 600;
+}
+
+.md-typeset .vision-card .vision-status.available {
+  background: #065f46;
+  color: #d1fae5;
+}
+
+.md-typeset .vision-card .vision-status.planned {
+  background: #4338ca;
+  color: #e0e7ff;
+}
+
 /* Mermaid diagram sizing */
 .md-typeset .mermaid {
   text-align: center;

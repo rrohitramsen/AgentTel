@@ -1,0 +1,46 @@
+# AgentTel Monitor Configuration
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-5-20250929
+  # api_key: set via ANTHROPIC_API_KEY environment variable
+  max_tokens: 4096
+  temperature: 0.2
+
+mcp:
+  host: localhost
+  port: 8081
+  protocol: http
+  timeout_seconds: 30.0
+
+watch:
+  interval_seconds: 10.0
+  degradation_threshold: 0.8
+  consecutive_failures_before_alert: 2
+
+actions:
+  auto_approve:
+    - circuit_breaker
+    - cache_flush
+  require_approval:
+    - rollback
+    - restart
+  dry_run: false
+
+notifications:
+  webhook_url: null
+  timeout_seconds: 10.0
+
+learning:
+  history_file: ./incident-history.json
+  max_entries: 1000
+
+improve:
+  enabled: true
+  instrument_url: http://agenttel-instrument:8082
+  config_path: ./agenttel.yml
+
+tracing:
+  enabled: true
+  otlp_endpoint: http://localhost:4318
+  service_name: agenttel.monitor
