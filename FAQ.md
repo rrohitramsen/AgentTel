@@ -23,3 +23,18 @@ Predefined sets of operational defaults (retry policy, escalation level, etc.) t
 
 **How does YAML config interact with annotations?**
 YAML config takes priority. When both YAML config and `@AgentOperation` annotations define the same operation, the YAML values are used. Annotations fill in gaps for operations not defined in config.
+
+**Does AgentTel support frontend/browser applications?**
+Yes. The `@agenttel/web` npm package provides a TypeScript browser SDK that auto-instruments page loads, SPA navigation, API calls, clicks, and errors. It supports per-route baselines, journey tracking, client-side anomaly detection (rage clicks, error loops, API cascades), and W3C Trace Context for cross-stack correlation with your backend.
+
+**How does cross-stack correlation work?**
+The browser SDK injects a W3C `traceparent` header on all outgoing `fetch` and `XMLHttpRequest` calls. The backend picks up this trace context automatically (standard OTel behavior). The SDK also extracts backend trace IDs from response headers. This allows the `get_cross_stack_context` MCP tool to link a user's browser interaction all the way through to backend operations.
+
+**What is the instrument agent?**
+`agenttel-instrument` is a Python MCP server you run alongside your IDE (Cursor, Claude Code, VS Code). It exposes 7 tools that let your AI assistant analyze your codebase, generate AgentTel config, validate instrumentation, and auto-apply low-risk improvements — for both backend and frontend.
+
+**What languages does AgentTel support?**
+Backend: Java, Kotlin, Scala, and any JVM language (via the Spring Boot starter or javaagent extension). Frontend: TypeScript/JavaScript in the browser (via the `@agenttel/web` SDK). Tooling: The instrument agent is written in Python but works with any codebase.
+
+**How many MCP tools are available?**
+The backend MCP server provides 9 tools: `get_service_health`, `get_incident_context`, `list_remediation_actions`, `execute_remediation`, `get_recent_agent_actions`, `get_slo_report`, `get_executive_summary`, `get_trend_analysis`, and `get_cross_stack_context`. The instrument agent provides 7 additional tools for instrumentation automation.
