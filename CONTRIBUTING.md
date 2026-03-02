@@ -6,10 +6,14 @@ Thank you for your interest in contributing to AgentTel. This guide will help yo
 
 ### Prerequisites
 
-- JDK 17 or later
+- JDK 17 or later (backend modules)
+- Node.js 20+ and npm (frontend SDK — `agenttel-web`)
+- Python 3.11+ (instrument agent — `agenttel-instrument`)
 - Git
 
 ### Building
+
+**Backend (JVM):**
 
 ```bash
 git clone https://github.com/rrohitramsen/AgentTel.git
@@ -17,15 +21,38 @@ cd AgentTel
 ./gradlew clean build
 ```
 
+**Frontend SDK:**
+
+```bash
+cd agenttel-web
+npm install
+npm run build
+npm test
+```
+
+**Instrument Agent:**
+
+```bash
+cd agenttel-instrument
+pip install -e .
+```
+
 ### Running Tests
 
 ```bash
-# All tests
+# All JVM tests
 ./gradlew test
 
 # Specific module
 ./gradlew :agenttel-core:test
 ./gradlew :agenttel-agent:test
+
+# Frontend SDK tests
+cd agenttel-web && npm test
+
+# Docker demo (integration)
+cd examples/spring-boot-example
+docker compose -f docker/docker-compose.yml up --build
 ```
 
 ### Project Structure
@@ -34,8 +61,11 @@ cd AgentTel
 agenttel-api/                 # Annotations, attributes, enums (zero dependencies)
 agenttel-core/                # Runtime engine (span enrichment, baselines, anomaly detection)
 agenttel-genai/               # GenAI instrumentation (LangChain4j, Spring AI, provider SDKs)
-agenttel-agent/               # Agent interface layer (MCP server, health, incidents)
+agenttel-agent/               # Agent interface layer (MCP server, health, incidents, reporting)
 agenttel-spring-boot-starter/ # Spring Boot auto-configuration
+agenttel-javaagent-extension/ # Zero-code OTel javaagent extension
+agenttel-web/                 # Browser telemetry SDK (TypeScript)
+agenttel-instrument/          # IDE MCP server for instrumentation automation (Python)
 agenttel-testing/             # Test utilities
 examples/                     # Example applications
 ```
@@ -76,11 +106,23 @@ Open a [GitHub issue](https://github.com/rrohitramsen/AgentTel/issues/new?templa
 
 ## Code Style
 
+**Java (backend modules):**
+
 - Java 17+ features are welcome (records, sealed classes, pattern matching)
 - Use the existing formatting conventions in the codebase
 - Prefer clarity over cleverness
 - No wildcard imports except `java.util.*`
 - All public classes should have Javadoc
+
+**TypeScript (agenttel-web):**
+
+- Strict mode, no `any` types
+- Follow existing naming conventions (camelCase for variables, PascalCase for types)
+
+**Python (agenttel-instrument):**
+
+- Type hints on all public functions
+- Async-first (use `async`/`await` for I/O)
 
 ## Module Guidelines
 
@@ -106,13 +148,34 @@ Open a [GitHub issue](https://github.com/rrohitramsen/AgentTel/issues/new?templa
 - Depends on `agenttel-core`.
 - MCP tools should return prompt-optimized text, not raw JSON dumps.
 - All agent actions must be tracked for auditability.
+- Reporting components (TrendAnalyzer, SloReportGenerator, etc.) should produce concise output optimized for LLM context windows.
+
+### agenttel-javaagent-extension
+
+- Must not depend on Spring.
+- Uses OTel SPI (`AutoConfigurationCustomizerProvider`) for zero-code integration.
+- Reads config from `agenttel.yml`, system properties, or environment variables.
+
+### agenttel-web
+
+- TypeScript with strict mode. Target ES2020.
+- Auto-instrumentation trackers must not capture PII — use `data-agenttel-target` for element identification.
+- Dual build output: CommonJS + ES Modules via Rollup.
+- Tests use Jest with jsdom environment.
+- Attribute keys should mirror backend `AgentTelAttributes` under the `agenttel.client.*` namespace.
+
+### agenttel-instrument
+
+- Python 3.11+ with async (aiohttp).
+- Tools should propose changes, not apply them directly (except `apply_improvements` for low-risk items).
+- Risk-based classification: low (auto-applicable), medium (suggest), high (human-only).
+- Must connect to backend MCP server for live health data when calibrating baselines.
 
 ## Testing
 
-- Unit tests use JUnit 5 + AssertJ + Mockito
-- Integration tests use `InMemorySpanExporter` from OTel SDK Testing
-- MCP server tests use JDK's `HttpClient`
-- Tests should be fast (< 1 second each)
+- **JVM modules:** JUnit 5 + AssertJ + Mockito. Integration tests use `InMemorySpanExporter` from OTel SDK Testing. MCP server tests use JDK's `HttpClient`.
+- **Frontend SDK:** Jest + jsdom + ts-jest.
+- Tests should be fast (< 1 second each).
 
 ## Questions?
 
