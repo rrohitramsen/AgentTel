@@ -97,6 +97,22 @@ Enabling agents to move from observe-suggest to observe-diagnose-act-verify.
 - [x] Spring Boot auto-config and JavaAgent extension updated with all new beans
 - [x] 108 new tests (232 total)
 
+#### Phase 6: Multi-Agent Support
+
+Enabling multi-agent orchestration patterns (coordinator, parallel, swarm, hierarchical).
+
+- [x] `agenttel-api` — `AgentRole` enum and agent identity/session attribute constants
+- [x] `agenttel-agent` — `AgentIdentity` record with HTTP header and argument extraction
+- [x] `agenttel-agent` — `ToolPermissionRegistry` with 4 default role profiles (observer, diagnostician, remediator, admin)
+- [x] `agenttel-agent` — `ToolPermission` enum for role-based MCP tool access control
+- [x] `agenttel-agent` — `SessionManager` with LRU eviction for shared incident sessions
+- [x] `agenttel-agent` — `IncidentSession` implementing blackboard pattern for multi-agent collaboration
+- [x] `agenttel-agent` — `McpServer` updated with identity extraction and permission enforcement
+- [x] `agenttel-agent` — `AgentActionTracker` and `RemediationExecutor` enhanced with agent identity tracking
+- [x] `agenttel-agent` — 3 new MCP tools: `create_session`, `add_session_entry`, `get_session` (15 total)
+- [x] Spring Boot auto-config with YAML-configurable role permissions
+- [x] 42 new tests (274 total)
+
 ---
 
 ## Planned: v0.2.0-alpha
@@ -106,7 +122,7 @@ Enabling agents to move from observe-suggest to observe-diagnose-act-verify.
 - [ ] MCP Server authentication (API key, mTLS)
 - [ ] Server-Sent Events (SSE) transport for real-time streaming
 - [ ] WebSocket transport option
-- [ ] Configurable tool permissions per agent identity
+- [x] ~~Configurable tool permissions per agent identity~~ — implemented in Phase 6
 - [ ] Rate limiting on MCP tool invocations
 - [ ] Remediation action execution hooks (webhook, Kubernetes API, AWS API)
 

@@ -1,6 +1,7 @@
 package io.agenttel.agent.remediation;
 
 import io.agenttel.agent.action.AgentActionTracker;
+import io.agenttel.agent.identity.AgentIdentity;
 
 import java.time.Instant;
 import java.util.*;
@@ -33,33 +34,51 @@ public class RemediationExecutor {
      * Returns the result of the execution.
      */
     public RemediationResult execute(String actionName, String reason) {
+        return execute(actionName, reason, null);
+    }
+
+    /**
+     * Executes a remediation action with agent identity tracking.
+     */
+    public RemediationResult execute(String actionName, String reason, AgentIdentity agent) {
         Optional<RemediationAction> action = registry.findAction(actionName);
         if (action.isEmpty()) {
             return new RemediationResult(actionName, false, "Action not found: " + actionName,
-                    Instant.now().toString(), 0, false);
+                    Instant.now().toString(), 0, false,
+                    agent != null ? agent.agentId() : null);
         }
 
         RemediationAction ra = action.get();
         if (ra.requiresApproval()) {
             return new RemediationResult(actionName, false,
                     "Action requires approval. Call executeApproved() after approval.",
-                    Instant.now().toString(), 0, false);
+                    Instant.now().toString(), 0, false,
+                    agent != null ? agent.agentId() : null);
         }
 
-        return doExecute(ra, reason);
+        return doExecute(ra, reason, agent);
     }
 
     /**
      * Executes an action that has been approved.
      */
     public RemediationResult executeApproved(String actionName, String reason, String approvedBy) {
+        return executeApproved(actionName, reason, approvedBy, null);
+    }
+
+    /**
+     * Executes an approved action with agent identity tracking.
+     */
+    public RemediationResult executeApproved(String actionName, String reason, String approvedBy,
+                                              AgentIdentity agent) {
         Optional<RemediationAction> action = registry.findAction(actionName);
         if (action.isEmpty()) {
             return new RemediationResult(actionName, false, "Action not found: " + actionName,
-                    Instant.now().toString(), 0, false);
+                    Instant.now().toString(), 0, false,
+                    agent != null ? agent.agentId() : null);
         }
 
-        return doExecute(action.get(), reason + " (approved by: " + approvedBy + ")");
+        return doExecute(action.get(), reason + " (approved by: " + approvedBy + ")", agent);
     }
 
     /**
@@ -79,9 +98,13 @@ public class RemediationExecutor {
     }
 
     private RemediationResult doExecute(RemediationAction action, String reason) {
+        return doExecute(action, reason, null);
+    }
+
+    private RemediationResult doExecute(RemediationAction action, String reason, AgentIdentity agent) {
         long startMs = System.currentTimeMillis();
 
-        // Track the action via agent action tracker
+        // Track the action via agent action tracker with identity
         actionTracker.recordAction(
                 "remediation:" + action.name(),
                 action.description(),
@@ -89,7 +112,8 @@ public class RemediationExecutor {
                         "action_type", action.type().name(),
                         "operation", action.operationName(),
                         "reason", reason
-                )
+                ),
+                agent
         );
 
         // In a real implementation, this would dispatch to actual infrastructure.
@@ -106,7 +130,8 @@ public class RemediationExecutor {
         RemediationResult result = new RemediationResult(
                 action.name(), true,
                 "Action dispatched: " + action.description(),
-                Instant.now().toString(), durationMs, verificationScheduled);
+                Instant.now().toString(), durationMs, verificationScheduled,
+                agent != null ? agent.agentId() : null);
 
         executionHistory.add(result);
         while (executionHistory.size() > 100) {
@@ -129,6 +154,7 @@ public class RemediationExecutor {
             String message,
             String timestamp,
             long durationMs,
-            boolean verificationScheduled
+            boolean verificationScheduled,
+            String agentId
     ) {}
 }

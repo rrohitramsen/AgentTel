@@ -159,6 +159,20 @@ public final class AgentTelAttributes {
     public static final AttributeKey<Double> CORRELATION_CONFIDENCE =
             AttributeKey.doubleKey("agenttel.correlation.confidence");
 
+    // --- Agent Identity ---
+    public static final AttributeKey<String> AGENT_ID =
+            AttributeKey.stringKey("agenttel.agent.id");
+    public static final AttributeKey<String> AGENT_ROLE =
+            AttributeKey.stringKey("agenttel.agent.role");
+    public static final AttributeKey<String> AGENT_SESSION_ID =
+            AttributeKey.stringKey("agenttel.agent.session_id");
+
+    // --- Session ---
+    public static final AttributeKey<String> SESSION_ID =
+            AttributeKey.stringKey("agenttel.session.id");
+    public static final AttributeKey<String> SESSION_INCIDENT_ID =
+            AttributeKey.stringKey("agenttel.session.incident_id");
+
     // --- Circuit Breaker ---
     public static final AttributeKey<String> CIRCUIT_BREAKER_NAME =
             AttributeKey.stringKey("agenttel.circuit_breaker.name");

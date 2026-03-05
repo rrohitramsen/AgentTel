@@ -1,5 +1,6 @@
 package io.agenttel.agent.action;
 
+import io.agenttel.agent.identity.AgentIdentity;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -12,6 +13,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Tracks AI agent actions as OpenTelemetry spans and events.
@@ -25,6 +27,9 @@ public class AgentActionTracker {
     private static final AttributeKey<String> AGENT_ACTION_STATUS = AttributeKey.stringKey("agenttel.agent.action.status");
     private static final AttributeKey<String> AGENT_ACTION_TYPE = AttributeKey.stringKey("agenttel.agent.action.type");
     private static final AttributeKey<String> AGENT_DECISION_RATIONALE = AttributeKey.stringKey("agenttel.agent.decision.rationale");
+    private static final AttributeKey<String> AGENT_ID_KEY = AttributeKey.stringKey("agenttel.agent.id");
+    private static final AttributeKey<String> AGENT_ROLE_KEY = AttributeKey.stringKey("agenttel.agent.role");
+    private static final AttributeKey<String> AGENT_SESSION_KEY = AttributeKey.stringKey("agenttel.agent.session_id");
 
     private final Tracer tracer;
     private final Deque<ActionRecord> recentActions = new ConcurrentLinkedDeque<>();
@@ -38,12 +43,29 @@ public class AgentActionTracker {
      * Records a simple agent action (fire-and-forget).
      */
     public void recordAction(String actionName, String reason, Map<String, String> metadata) {
-        Span span = tracer.spanBuilder("agent.action:" + actionName)
+        recordAction(actionName, reason, metadata, null);
+    }
+
+    /**
+     * Records an agent action with identity tracking.
+     */
+    public void recordAction(String actionName, String reason, Map<String, String> metadata,
+                              AgentIdentity agent) {
+        var spanBuilder = tracer.spanBuilder("agent.action:" + actionName)
                 .setSpanKind(SpanKind.INTERNAL)
                 .setAttribute(AGENT_ACTION_NAME, actionName)
                 .setAttribute(AGENT_ACTION_REASON, reason)
-                .setAttribute(AGENT_ACTION_TYPE, "action")
-                .startSpan();
+                .setAttribute(AGENT_ACTION_TYPE, "action");
+
+        if (agent != null && !agent.isAnonymous()) {
+            spanBuilder.setAttribute(AGENT_ID_KEY, agent.agentId());
+            spanBuilder.setAttribute(AGENT_ROLE_KEY, agent.role());
+            if (agent.sessionId() != null) {
+                spanBuilder.setAttribute(AGENT_SESSION_KEY, agent.sessionId());
+            }
+        }
+
+        Span span = spanBuilder.startSpan();
 
         for (Map.Entry<String, String> entry : metadata.entrySet()) {
             span.setAttribute(AttributeKey.stringKey("agenttel.agent.metadata." + entry.getKey()), entry.getValue());
@@ -52,7 +74,9 @@ public class AgentActionTracker {
         span.setAttribute(AGENT_ACTION_STATUS, "completed");
         span.end();
 
-        addToHistory(actionName, "action", reason, "completed");
+        String agentId = agent != null ? agent.agentId() : null;
+        String role = agent != null ? agent.role() : null;
+        addToHistory(actionName, "action", reason, "completed", agentId, role);
     }
 
     /**
@@ -134,8 +158,23 @@ public class AgentActionTracker {
         return result;
     }
 
+    /**
+     * Returns recent actions filtered by agent ID.
+     */
+    public List<ActionRecord> getRecentActions(String agentId) {
+        return recentActions.stream()
+                .filter(r -> agentId.equals(r.agentId()))
+                .collect(Collectors.toList());
+    }
+
     private void addToHistory(String name, String type, String reason, String status) {
-        recentActions.addLast(new ActionRecord(name, type, reason, status, Instant.now().toString()));
+        addToHistory(name, type, reason, status, null, null);
+    }
+
+    private void addToHistory(String name, String type, String reason, String status,
+                               String agentId, String role) {
+        recentActions.addLast(new ActionRecord(name, type, reason, status,
+                Instant.now().toString(), agentId, role));
         while (recentActions.size() > MAX_HISTORY) {
             recentActions.pollFirst();
         }
@@ -146,6 +185,8 @@ public class AgentActionTracker {
             String type,
             String reason,
             String status,
-            String timestamp
+            String timestamp,
+            String agentId,
+            String role
     ) {}
 }

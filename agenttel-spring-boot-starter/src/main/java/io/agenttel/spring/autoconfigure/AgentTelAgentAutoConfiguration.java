@@ -4,6 +4,8 @@ import io.agenttel.agent.action.AgentActionTracker;
 import io.agenttel.agent.context.AgentContextProvider;
 import io.agenttel.agent.correlation.ChangeCorrelationEngine;
 import io.agenttel.agent.health.ServiceHealthAggregator;
+import io.agenttel.agent.identity.ToolPermission;
+import io.agenttel.agent.identity.ToolPermissionRegistry;
 import io.agenttel.agent.incident.IncidentContextBuilder;
 import io.agenttel.agent.mcp.AgentTelMcpServerBuilder;
 import io.agenttel.agent.mcp.McpServer;
@@ -15,6 +17,7 @@ import io.agenttel.agent.reporting.CrossStackContextBuilder;
 import io.agenttel.agent.reporting.ExecutiveSummaryBuilder;
 import io.agenttel.agent.reporting.SloReportGenerator;
 import io.agenttel.agent.reporting.TrendAnalyzer;
+import io.agenttel.agent.session.SessionManager;
 import io.agenttel.core.anomaly.PatternMatcher;
 import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.enrichment.AgentTelSpanProcessor;
@@ -29,6 +32,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * Auto-configuration for the AgentTel agent layer (MCP server, health aggregation,
  * incident context, remediation). Only activates when agenttel-agent is on the classpath.
@@ -38,6 +47,28 @@ import org.springframework.context.annotation.Bean;
 public class AgentTelAgentAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(AgentTelAgentAutoConfiguration.class);
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ToolPermissionRegistry agentTelToolPermissionRegistry(AgentTelProperties properties) {
+        ToolPermissionRegistry registry = new ToolPermissionRegistry();
+        Map<String, List<String>> roleConfig = properties.getAgentRoles();
+        if (roleConfig != null) {
+            for (Map.Entry<String, List<String>> entry : roleConfig.entrySet()) {
+                Set<ToolPermission> permissions = entry.getValue().stream()
+                        .map(ToolPermission::fromValue)
+                        .collect(Collectors.toCollection(() -> EnumSet.noneOf(ToolPermission.class)));
+                registry.setRolePermissions(entry.getKey(), permissions);
+            }
+        }
+        return registry;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SessionManager agentTelSessionManager() {
+        return new SessionManager();
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -169,15 +200,19 @@ public class AgentTelAgentAutoConfiguration {
     @Bean
     public ApplicationRunner agentTelMcpServerStarter(
             AgentContextProvider contextProvider,
-            RemediationExecutor remediationExecutor) {
+            RemediationExecutor remediationExecutor,
+            ToolPermissionRegistry permissionRegistry,
+            SessionManager sessionManager) {
         return args -> {
             McpServer server = new AgentTelMcpServerBuilder()
                     .port(8081)
                     .contextProvider(contextProvider)
                     .remediationExecutor(remediationExecutor)
+                    .permissionRegistry(permissionRegistry)
+                    .sessionManager(sessionManager)
                     .build();
             server.start();
-            log.info("AgentTel MCP server started on port 8081");
+            log.info("AgentTel MCP server started on port 8081 with multi-agent support");
         };
     }
 }

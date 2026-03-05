@@ -424,3 +424,21 @@ Parameterized remediation action specifications:
 | `CONFIG` | Configuration change | 0.8 |
 | `FEATURE_FLAG` | Feature flag toggle | 0.7 |
 | `SCALING` | Instance count change | 0.6 |
+
+### AgentRole
+
+| Value | Description | Default Permissions |
+|-------|-------------|-------------------|
+| `observer` | Read-only access to health, incidents, reports | READ |
+| `diagnostician` | Can diagnose issues and create sessions | READ, DIAGNOSE |
+| `remediator` | Can execute remediation actions | READ, DIAGNOSE, REMEDIATE |
+| `admin` | Full access to all tools | ALL |
+
+### ToolPermission
+
+| Value | Description | Example Tools |
+|-------|-------------|--------------|
+| `READ` | Read system state and reports | `get_service_health`, `get_session` |
+| `DIAGNOSE` | Create sessions and verify actions | `create_session`, `verify_remediation_effect` |
+| `REMEDIATE` | Execute remediation actions | `execute_remediation`, `list_remediation_actions` |
+| `ADMIN` | Administrative operations | Reserved for future tools |
