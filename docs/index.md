@@ -57,7 +57,7 @@ graph LR
 
     AT1 -->|"Topology + Baselines<br/>+ Decisions"| C
     AT2 -->|"Journeys + Anomalies<br/>+ Correlation"| C
-    E -->|"MCP Tools<br/>(9 tools)"| AT1
+    E -->|"MCP Tools<br/>(12 tools)"| AT1
     B2 -->|"W3C Trace Context"| B1
 
     style B1 fill:#4a1d96,stroke:#7c3aed,color:#fff
@@ -137,6 +137,14 @@ Real-time z-score anomaly detection on latency and error rates — backend and f
 ### Incident Context
 
 Structured incident packages: what's happening, what changed, what's affected, and what to do — with cross-stack context linking frontend and backend telemetry.
+
+</div>
+
+<div class="feature-card" markdown>
+
+### Agent-Autonomous Loop
+
+Error classification, causal analysis, structured playbooks, parameterized action specs, action feedback loops, and change correlation — everything agents need to observe, diagnose, act, and verify without human intervention.
 
 </div>
 
@@ -229,9 +237,13 @@ SUMMARY: POST /api/payments experiencing elevated error rate (5.2%)
 Error Rate: 5.2% (baseline: 0.1%)
 Latency P50: 312ms (baseline: 45ms)
 Patterns: ERROR_RATE_SPIKE
+Error Breakdown: dependency_timeout=62%, connection_error=31%, unknown=7%
+Baseline Confidence: high (1,250 samples)
 
 ## WHAT CHANGED
 Last Deploy: v2.1.0 at 2025-01-15T14:30:00Z
+CHANGE CORRELATION:
+  Likely cause: DEPLOYMENT (deploy-v2.1.0) — confidence: 0.85
 
 ## WHAT IS AFFECTED
 Scope: operation_specific
@@ -240,7 +252,15 @@ Affected Deps: stripe-api
 
 ## SUGGESTED ACTIONS
   - [HIGH] rollback_deployment: Rollback to previous version (NEEDS APPROVAL)
-  - [MEDIUM] enable_circuit_breakers: Circuit break stripe-api
+  - [MEDIUM] toggle_circuit_breaker: Circuit break stripe-api
+    Spec: failureThreshold=5, halfOpenAfterMs=30000, successThreshold=3
+
+## PLAYBOOK: error-rate-spike-response
+  [1] CHECK: Classify error types → step 2
+  [2] DECISION: Mostly dependency errors? → step 3 (yes) / step 4 (no)
+  [3] ACTION: Enable circuit breaker → step 5
+  [4] ACTION: Rollback deployment (NEEDS APPROVAL) → step 5
+  [5] CHECK: Verify error rate decreasing
 ```
 
 ---

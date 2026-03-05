@@ -22,13 +22,15 @@ Today's observability stack — traces, metrics, logs — is designed for human 
 
 ### The Solution
 
-AgentTel enriches telemetry at the instrumentation layer — the earliest and most reliable point in the data pipeline — with five categories of agent-ready context:
+AgentTel enriches telemetry at the instrumentation layer — the earliest and most reliable point in the data pipeline — with seven categories of agent-ready context:
 
 1. **Topology** — Service identity, ownership, dependency graph, consumer relationships
-2. **Baselines** — Static and rolling latency/error baselines per operation
+2. **Baselines** — Static and rolling latency/error baselines per operation, with confidence scoring
 3. **Decision Metadata** — Retryability, idempotency, fallbacks, runbooks, escalation levels
 4. **Anomaly Detection** — Z-score deviation detection with pattern recognition
 5. **SLO Tracking** — Error budget consumption with burn rate alerting
+6. **Error Classification** — Categorizing errors into actionable types (dependency timeout, code bug, rate limited) so agents know whether to retry, rollback, or escalate
+7. **Autonomous Capabilities** — Structured playbooks, parameterized action specs, action feedback loops, causal analysis, and change correlation for full observe → diagnose → act → verify loops
 
 It also provides an **agent interface layer** that packages this telemetry into structured formats AI agents can consume via the Model Context Protocol (MCP), complete with incident context building, remediation execution, and full action auditability.
 
@@ -125,3 +127,4 @@ AgentTel is in **alpha** (v0.1.0-alpha). The core instrumentation, GenAI support
 - [GenAI Instrumentation](05-GENAI-INSTRUMENTATION.md) — LLM framework instrumentation
 - [API Reference](06-API-REFERENCE.md) — Full API documentation
 - [Roadmap](07-ROADMAP.md) — Release plan and future work
+- [Agent-Autonomous Telemetry](09-AGENT-AUTONOMOUS-TELEMETRY.md) — Error classification, playbooks, change correlation, and the autonomous decision loop
