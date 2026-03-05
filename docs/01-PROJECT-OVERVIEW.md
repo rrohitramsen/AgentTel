@@ -127,4 +127,3 @@ AgentTel is in **alpha** (v0.1.0-alpha). The core instrumentation, GenAI support
 - [GenAI Instrumentation](05-GENAI-INSTRUMENTATION.md) — LLM framework instrumentation
 - [API Reference](06-API-REFERENCE.md) — Full API documentation
 - [Roadmap](07-ROADMAP.md) — Release plan and future work
-- [Agent-Autonomous Telemetry](09-AGENT-AUTONOMOUS-TELEMETRY.md) — Error classification, playbooks, change correlation, and the autonomous decision loop

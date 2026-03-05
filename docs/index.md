@@ -142,14 +142,6 @@ Structured incident packages: what's happening, what changed, what's affected, a
 
 <div class="feature-card" markdown>
 
-### Agent-Autonomous Loop
-
-Error classification, causal analysis, structured playbooks, parameterized action specs, action feedback loops, and change correlation — everything agents need to observe, diagnose, act, and verify without human intervention.
-
-</div>
-
-<div class="feature-card" markdown>
-
 ### Instrumentation Agent
 
 IDE MCP server that analyzes your codebase, generates AgentTel config, validates instrumentation, and auto-applies improvements — for both backend and frontend.

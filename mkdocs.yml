@@ -50,7 +50,6 @@ nav:
     - Design Considerations: concepts/design-considerations.md
   - Guides:
     - Agent Layer: guides/agent-layer.md
-    - Agent-Autonomous Telemetry: guides/agent-autonomous-telemetry.md
     - GenAI Instrumentation: guides/genai-instrumentation.md
     - API Documentation: guides/api-documentation.md
   - Reference:
