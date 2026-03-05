@@ -14,9 +14,13 @@ import io.agenttel.core.anomaly.PatternMatcher;
 import io.agenttel.core.baseline.DurationParser;
 import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.baseline.StaticBaselineProvider;
+import io.agenttel.core.causality.CausalityTracker;
+import io.agenttel.core.causality.OperationDependencyTracker;
 import io.agenttel.core.enrichment.AgentTelSpanProcessor;
 import io.agenttel.core.enrichment.OperationContext;
 import io.agenttel.core.enrichment.OperationContextRegistry;
+import io.agenttel.core.error.ErrorClassifier;
+import io.agenttel.core.export.AgentTelEnrichingSpanExporter;
 import io.agenttel.core.resource.AgentTelGlobalState;
 import io.agenttel.core.slo.SloTracker;
 import io.agenttel.core.topology.TopologyRegistry;
@@ -61,19 +65,33 @@ public class AgentTelExtensionCustomizer implements AutoConfigurationCustomizerP
         OperationContextRegistry opContexts = new OperationContextRegistry();
         registerOperations(config, baselines, opContexts);
 
-        // 3. Build SpanProcessor
+        // 3. Build analysis components
+        AnomalyDetector anomalyDetector = new AnomalyDetector(
+                config.getAnomalyDetection().getZScoreThreshold());
+        PatternMatcher patternMatcher = new PatternMatcher();
+        RollingBaselineProvider rollingBaselines = new RollingBaselineProvider(
+                config.getBaselines().getRollingWindowSize(),
+                config.getBaselines().getRollingMinSamples());
+        SloTracker sloTracker = new SloTracker();
+        OperationDependencyTracker dependencyTracker = new OperationDependencyTracker();
+        CausalityTracker causalityTracker = new CausalityTracker(dependencyTracker);
+        ErrorClassifier errorClassifier = new ErrorClassifier();
+
+        // 4. Build SpanProcessor with dependency and causality tracking
         AgentTelSpanProcessor processor = new AgentTelSpanProcessor(
                 baselines, opContexts,
-                new AnomalyDetector(config.getAnomalyDetection().getZScoreThreshold()),
-                new PatternMatcher(),
-                new RollingBaselineProvider(
-                        config.getBaselines().getRollingWindowSize(),
-                        config.getBaselines().getRollingMinSamples()),
-                new SloTracker(), null);
+                anomalyDetector, patternMatcher, rollingBaselines, sloTracker, null,
+                dependencyTracker, causalityTracker);
 
-        // 4. Register with OTel SDK
+        // 5. Register with OTel SDK
         customizer.addTracerProviderCustomizer(
                 (builder, cfg) -> builder.addSpanProcessor(processor));
+
+        // 6. Register enriching exporter to add computed attributes at export time
+        customizer.addSpanExporterCustomizer(
+                (exporter, cfg) -> new AgentTelEnrichingSpanExporter(
+                        exporter, rollingBaselines, sloTracker, causalityTracker,
+                        anomalyDetector, errorClassifier, topology));
 
         logger.info("AgentTel extension initialized — topology: team=" + topology.getTeam()
                 + ", tier=" + topology.getTier().getValue()

@@ -2,6 +2,7 @@ package io.agenttel.agent.remediation;
 
 /**
  * Describes a remediation action that an AI agent can execute.
+ * Enhanced with parameterized {@link ActionSpec} for precise agent guidance.
  */
 public record RemediationAction(
         String name,
@@ -9,7 +10,8 @@ public record RemediationAction(
         String operationName,
         ActionType type,
         boolean requiresApproval,
-        String command
+        String command,
+        ActionSpec spec
 ) {
 
     public enum ActionType {
@@ -36,6 +38,7 @@ public record RemediationAction(
         private ActionType type = ActionType.CUSTOM;
         private boolean requiresApproval = true;
         private String command = "";
+        private ActionSpec spec;
 
         Builder(String name, String operationName) {
             this.name = name;
@@ -62,8 +65,14 @@ public record RemediationAction(
             return this;
         }
 
+        public Builder spec(ActionSpec spec) {
+            this.spec = spec;
+            return this;
+        }
+
         public RemediationAction build() {
-            return new RemediationAction(name, description, operationName, type, requiresApproval, command);
+            return new RemediationAction(name, description, operationName, type,
+                    requiresApproval, command, spec);
         }
     }
 }

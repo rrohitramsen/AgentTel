@@ -1,14 +1,16 @@
 package io.agenttel.agent.incident;
 
 import io.agenttel.agent.health.ServiceHealthAggregator;
+import io.agenttel.agent.playbook.Playbook;
+import io.agenttel.agent.correlation.ChangeCorrelationEngine;
 import io.agenttel.core.anomaly.IncidentPattern;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * A complete incident context package — everything an AI agent needs
  * to understand and respond to a production incident in one object.
+ * Enhanced with playbooks, error classification, and change correlation.
  */
 public record IncidentContext(
         String incidentId,
@@ -35,13 +37,15 @@ public record IncidentContext(
             double currentLatencyP50Ms,
             double baselineLatencyP50Ms,
             double anomalyScore,
-            ServiceHealthAggregator.HealthStatus serviceHealth
+            ServiceHealthAggregator.HealthStatus serviceHealth,
+            String errorBreakdown
     ) {}
 
     public record WhatChanged(
             List<RecentChange> recentChanges,
             String lastDeploymentVersion,
-            String lastDeploymentTimestamp
+            String lastDeploymentTimestamp,
+            ChangeCorrelationEngine.CorrelationResult correlation
     ) {}
 
     public record RecentChange(
@@ -64,7 +68,8 @@ public record IncidentContext(
             boolean isRetryable,
             boolean isIdempotent,
             String fallbackDescription,
-            List<SuggestedAction> suggestedActions
+            List<SuggestedAction> suggestedActions,
+            Playbook playbook
     ) {}
 
     public record SuggestedAction(

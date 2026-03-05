@@ -27,4 +27,13 @@ public enum IncidentPattern {
     public String getDescription() {
         return description;
     }
+
+    public static IncidentPattern fromValue(String value) {
+        for (IncidentPattern p : values()) {
+            if (p.value.equals(value)) {
+                return p;
+            }
+        }
+        throw new IllegalArgumentException("Unknown IncidentPattern: " + value);
+    }
 }

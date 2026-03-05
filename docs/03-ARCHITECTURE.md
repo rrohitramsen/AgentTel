@@ -86,6 +86,14 @@ agenttel-core/
 │   └── AnnotationTopologyScanner    # Reads topology from annotations
 ├── enrichment/
 │   └── AgentTelSpanProcessor        # Main SpanProcessor — enriches every span
+├── error/
+│   └── ErrorClassifier              # Classifies errors into actionable categories
+├── causality/
+│   ├── CausalityTracker             # Structured causal analysis for errors
+│   └── OperationDependencyTracker   # Runtime op-to-dep mapping from spans
+├── export/
+│   ├── AgentTelEnrichingSpanExporter  # Adds computed attrs at export time
+│   └── EnrichedSpanData             # Delegating SpanData with merged attrs
 ├── engine/
 │   └── AgentTelEngine               # Orchestrator — wires all components
 ├── events/
@@ -354,9 +362,15 @@ flowchart TD
     E --> E3["Run PatternMatcher"]
     E --> E4["Record in SloTracker"]
     E --> E5["Emit anomaly / SLO events"]
-    E5 --> F["6. SpanExporter exports enriched span"]
-    F --> F1["CostEnrichingSpanExporter adds cost_usd"]
-    F --> F2["OTLP export to backend"]
+    E --> E6["Feed OperationDependencyTracker"]
+    E --> E7["Feed CausalityTracker"]
+    E5 --> F["6. AgentTelEnrichingSpanExporter"]
+    F --> F0["ErrorClassifier → error category"]
+    F --> F1["CausalityTracker → root cause"]
+    F --> F2["Baseline confidence from sample count"]
+    F --> F3["Severity assessment"]
+    F3 --> G["7. CostEnrichingSpanExporter adds cost_usd"]
+    G --> G1["OTLP export to backend"]
 
     style A fill:#4a1d96,stroke:#7c3aed,color:#fff
     style B fill:#4a1d96,stroke:#7c3aed,color:#fff

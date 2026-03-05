@@ -14,14 +14,17 @@ import java.util.Map;
  * <p>Default tools registered:
  * <ul>
  *   <li>{@code get_service_health} — Current health summary</li>
- *   <li>{@code get_incident_context} — Full incident diagnosis</li>
- *   <li>{@code list_remediation_actions} — Available fixes</li>
- *   <li>{@code execute_remediation} — Execute an approved fix</li>
+ *   <li>{@code get_incident_context} — Full incident diagnosis with playbook and correlation</li>
+ *   <li>{@code list_remediation_actions} — Available fixes with parameterized specs</li>
+ *   <li>{@code execute_remediation} — Execute an approved fix with verification</li>
  *   <li>{@code get_recent_agent_actions} — Agent action audit trail</li>
  *   <li>{@code get_slo_report} — SLO compliance report</li>
  *   <li>{@code get_trend_analysis} — Operation trend analysis</li>
  *   <li>{@code get_executive_summary} — High-level executive summary</li>
  *   <li>{@code get_cross_stack_context} — Correlated frontend + backend context</li>
+ *   <li>{@code get_playbook} — Structured playbook for incident patterns</li>
+ *   <li>{@code verify_remediation_effect} — Verify if remediation action was effective</li>
+ *   <li>{@code get_error_analysis} — Error category breakdown for an operation</li>
  * </ul>
  */
 public class AgentTelMcpServerBuilder {
@@ -228,6 +231,65 @@ public class AgentTelMcpServerBuilder {
                         return "Error: operation_name is required";
                     }
                     return contextProvider.getCrossStackContext(opName);
+                }
+        );
+
+        // --- Agent-Autonomous Tools ---
+
+        // Tool: get_playbook
+        Map<String, McpToolDefinition.ParameterDefinition> playbookParams = new LinkedHashMap<>();
+        playbookParams.put("operation_name", new McpToolDefinition.ParameterDefinition("string",
+                "Operation name to get playbook for"));
+        playbookParams.put("pattern", new McpToolDefinition.ParameterDefinition("string",
+                "Incident pattern name (e.g., cascade_failure, error_rate_spike)"));
+
+        server.registerTool(
+                new McpToolDefinition(
+                        "get_playbook",
+                        "Get a structured, machine-readable playbook with step-by-step remediation instructions for an incident pattern",
+                        playbookParams,
+                        List.of()
+                ),
+                args -> {
+                    String opName = args.getOrDefault("operation_name", "");
+                    String pattern = args.get("pattern");
+                    return contextProvider.getPlaybook(opName, pattern);
+                }
+        );
+
+        // Tool: verify_remediation_effect
+        server.registerTool(
+                new McpToolDefinition(
+                        "verify_remediation_effect",
+                        "Verify whether a previously executed remediation action was effective by comparing pre- and post-action health snapshots",
+                        Map.of("action_name", new McpToolDefinition.ParameterDefinition("string",
+                                "Name of the remediation action to verify")),
+                        List.of("action_name")
+                ),
+                args -> {
+                    String actionName = args.get("action_name");
+                    if (actionName == null || actionName.isEmpty()) {
+                        return "Error: action_name is required";
+                    }
+                    return contextProvider.verifyRemediationEffect(actionName);
+                }
+        );
+
+        // Tool: get_error_analysis
+        server.registerTool(
+                new McpToolDefinition(
+                        "get_error_analysis",
+                        "Get error category breakdown and baseline confidence for an operation — helps agents choose the right remediation",
+                        Map.of("operation_name", new McpToolDefinition.ParameterDefinition("string",
+                                "The operation name to analyze errors for")),
+                        List.of("operation_name")
+                ),
+                args -> {
+                    String opName = args.get("operation_name");
+                    if (opName == null || opName.isEmpty()) {
+                        return "Error: operation_name is required";
+                    }
+                    return contextProvider.getErrorAnalysis(opName);
                 }
         );
     }

@@ -16,6 +16,7 @@ public class RollingWindow {
     private final AtomicInteger count = new AtomicInteger(0);
     private final AtomicLong errorCount = new AtomicLong(0);
     private final AtomicLong totalCount = new AtomicLong(0);
+    private final AtomicLong firstSampleTimeMs = new AtomicLong(0);
 
     public RollingWindow(int capacity) {
         if (capacity <= 0) {
@@ -26,6 +27,7 @@ public class RollingWindow {
     }
 
     public void record(double value) {
+        firstSampleTimeMs.compareAndSet(0, System.currentTimeMillis());
         int idx = writeIndex.getAndUpdate(i -> (i + 1) % capacity);
         samples[idx] = value;
         int currentCount = count.get();
@@ -71,7 +73,10 @@ public class RollingWindow {
         long errors = errorCount.get();
         double errorRate = total > 0 ? (double) errors / total : 0.0;
 
-        return new Snapshot(mean, stddev, p50, p95, p99, errorRate, n);
+        long firstTime = firstSampleTimeMs.get();
+        long ageMs = firstTime > 0 ? System.currentTimeMillis() - firstTime : 0;
+
+        return new Snapshot(mean, stddev, p50, p95, p99, errorRate, n, ageMs);
     }
 
     private static double percentile(double[] sorted, double p) {
@@ -88,11 +93,21 @@ public class RollingWindow {
     }
 
     public record Snapshot(double mean, double stddev, double p50, double p95, double p99,
-                           double errorRate, int sampleCount) {
-        static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0, 0);
+                           double errorRate, int sampleCount, long ageMs) {
+        static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0, 0, 0);
 
         public boolean isEmpty() {
             return sampleCount == 0;
+        }
+
+        /**
+         * Returns baseline confidence based on sample count.
+         * Agents should weight decisions by this confidence level.
+         */
+        public String confidence() {
+            if (sampleCount < 30) return "low";
+            if (sampleCount < 200) return "medium";
+            return "high";
         }
     }
 }

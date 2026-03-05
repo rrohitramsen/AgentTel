@@ -2,10 +2,13 @@ package io.agenttel.spring.autoconfigure;
 
 import io.agenttel.agent.action.AgentActionTracker;
 import io.agenttel.agent.context.AgentContextProvider;
+import io.agenttel.agent.correlation.ChangeCorrelationEngine;
 import io.agenttel.agent.health.ServiceHealthAggregator;
 import io.agenttel.agent.incident.IncidentContextBuilder;
 import io.agenttel.agent.mcp.AgentTelMcpServerBuilder;
 import io.agenttel.agent.mcp.McpServer;
+import io.agenttel.agent.playbook.PlaybookRegistry;
+import io.agenttel.agent.remediation.ActionFeedbackLoop;
 import io.agenttel.agent.remediation.RemediationExecutor;
 import io.agenttel.agent.remediation.RemediationRegistry;
 import io.agenttel.agent.reporting.CrossStackContextBuilder;
@@ -57,19 +60,43 @@ public class AgentTelAgentAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public PlaybookRegistry agentTelPlaybookRegistry() {
+        return new PlaybookRegistry();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ChangeCorrelationEngine agentTelChangeCorrelationEngine() {
+        return new ChangeCorrelationEngine();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ActionFeedbackLoop agentTelActionFeedbackLoop(ServiceHealthAggregator healthAggregator) {
+        return new ActionFeedbackLoop(healthAggregator);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public IncidentContextBuilder agentTelIncidentContextBuilder(
             ServiceHealthAggregator healthAggregator,
             TopologyRegistry topology,
             RollingBaselineProvider rollingBaselines,
-            RemediationRegistry remediationRegistry) {
-        return new IncidentContextBuilder(healthAggregator, topology, rollingBaselines, remediationRegistry);
+            RemediationRegistry remediationRegistry,
+            PlaybookRegistry playbookRegistry,
+            ChangeCorrelationEngine changeCorrelationEngine) {
+        IncidentContextBuilder builder = new IncidentContextBuilder(
+                healthAggregator, topology, rollingBaselines, remediationRegistry);
+        builder.setEnhancedComponents(playbookRegistry, changeCorrelationEngine);
+        return builder;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public RemediationExecutor agentTelRemediationExecutor(RemediationRegistry registry,
-                                                            AgentActionTracker actionTracker) {
-        return new RemediationExecutor(registry, actionTracker);
+                                                            AgentActionTracker actionTracker,
+                                                            ActionFeedbackLoop feedbackLoop) {
+        return new RemediationExecutor(registry, actionTracker, feedbackLoop);
     }
 
     @Bean
@@ -117,12 +144,15 @@ public class AgentTelAgentAutoConfiguration {
             SloReportGenerator sloReportGenerator,
             TrendAnalyzer trendAnalyzer,
             ExecutiveSummaryBuilder executiveSummaryBuilder,
-            CrossStackContextBuilder crossStackContextBuilder) {
+            CrossStackContextBuilder crossStackContextBuilder,
+            PlaybookRegistry playbookRegistry,
+            RemediationExecutor remediationExecutor) {
         AgentContextProvider provider = new AgentContextProvider(
                 healthAggregator, incidentContextBuilder, remediationRegistry,
                 topology, patternMatcher, rollingBaselines, actionTracker);
         provider.setReportingComponents(sloReportGenerator, trendAnalyzer,
                 executiveSummaryBuilder, crossStackContextBuilder);
+        provider.setAutonomousComponents(playbookRegistry, remediationExecutor);
         return provider;
     }
 
