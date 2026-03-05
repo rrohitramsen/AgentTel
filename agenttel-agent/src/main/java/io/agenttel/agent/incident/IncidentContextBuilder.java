@@ -1,6 +1,9 @@
 package io.agenttel.agent.incident;
 
+import io.agenttel.agent.correlation.ChangeCorrelationEngine;
 import io.agenttel.agent.health.ServiceHealthAggregator;
+import io.agenttel.agent.playbook.Playbook;
+import io.agenttel.agent.playbook.PlaybookRegistry;
 import io.agenttel.agent.remediation.RemediationRegistry;
 import io.agenttel.agent.remediation.RemediationAction;
 import io.agenttel.core.anomaly.IncidentPattern;
@@ -13,7 +16,7 @@ import java.util.*;
 
 /**
  * Builds a complete {@link IncidentContext} from current system state.
- * This is the primary API for AI agents to get a full picture of an incident.
+ * Enhanced with playbooks, change correlation, and error breakdown.
  */
 public class IncidentContextBuilder {
 
@@ -23,6 +26,10 @@ public class IncidentContextBuilder {
     private final RemediationRegistry remediationRegistry;
     private final List<IncidentContext.HistoricalIncident> historicalIncidents = Collections.synchronizedList(new ArrayList<>());
     private final List<IncidentContext.RecentChange> recentChanges = Collections.synchronizedList(new ArrayList<>());
+
+    // Enhanced components (nullable for backward compatibility)
+    private PlaybookRegistry playbookRegistry;
+    private ChangeCorrelationEngine changeCorrelationEngine;
 
     public IncidentContextBuilder(ServiceHealthAggregator healthAggregator,
                                    TopologyRegistry topology,
@@ -35,10 +42,23 @@ public class IncidentContextBuilder {
     }
 
     /**
+     * Configures enhanced components for agent-autonomous telemetry.
+     */
+    public void setEnhancedComponents(PlaybookRegistry playbookRegistry,
+                                       ChangeCorrelationEngine changeCorrelationEngine) {
+        this.playbookRegistry = playbookRegistry;
+        this.changeCorrelationEngine = changeCorrelationEngine;
+    }
+
+    /**
      * Records a deployment for change tracking.
      */
     public void recordDeployment(String version, String timestamp) {
         recentChanges.add(new IncidentContext.RecentChange("deployment", "Deployed version " + version, timestamp));
+        if (changeCorrelationEngine != null) {
+            changeCorrelationEngine.recordDeployment(
+                    "deploy-" + version, version, "Deployed version " + version);
+        }
     }
 
     /**
@@ -46,6 +66,10 @@ public class IncidentContextBuilder {
      */
     public void recordConfigChange(String description) {
         recentChanges.add(new IncidentContext.RecentChange("config_change", description, Instant.now().toString()));
+        if (changeCorrelationEngine != null) {
+            changeCorrelationEngine.recordConfigChange(
+                    "config-" + System.currentTimeMillis(), description);
+        }
     }
 
     /**
@@ -55,7 +79,6 @@ public class IncidentContextBuilder {
                                           String resolution, String rootCause) {
         historicalIncidents.add(new IncidentContext.HistoricalIncident(
                 incidentId, timestamp, resolution, rootCause));
-        // Keep bounded
         while (historicalIncidents.size() > 100) {
             historicalIncidents.remove(0);
         }
@@ -90,13 +113,22 @@ public class IncidentContextBuilder {
 
         String description = buildDescription(operationName, detectedPatterns, currentErrorRate, currentP50, baselineP50);
 
+        // Error breakdown summary
+        String errorBreakdown = buildErrorBreakdown(healthSummary);
+
         IncidentContext.WhatIsHappening whatIsHappening = new IncidentContext.WhatIsHappening(
                 operationName, description, detectedPatterns,
                 currentErrorRate, baselineErrorRate,
                 currentP50, baselineP50, anomalyScore,
-                healthSummary.status());
+                healthSummary.status(),
+                errorBreakdown);
 
-        // What changed
+        // What changed (with correlation)
+        ChangeCorrelationEngine.CorrelationResult correlation = null;
+        if (changeCorrelationEngine != null) {
+            correlation = changeCorrelationEngine.correlate(Instant.now());
+        }
+
         String lastDeployVersion = "";
         String lastDeployTime = "";
         for (int i = recentChanges.size() - 1; i >= 0; i--) {
@@ -107,7 +139,8 @@ public class IncidentContextBuilder {
             }
         }
         IncidentContext.WhatChanged whatChanged = new IncidentContext.WhatChanged(
-                new ArrayList<>(recentChanges), lastDeployVersion, lastDeployTime);
+                new ArrayList<>(recentChanges), lastDeployVersion, lastDeployTime,
+                correlation);
 
         // What is affected
         List<String> affectedOps = new ArrayList<>();
@@ -131,13 +164,19 @@ public class IncidentContextBuilder {
                 affectedOps.size() > 3 ? "service_wide" : "operation_specific",
                 topology.getTier().getValue().equals("critical"));
 
-        // What to do
+        // What to do (with playbook)
         List<IncidentContext.SuggestedAction> actions = buildSuggestedActions(operationName, detectedPatterns);
+        Playbook playbook = null;
+        if (playbookRegistry != null) {
+            playbook = playbookRegistry.findForPatterns(detectedPatterns).orElse(null);
+        }
+
         IncidentContext.WhatToDo whatToDo = new IncidentContext.WhatToDo(
-                "", // runbook url from operation context would go here
+                "",
                 topology.getTier().getValue().equals("critical") ? "page_oncall" : "notify",
                 true, true, "",
-                actions);
+                actions,
+                playbook);
 
         // Severity
         IncidentContext.Severity severity = determineSeverity(healthSummary.status(), detectedPatterns, currentErrorRate);
@@ -162,6 +201,15 @@ public class IncidentContextBuilder {
             sb.append("anomalous behavior");
         }
         return sb.toString();
+    }
+
+    private String buildErrorBreakdown(ServiceHealthAggregator.ServiceHealthSummary summary) {
+        long errorOps = summary.operations().stream()
+                .filter(op -> op.errorRate() > 0.01)
+                .count();
+        long totalOps = summary.operations().size();
+        if (errorOps == 0) return "No operations with elevated error rates";
+        return String.format("%d of %d operations with elevated error rates", errorOps, totalOps);
     }
 
     private List<IncidentContext.SuggestedAction> buildSuggestedActions(
@@ -222,7 +270,6 @@ public class IncidentContextBuilder {
 
     private List<IncidentContext.HistoricalIncident> findSimilarIncidents(List<IncidentPattern> patterns) {
         if (patterns.isEmpty() || historicalIncidents.isEmpty()) return Collections.emptyList();
-        // Simple: return recent historical incidents (in production, match by pattern)
         int count = Math.min(3, historicalIncidents.size());
         return new ArrayList<>(historicalIncidents.subList(
                 historicalIncidents.size() - count, historicalIncidents.size()));

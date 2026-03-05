@@ -85,6 +85,9 @@ public class ContextFormatter {
             }
             sb.append("\n");
         }
+        if (what.errorBreakdown() != null && !what.errorBreakdown().isEmpty()) {
+            sb.append("Errors: ").append(what.errorBreakdown()).append("\n");
+        }
 
         // What changed
         var changed = ctx.whatChanged();
@@ -96,6 +99,14 @@ public class ContextFormatter {
         for (var change : changed.recentChanges()) {
             sb.append("  [").append(change.type()).append("] ")
                     .append(change.description()).append(" (").append(change.timestamp()).append(")\n");
+        }
+        if (changed.correlation() != null && changed.correlation().hasCorrelation()) {
+            var corr = changed.correlation();
+            sb.append("LIKELY CAUSE: ").append(corr.likelyCause())
+                    .append(" (").append(corr.changeId()).append(")")
+                    .append(" — ").append(corr.timeDeltaMs() / 1000).append("s before anomaly")
+                    .append(", confidence=").append(String.format("%.0f%%", corr.confidence() * 100))
+                    .append("\n");
         }
 
         // What is affected
@@ -124,6 +135,12 @@ public class ContextFormatter {
                 sb.append(" (NEEDS APPROVAL)");
             }
             sb.append("\n");
+        }
+
+        // Playbook
+        if (todo.playbook() != null) {
+            sb.append("\n## PLAYBOOK\n");
+            sb.append(todo.playbook().toFormattedText());
         }
 
         // Similar past incidents

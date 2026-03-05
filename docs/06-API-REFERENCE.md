@@ -389,3 +389,38 @@ agenttel:
 | `COLD_START` | High latency on fresh instances |
 | `ERROR_RATE_SPIKE` | Sudden error rate increase |
 | `LATENCY_DEGRADATION` | Sustained latency elevation |
+
+### ErrorCategory
+
+| Value | Description | Agent Guidance |
+|-------|-------------|----------------|
+| `DEPENDENCY_TIMEOUT` | Timeout calling a dependency | Retry with backoff, check dependency health |
+| `CONNECTION_ERROR` | Cannot connect to dependency | Check availability, circuit break |
+| `CODE_BUG` | Application logic error (NPE, ClassCast, etc.) | Do not retry — needs code fix |
+| `RATE_LIMITED` | Rate limited by upstream (HTTP 429) | Back off, reduce traffic |
+| `AUTH_FAILURE` | Authentication/authorization failed (HTTP 401/403) | Check credentials, do not retry |
+| `RESOURCE_EXHAUSTION` | OOM, StackOverflow | Scale up, restart |
+| `DATA_VALIDATION` | Invalid input (HTTP 400/422) | Do not retry — fix input |
+| `UNKNOWN` | Cannot classify | Investigate manually |
+
+### ActionSpec Types
+
+Parameterized remediation action specifications:
+
+| Type | Fields |
+|------|--------|
+| `RetrySpec` | `maxAttempts`, `backoffMs` (List), `retryOnStatusCodes`, `retryOnExceptions`, `notRetryOnStatusCodes` |
+| `ScaleSpec` | `direction`, `minInstances`, `maxInstances`, `cooldownSeconds` |
+| `CircuitBreakerSpec` | `failureThreshold`, `halfOpenAfterMs`, `successThreshold` |
+| `RateLimitSpec` | `requestsPerSecond`, `burstSize` |
+| `GenericSpec` | `parameters` (Map<String, String>) |
+
+### ChangeType
+
+| Value | Description | Confidence Weight |
+|-------|-------------|-------------------|
+| `DEPLOYMENT` | Code deployment | 1.0 (highest) |
+| `DEPENDENCY_UPDATE` | Dependency version change | 0.9 |
+| `CONFIG` | Configuration change | 0.8 |
+| `FEATURE_FLAG` | Feature flag toggle | 0.7 |
+| `SCALING` | Instance count change | 0.6 |

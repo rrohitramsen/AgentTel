@@ -40,6 +40,10 @@ public final class AgentTelAttributes {
             AttributeKey.stringKey("agenttel.baseline.updated_at");
     public static final AttributeKey<String> BASELINE_SLO =
             AttributeKey.stringKey("agenttel.baseline.slo");
+    public static final AttributeKey<Long> BASELINE_SAMPLE_COUNT =
+            AttributeKey.longKey("agenttel.baseline.sample_count");
+    public static final AttributeKey<String> BASELINE_CONFIDENCE =
+            AttributeKey.stringKey("agenttel.baseline.confidence");
 
     // --- Causality ---
     public static final AttributeKey<String> CAUSE_HINT =
@@ -136,6 +140,24 @@ public final class AgentTelAttributes {
             AttributeKey.doubleKey("agenttel.slo.budget_remaining");
     public static final AttributeKey<Double> SLO_BURN_RATE =
             AttributeKey.doubleKey("agenttel.slo.burn_rate");
+
+    // --- Error Classification ---
+    public static final AttributeKey<String> ERROR_CATEGORY =
+            AttributeKey.stringKey("agenttel.error.category");
+    public static final AttributeKey<String> ERROR_ROOT_EXCEPTION =
+            AttributeKey.stringKey("agenttel.error.root_exception");
+    public static final AttributeKey<String> ERROR_DEPENDENCY =
+            AttributeKey.stringKey("agenttel.error.dependency");
+
+    // --- Change Correlation ---
+    public static final AttributeKey<String> CORRELATION_LIKELY_CAUSE =
+            AttributeKey.stringKey("agenttel.correlation.likely_cause");
+    public static final AttributeKey<String> CORRELATION_CHANGE_ID =
+            AttributeKey.stringKey("agenttel.correlation.change_id");
+    public static final AttributeKey<Long> CORRELATION_TIME_DELTA_MS =
+            AttributeKey.longKey("agenttel.correlation.time_delta_ms");
+    public static final AttributeKey<Double> CORRELATION_CONFIDENCE =
+            AttributeKey.doubleKey("agenttel.correlation.confidence");
 
     // --- Circuit Breaker ---
     public static final AttributeKey<String> CIRCUIT_BREAKER_NAME =

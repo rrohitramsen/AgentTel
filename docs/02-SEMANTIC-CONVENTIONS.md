@@ -109,6 +109,21 @@ The `RollingBaselineProvider` maintains per-operation sliding windows that compu
 | Error Rate | Observed error rate over the window |
 | Sample Count | Number of observations in the current window |
 
+### Baseline Confidence
+
+Added at export time by the `AgentTelEnrichingSpanExporter`. Tells agents how much to trust the baseline.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.baseline.sample_count` | long | Number of observations in current baseline | `250` |
+| `agenttel.baseline.confidence` | string | Confidence level based on sample count | `"high"` |
+
+| Sample Count | Confidence | Meaning |
+|-------------|------------|---------|
+| < 30 | `"low"` | Baseline is unreliable — insufficient data |
+| 30–200 | `"medium"` | Baseline is usable but may not capture edge cases |
+| > 200 | `"high"` | Baseline is reliable and statistically significant |
+
 ### Configuration
 
 | Property | Default | Description |
@@ -177,7 +192,80 @@ Real-time deviation detection. Set as span attributes by the `AgentTelSpanProces
 
 ---
 
-## 5. SLO Attributes
+## 5. Error Classification Attributes
+
+Structured error categorization added at export time by the `AgentTelEnrichingSpanExporter`. Tells agents *why* a span failed, not just *that* it failed.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.error.category` | string | Error category for agent decision-making | `"dependency_timeout"` |
+| `agenttel.error.root_exception` | string | Root exception class name | `"java.net.SocketTimeoutException"` |
+| `agenttel.error.dependency` | string | Dependency involved in the error (if applicable) | `"postgres"` |
+
+### Error Categories
+
+| Category | Value | Classification Rules | Agent Action |
+|----------|-------|---------------------|--------------|
+| Dependency Timeout | `"dependency_timeout"` | Exception contains `Timeout`/`SocketTimeout` | Retry with backoff, check dependency health |
+| Connection Error | `"connection_error"` | Exception contains `Connection`/`ConnectException` | Check dependency availability, circuit break |
+| Code Bug | `"code_bug"` | `NullPointer`, `ClassCast`, `IndexOutOfBounds`, `IllegalState` | Do not retry — needs code fix |
+| Rate Limited | `"rate_limited"` | HTTP 429 | Back off, reduce traffic, request quota increase |
+| Auth Failure | `"auth_failure"` | HTTP 401/403 | Check credentials/tokens, do not retry |
+| Resource Exhaustion | `"resource_exhaustion"` | `OutOfMemory`, `StackOverflow` | Scale up, restart instances |
+| Data Validation | `"data_validation"` | HTTP 400/422, `Validation`/`IllegalArgument` exceptions | Do not retry — fix input |
+| Unknown | `"unknown"` | Everything else | Investigate manually |
+
+---
+
+## 6. Causality & Severity Attributes
+
+Root cause analysis and business impact assessment, added at export time by the `AgentTelEnrichingSpanExporter`.
+
+### Causality Attributes
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.cause.hint` | string | Human-readable cause description | `"Dependency postgres is unhealthy: Connection refused"` |
+| `agenttel.cause.category` | string | Cause category | `"dependency"` |
+| `agenttel.cause.dependency` | string | Specific dependency if cause is dependency-related | `"postgres"` |
+
+**Cause Categories:** `dependency`, `code`, `infrastructure`, `traffic`, `unknown`
+
+### Severity Attributes
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.severity.anomaly_score` | double | Anomaly score (mirrors anomaly.score) | `0.85` |
+| `agenttel.severity.user_facing` | boolean | Whether this affects user-facing services | `true` |
+| `agenttel.severity.business_impact` | string | Business impact level | `"critical"` |
+
+**Business Impact Levels:**
+
+| Impact | Condition |
+|--------|-----------|
+| `"critical"` | Anomaly score > 0.8 |
+| `"high"` | Error on critical-tier service |
+| `"medium"` | Error on standard service or moderate anomaly |
+| `"low"` | Minor anomaly or data validation error |
+
+---
+
+## 7. Change Correlation Attributes
+
+Correlates anomalies with recent changes. Added to incident context by the `ChangeCorrelationEngine`.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.correlation.likely_cause` | string | Most likely change type | `"deployment"` |
+| `agenttel.correlation.change_id` | string | ID of the correlated change | `"deploy-v2.1.0"` |
+| `agenttel.correlation.time_delta_ms` | long | Time between change and anomaly onset | `1800000` |
+| `agenttel.correlation.confidence` | double | Correlation confidence (0.0–1.0) | `0.85` |
+
+**Change Types:** `DEPLOYMENT`, `CONFIG`, `SCALING`, `FEATURE_FLAG`, `DEPENDENCY_UPDATE`
+
+---
+
+## SLO Attributes
 
 Error budget consumption tracking. Set as span attributes when SLOs are registered.
 

@@ -79,6 +79,24 @@ Full-stack telemetry and developer experience.
 - [x] `agenttel-agent` — `ExecutiveSummaryBuilder` for high-level service status summaries
 - [x] `agenttel-agent` — `CrossStackContextBuilder` for correlated frontend-backend context
 
+#### Phase 5: Agent-Autonomous Telemetry
+
+Enabling agents to move from observe-suggest to observe-diagnose-act-verify.
+
+- [x] `agenttel-api` — `ErrorCategory` enum and new attribute constants for error classification, baseline confidence, and change correlation
+- [x] `agenttel-core` — `ErrorClassifier` categorizing span errors into actionable types (dependency_timeout, code_bug, rate_limited, auth_failure, resource_exhaustion, data_validation)
+- [x] `agenttel-core` — `AgentTelEnrichingSpanExporter` populating 35+ span attributes at export time (anomaly, SLO, error, causality, severity, baseline confidence)
+- [x] `agenttel-core` — `OperationDependencyTracker` for runtime operation-to-dependency mapping from span relationships
+- [x] `agenttel-core` — Enhanced `CausalityTracker` with structured causal analysis and confidence scores
+- [x] `agenttel-core` — Baseline confidence scoring (low/medium/high based on sample count)
+- [x] `agenttel-agent` — `PlaybookRegistry` with 4 default machine-readable decision trees (cascade failure, error rate spike, latency degradation, memory leak)
+- [x] `agenttel-agent` — `ActionFeedbackLoop` with pre/post health snapshot verification
+- [x] `agenttel-agent` — Sealed `ActionSpec` interface (RetrySpec, ScaleSpec, CircuitBreakerSpec, RateLimitSpec, GenericSpec)
+- [x] `agenttel-agent` — `ChangeCorrelationEngine` ranking recent changes by time proximity and type weight
+- [x] `agenttel-agent` — 3 new MCP tools: `get_playbook`, `verify_remediation_effect`, `get_error_analysis` (12 total)
+- [x] Spring Boot auto-config and JavaAgent extension updated with all new beans
+- [x] 108 new tests (232 total)
+
 ---
 
 ## Planned: v0.2.0-alpha
@@ -94,7 +112,7 @@ Full-stack telemetry and developer experience.
 
 ### Observability Enhancements
 
-- [ ] Causality tracking — linking anomalies to recent deployments and config changes
+- [x] ~~Causality tracking — linking anomalies to recent deployments and config changes~~ — implemented in Phase 5 as `ChangeCorrelationEngine` and enhanced `CausalityTracker`
 - [ ] Dependency health state machine with transition events
 - [ ] Multi-service correlation — cross-service incident grouping
 - [ ] Custom metric emission alongside span enrichment

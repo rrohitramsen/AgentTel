@@ -6,12 +6,17 @@ import io.agenttel.core.anomaly.AnomalyDetector;
 import io.agenttel.core.anomaly.AnomalyResult;
 import io.agenttel.core.anomaly.IncidentPattern;
 import io.agenttel.core.anomaly.PatternMatcher;
+import io.agenttel.api.DependencyState;
 import io.agenttel.core.baseline.BaselineProvider;
 import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.baseline.RollingWindow;
+import io.agenttel.core.causality.CausalityTracker;
+import io.agenttel.core.causality.OperationDependencyTracker;
 import io.agenttel.core.events.AgentTelEventEmitter;
 import io.agenttel.core.slo.SloTracker;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.logs.Severity;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.common.CompletableResultCode;
@@ -49,11 +54,13 @@ public class AgentTelSpanProcessor implements SpanProcessor {
     private final RollingBaselineProvider rollingBaselines;
     private final SloTracker sloTracker;
     private final AgentTelEventEmitter eventEmitter;
+    private final OperationDependencyTracker dependencyTracker;
+    private final CausalityTracker causalityTracker;
     private volatile SpanCompletionListener spanCompletionListener;
 
     public AgentTelSpanProcessor(BaselineProvider baselineProvider,
                                   OperationContextRegistry operationContexts) {
-        this(baselineProvider, operationContexts, null, null, null, null, null);
+        this(baselineProvider, operationContexts, null, null, null, null, null, null, null);
     }
 
     public AgentTelSpanProcessor(BaselineProvider baselineProvider,
@@ -63,6 +70,19 @@ public class AgentTelSpanProcessor implements SpanProcessor {
                                   RollingBaselineProvider rollingBaselines,
                                   SloTracker sloTracker,
                                   AgentTelEventEmitter eventEmitter) {
+        this(baselineProvider, operationContexts, anomalyDetector, patternMatcher,
+                rollingBaselines, sloTracker, eventEmitter, null, null);
+    }
+
+    public AgentTelSpanProcessor(BaselineProvider baselineProvider,
+                                  OperationContextRegistry operationContexts,
+                                  AnomalyDetector anomalyDetector,
+                                  PatternMatcher patternMatcher,
+                                  RollingBaselineProvider rollingBaselines,
+                                  SloTracker sloTracker,
+                                  AgentTelEventEmitter eventEmitter,
+                                  OperationDependencyTracker dependencyTracker,
+                                  CausalityTracker causalityTracker) {
         this.baselineProvider = baselineProvider;
         this.operationContexts = operationContexts;
         this.anomalyDetector = anomalyDetector;
@@ -70,6 +90,8 @@ public class AgentTelSpanProcessor implements SpanProcessor {
         this.rollingBaselines = rollingBaselines;
         this.sloTracker = sloTracker;
         this.eventEmitter = eventEmitter;
+        this.dependencyTracker = dependencyTracker;
+        this.causalityTracker = causalityTracker;
     }
 
     /**
@@ -105,6 +127,34 @@ public class AgentTelSpanProcessor implements SpanProcessor {
         long durationNanos = span.getLatencyNanos();
         double latencyMs = (double) durationNanos / TimeUnit.MILLISECONDS.toNanos(1);
         boolean isError = span.toSpanData().getStatus().getStatusCode() == StatusCode.ERROR;
+
+        // Track operation-to-dependency relationships from client spans
+        if (dependencyTracker != null && span.toSpanData().getKind() == SpanKind.CLIENT) {
+            String parentOp = span.toSpanData().getParentSpanContext().isValid()
+                    ? operationName : null;
+            // For client spans, the span name is typically the dependency operation
+            // Extract the dependency name from attributes
+            var spanAttrs = span.toSpanData().getAttributes();
+            String depName = spanAttrs.get(AttributeKey.stringKey("db.system"));
+            if (depName == null) depName = spanAttrs.get(AttributeKey.stringKey("peer.service"));
+            if (depName == null) depName = spanAttrs.get(AttributeKey.stringKey("server.address"));
+            if (depName == null) depName = operationName;
+
+            // Feed dependency error state to causality tracker
+            if (causalityTracker != null) {
+                if (isError) {
+                    causalityTracker.reportDependencyState(depName,
+                            DependencyState.UNHEALTHY,
+                            "Error in client span: " + operationName);
+                    if (patternMatcher != null) {
+                        patternMatcher.recordDependencyError(depName);
+                    }
+                } else {
+                    causalityTracker.reportDependencyState(depName,
+                            DependencyState.HEALTHY, "Successful call");
+                }
+            }
+        }
 
         // Feed rolling baselines
         if (rollingBaselines != null) {
@@ -167,7 +217,8 @@ public class AgentTelSpanProcessor implements SpanProcessor {
 
     @Override
     public boolean isEndRequired() {
-        return anomalyDetector != null || rollingBaselines != null || sloTracker != null || spanCompletionListener != null;
+        return anomalyDetector != null || rollingBaselines != null || sloTracker != null
+                || spanCompletionListener != null || dependencyTracker != null || causalityTracker != null;
     }
 
     @Override

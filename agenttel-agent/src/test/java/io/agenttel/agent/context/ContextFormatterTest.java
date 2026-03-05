@@ -47,17 +47,18 @@ class ContextFormatterTest {
                         "POST /orders", "Elevated error rate",
                         List.of(IncidentPattern.ERROR_RATE_SPIKE),
                         0.05, 0.001, 150.0, 100.0, 0.8,
-                        ServiceHealthAggregator.HealthStatus.DEGRADED),
+                        ServiceHealthAggregator.HealthStatus.DEGRADED, ""),
                 new IncidentContext.WhatChanged(
                         List.of(new IncidentContext.RecentChange("deployment", "v2.1.0", "2024-01-01T00:00:00Z")),
-                        "v2.1.0", "2024-01-01T00:00:00Z"),
+                        "v2.1.0", "2024-01-01T00:00:00Z", null),
                 new IncidentContext.WhatIsAffected(
                         List.of("POST /orders"), List.of("postgres"),
                         List.of("checkout-service"), "operation_specific", true),
                 new IncidentContext.WhatToDo(
                         "", "page_oncall", true, true, "",
                         List.of(new IncidentContext.SuggestedAction(
-                                "rollback", "Rollback to previous version", "high", true))),
+                                "rollback", "Rollback to previous version", "high", true)),
+                        null),
                 List.of()
         );
 
@@ -86,11 +87,12 @@ class ContextFormatterTest {
                 new IncidentContext.WhatIsHappening(
                         "GET /health", "Service down", List.of(),
                         0.50, 0.001, 5000.0, 100.0, 1.0,
-                        ServiceHealthAggregator.HealthStatus.CRITICAL),
-                new IncidentContext.WhatChanged(List.of(), "", ""),
+                        ServiceHealthAggregator.HealthStatus.CRITICAL, ""),
+                new IncidentContext.WhatChanged(List.of(), "", "", null),
                 new IncidentContext.WhatIsAffected(List.of(), List.of(), List.of(), "service_wide", true),
                 new IncidentContext.WhatToDo("", "page_oncall", false, false, "",
-                        List.of(new IncidentContext.SuggestedAction("restart", "Restart", "high", true))),
+                        List.of(new IncidentContext.SuggestedAction("restart", "Restart", "high", true)),
+                        null),
                 List.of()
         );
 

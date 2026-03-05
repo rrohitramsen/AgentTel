@@ -15,13 +15,16 @@ import io.agenttel.core.baseline.DurationParser;
 import io.agenttel.core.baseline.RollingBaselineProvider;
 import io.agenttel.core.baseline.StaticBaselineProvider;
 import io.agenttel.core.causality.CausalityTracker;
+import io.agenttel.core.causality.OperationDependencyTracker;
 import io.agenttel.core.engine.AgentTelEngine;
+import io.agenttel.core.error.ErrorClassifier;
 import io.agenttel.core.enrichment.AgentTelSpanProcessor;
 import io.agenttel.core.enrichment.OperationContext;
 import io.agenttel.core.enrichment.OperationContextRegistry;
 import io.agenttel.core.resource.AgentTelGlobalState;
 import io.agenttel.core.slo.SloTracker;
 import io.agenttel.core.topology.TopologyRegistry;
+import io.agenttel.core.export.AgentTelEnrichingSpanExporter;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -194,8 +197,20 @@ public class AgentTelAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public CausalityTracker agentTelCausalityTracker() {
-        return new CausalityTracker();
+    public ErrorClassifier agentTelErrorClassifier() {
+        return new ErrorClassifier();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public OperationDependencyTracker agentTelOperationDependencyTracker() {
+        return new OperationDependencyTracker();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public CausalityTracker agentTelCausalityTracker(OperationDependencyTracker dependencyTracker) {
+        return new CausalityTracker(dependencyTracker);
     }
 
     @Bean
@@ -244,18 +259,33 @@ public class AgentTelAutoConfiguration {
                                                         AnomalyDetector anomalyDetector,
                                                         PatternMatcher patternMatcher,
                                                         RollingBaselineProvider rollingBaselines,
-                                                        SloTracker sloTracker) {
+                                                        SloTracker sloTracker,
+                                                        OperationDependencyTracker dependencyTracker,
+                                                        CausalityTracker causalityTracker) {
         return new AgentTelSpanProcessor(
                 baselines, operationContexts,
-                anomalyDetector, patternMatcher, rollingBaselines, sloTracker, null);
+                anomalyDetector, patternMatcher, rollingBaselines, sloTracker, null,
+                dependencyTracker, causalityTracker);
     }
 
     @Bean
-    public AutoConfigurationCustomizerProvider agentTelOtelCustomizer(AgentTelSpanProcessor spanProcessor) {
-        // Register AgentTelSpanProcessor with the OTel SDK via the customizer API.
-        // This ensures the processor is added during SDK initialization.
-        return customizer -> customizer.addTracerProviderCustomizer(
-                (builder, config) -> builder.addSpanProcessor(spanProcessor));
+    public AutoConfigurationCustomizerProvider agentTelOtelCustomizer(
+            AgentTelSpanProcessor spanProcessor,
+            RollingBaselineProvider rollingBaselines,
+            SloTracker sloTracker,
+            CausalityTracker causalityTracker,
+            AnomalyDetector anomalyDetector,
+            ErrorClassifier errorClassifier,
+            TopologyRegistry topology) {
+        // Register AgentTelSpanProcessor and enriching exporter with the OTel SDK.
+        return customizer -> {
+            customizer.addTracerProviderCustomizer(
+                    (builder, config) -> builder.addSpanProcessor(spanProcessor));
+            customizer.addSpanExporterCustomizer(
+                    (exporter, config) -> new AgentTelEnrichingSpanExporter(
+                            exporter, rollingBaselines, sloTracker, causalityTracker,
+                            anomalyDetector, errorClassifier, topology));
+        };
     }
 
     @Bean
