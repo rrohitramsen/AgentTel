@@ -31,8 +31,9 @@ AgentTel enriches telemetry at the instrumentation layer — the earliest and mo
 5. **SLO Tracking** — Error budget consumption with burn rate alerting
 6. **Error Classification** — Categorizing errors into actionable types (dependency timeout, code bug, rate limited) so agents know whether to retry, rollback, or escalate
 7. **Autonomous Capabilities** — Structured playbooks, parameterized action specs, action feedback loops, causal analysis, and change correlation for full observe → diagnose → act → verify loops
+8. **Multi-Agent Support** — Agent identity tracking, role-based tool permissions, and shared incident sessions enabling coordinator, parallel, swarm, and hierarchical agent patterns
 
-It also provides an **agent interface layer** that packages this telemetry into structured formats AI agents can consume via the Model Context Protocol (MCP), complete with incident context building, remediation execution, and full action auditability.
+It also provides an **agent interface layer** that packages this telemetry into structured formats AI agents can consume via the Model Context Protocol (MCP), complete with incident context building, remediation execution, multi-agent collaboration, and full action auditability.
 
 ### Why Now
 

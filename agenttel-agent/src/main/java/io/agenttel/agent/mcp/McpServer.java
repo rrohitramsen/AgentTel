@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import io.agenttel.agent.identity.AgentIdentity;
+import io.agenttel.agent.identity.ToolPermissionRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,10 +44,16 @@ public class McpServer {
     private final int port;
     private final Map<String, McpToolDefinition> toolDefinitions = new ConcurrentHashMap<>();
     private final Map<String, McpToolHandler> toolHandlers = new ConcurrentHashMap<>();
+    private final ToolPermissionRegistry permissionRegistry;
     private HttpServer httpServer;
 
     public McpServer(int port) {
+        this(port, null);
+    }
+
+    public McpServer(int port, ToolPermissionRegistry permissionRegistry) {
         this.port = port;
+        this.permissionRegistry = permissionRegistry;
     }
 
     /**
@@ -113,6 +121,18 @@ public class McpServer {
             return;
         }
 
+        // Extract agent identity from HTTP headers
+        Map<String, String> headers = new HashMap<>();
+        for (String headerName : List.of(
+                AgentIdentity.HEADER_AGENT_ID,
+                AgentIdentity.HEADER_AGENT_ROLE,
+                AgentIdentity.HEADER_AGENT_SESSION_ID)) {
+            var values = exchange.getRequestHeaders().get(headerName);
+            if (values != null && !values.isEmpty()) {
+                headers.put(headerName, values.get(0));
+            }
+        }
+
         String body;
         try (var is = exchange.getRequestBody()) {
             body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -128,7 +148,7 @@ public class McpServer {
             switch (method) {
                 case "initialize" -> result = handleInitialize();
                 case "tools/list" -> result = handleToolsList();
-                case "tools/call" -> result = handleToolsCall(params);
+                case "tools/call" -> result = handleToolsCall(params, headers);
                 default -> {
                     sendJsonRpcError(exchange, id, -32601, "Method not found: " + method);
                     return;
@@ -138,6 +158,8 @@ public class McpServer {
             sendJsonRpcResult(exchange, id, result);
         } catch (JsonProcessingException e) {
             sendJsonRpcError(exchange, null, -32700, "Parse error: " + e.getMessage());
+        } catch (PermissionDeniedException e) {
+            sendJsonRpcError(exchange, null, -32603, e.getMessage());
         } catch (Exception e) {
             LOG.error("Error handling MCP request", e);
             sendJsonRpcError(exchange, null, -32603, "Internal error: " + e.getMessage());
@@ -163,7 +185,7 @@ public class McpServer {
         return Map.of("tools", tools);
     }
 
-    private Map<String, Object> handleToolsCall(JsonNode params) {
+    private Map<String, Object> handleToolsCall(JsonNode params, Map<String, String> headers) {
         if (params == null || !params.has("name")) {
             throw new IllegalArgumentException("Missing tool name");
         }
@@ -181,6 +203,18 @@ public class McpServer {
                     arguments.put(field, args.get(field).asText()));
         }
 
+        // Resolve agent identity from headers + arguments
+        AgentIdentity agent = AgentIdentity.resolve(headers, arguments);
+
+        // Strip _agent_* meta-arguments before passing to handler
+        arguments.keySet().removeIf(key -> key.startsWith("_agent_"));
+
+        // Check permissions
+        if (permissionRegistry != null && !permissionRegistry.isAllowed(agent, toolName)) {
+            throw new PermissionDeniedException(
+                    "Permission denied: role '" + agent.role() + "' cannot access tool '" + toolName + "'");
+        }
+
         String resultText = handler.handle(arguments);
 
         return Map.of(
@@ -190,6 +224,19 @@ public class McpServer {
                 )),
                 "isError", false
         );
+    }
+
+    /**
+     * Returns the permission registry, if configured.
+     */
+    public ToolPermissionRegistry getPermissionRegistry() {
+        return permissionRegistry;
+    }
+
+    private static class PermissionDeniedException extends RuntimeException {
+        PermissionDeniedException(String message) {
+            super(message);
+        }
     }
 
     private void sendJsonRpcResult(HttpExchange exchange, JsonNode id, Object result) throws IOException {

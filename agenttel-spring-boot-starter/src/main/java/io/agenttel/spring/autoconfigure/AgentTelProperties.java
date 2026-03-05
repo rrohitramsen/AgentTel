@@ -23,6 +23,7 @@ public class AgentTelProperties {
     private BaselineProperties baselines = new BaselineProperties();
     private AnomalyDetectionProperties anomalyDetection = new AnomalyDetectionProperties();
     private DeploymentProperties deployment = new DeploymentProperties();
+    private Map<String, List<String>> agentRoles = new LinkedHashMap<>();
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -42,6 +43,8 @@ public class AgentTelProperties {
     public void setAnomalyDetection(AnomalyDetectionProperties anomalyDetection) { this.anomalyDetection = anomalyDetection; }
     public DeploymentProperties getDeployment() { return deployment; }
     public void setDeployment(DeploymentProperties deployment) { this.deployment = deployment; }
+    public Map<String, List<String>> getAgentRoles() { return agentRoles; }
+    public void setAgentRoles(Map<String, List<String>> agentRoles) { this.agentRoles = agentRoles; }
 
     public static class TopologyProperties {
         private String team = "";

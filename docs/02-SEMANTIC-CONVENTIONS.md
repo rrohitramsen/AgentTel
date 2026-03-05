@@ -265,6 +265,31 @@ Correlates anomalies with recent changes. Added to incident context by the `Chan
 
 ---
 
+## 8. Agent Identity Attributes
+
+Tracks which AI agent is making each MCP request. Set on action spans by `AgentActionTracker`.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.agent.id` | string | Unique agent identifier | `"diag-agent-1"` |
+| `agenttel.agent.role` | string | Agent role (observer, diagnostician, remediator, admin) | `"diagnostician"` |
+| `agenttel.agent.session_id` | string | Shared session ID for multi-agent collaboration | `"sess-a3f2b1c4"` |
+
+**Predefined Roles:** `observer`, `diagnostician`, `remediator`, `admin`
+
+---
+
+## 9. Session Attributes
+
+Shared incident session tracking for multi-agent collaboration.
+
+| Attribute | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `agenttel.session.id` | string | Session identifier | `"a3f2b1c4"` |
+| `agenttel.session.incident_id` | string | Associated incident identifier | `"inc-payment-spike"` |
+
+---
+
 ## SLO Attributes
 
 Error budget consumption tracking. Set as span attributes when SLOs are registered.

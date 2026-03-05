@@ -57,7 +57,7 @@ graph LR
 
     AT1 -->|"Topology + Baselines<br/>+ Decisions"| C
     AT2 -->|"Journeys + Anomalies<br/>+ Correlation"| C
-    E -->|"MCP Tools<br/>(12 tools)"| AT1
+    E -->|"MCP Tools<br/>(15 tools)"| AT1
     B2 -->|"W3C Trace Context"| B1
 
     style B1 fill:#4a1d96,stroke:#7c3aed,color:#fff
@@ -137,6 +137,14 @@ Real-time z-score anomaly detection on latency and error rates — backend and f
 ### Incident Context
 
 Structured incident packages: what's happening, what changed, what's affected, and what to do — with cross-stack context linking frontend and backend telemetry.
+
+</div>
+
+<div class="feature-card" markdown>
+
+### Multi-Agent Support
+
+Role-based tool permissions, shared incident sessions (blackboard pattern), and agent identity tracking — enabling coordinator, parallel, swarm, and hierarchical agent patterns.
 
 </div>
 

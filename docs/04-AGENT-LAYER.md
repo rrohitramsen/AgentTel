@@ -10,10 +10,11 @@ The `agenttel-agent` module provides the interface layer between AI agents and y
 graph TB
     Agent["AI Agent / LLM<br/><small>Claude, GPT, custom agent</small>"]
 
-    subgraph MCP["MCP Server (12 tools)"]
+    subgraph MCP["MCP Server (15 tools)"]
         Tools1["get_service_health · get_incident_context<br/>list_remediation_actions · execute_remediation<br/>get_recent_agent_actions"]
         Tools2["get_slo_report · get_executive_summary<br/>get_trend_analysis · get_cross_stack_context"]
         Tools3["get_playbook · verify_remediation_effect<br/>get_error_analysis"]
+        Tools4["create_session · add_session_entry<br/>get_session"]
     end
 
     ACP["AgentContextProvider<br/><small>Single entry point for all agent queries</small>"]
@@ -890,9 +891,136 @@ IncidentContext ctx = provider.getIncidentContextObject("POST /api/payments");
 
 ---
 
+## Multi-Agent Support
+
+AgentTel supports multi-agent orchestration patterns — coordinator, parallel, swarm, and hierarchical — through three capabilities:
+
+### Agent Identity
+
+Every MCP request can carry agent identity via HTTP headers or tool argument meta-parameters:
+
+**HTTP Headers:**
+
+| Header | Description |
+|--------|-------------|
+| `X-Agent-Id` | Unique agent identifier |
+| `X-Agent-Role` | Agent role: `observer`, `diagnostician`, `remediator`, `admin` |
+| `X-Agent-Session-Id` | Shared session ID for multi-agent collaboration |
+
+**Tool Argument Meta-Parameters:**
+
+Alternatively, pass identity as `_agent_*` prefixed arguments:
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "get_incident_context",
+    "arguments": {
+      "operation_name": "POST /api/payments",
+      "_agent_id": "diag-agent-1",
+      "_agent_role": "diagnostician",
+      "_agent_session_id": "sess-abc"
+    }
+  }
+}
+```
+
+Meta-parameters are stripped before reaching the tool handler. Arguments take precedence over headers.
+
+### Role-Based Tool Permissions
+
+Each agent role grants a set of permissions that control which MCP tools it can invoke:
+
+| Role | Permissions | Accessible Tools |
+|------|------------|-----------------|
+| `observer` | READ | `get_service_health`, `get_incident_context`, `get_slo_report`, `get_executive_summary`, `get_trend_analysis`, `get_playbook`, `get_error_analysis`, `get_session` |
+| `diagnostician` | READ, DIAGNOSE | All observer tools + `verify_remediation_effect`, `create_session`, `add_session_entry` |
+| `remediator` | READ, DIAGNOSE, REMEDIATE | All diagnostician tools + `execute_remediation`, `list_remediation_actions` |
+| `admin` | ALL | All tools |
+
+Anonymous agents (no identity) default to `observer` permissions. Denied requests return a JSON-RPC error:
+
+```json
+{"error": {"code": -32603, "message": "Permission denied: role 'observer' cannot access tool 'execute_remediation'"}}
+```
+
+**YAML configuration:**
+
+```yaml
+agenttel:
+  agent-roles:
+    observer: [READ]
+    diagnostician: [READ, DIAGNOSE]
+    remediator: [READ, DIAGNOSE, REMEDIATE]
+    custom-role: [READ, DIAGNOSE]
+```
+
+### Shared Incident Sessions
+
+The session system implements the **blackboard pattern** for multi-agent collaboration. Agents post observations, diagnoses, and actions to a shared session that all participants can read.
+
+#### create_session
+
+Creates a shared session for an incident.
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `incident_id` | string | Yes | The incident to create a session for |
+
+#### add_session_entry
+
+Adds an entry to a shared session. Agent identity is automatically captured.
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `session_id` | string | Yes | Session ID to add entry to |
+| `type` | string | Yes | `OBSERVATION`, `DIAGNOSIS`, `ACTION`, or `RECOMMENDATION` |
+| `content` | string | Yes | The content of this entry |
+
+#### get_session
+
+Retrieves all entries from a shared session.
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `session_id` | string | Yes | Session ID to retrieve |
+
+**Example multi-agent session:**
+
+```
+=== SESSION a3f2b1c4 ===
+Incident: inc-payment-spike
+Created: 2025-01-15T14:30:00Z
+Entries: 4
+
+[14:30:05Z] OBSERVATION by monitor-agent (observer): Error rate on POST /api/payments
+  spiked to 5.2% (baseline: 0.1%)
+[14:30:08Z] DIAGNOSIS by diag-agent (diagnostician): Root cause is stripe-api timeout.
+  62% of errors are dependency_timeout, correlated with deploy v2.1.0 (confidence: 0.85)
+[14:30:12Z] RECOMMENDATION by diag-agent (diagnostician): Enable circuit breaker on
+  stripe-api, then verify error rate in 60s
+[14:30:15Z] ACTION by remediation-bot (remediator): Executed toggle_circuit_breaker.
+  Verification scheduled.
+```
+
+### Multi-Agent Patterns
+
+AgentTel's multi-agent support enables the following patterns from [Anthropic](https://www.anthropic.com/engineering/building-effective-agents) and [Google Cloud](https://docs.cloud.google.com/architecture/choose-design-pattern-agentic-ai-system):
+
+| Pattern | How AgentTel Supports It |
+|---------|------------------------|
+| **Coordinator** | One admin agent delegates to specialized agents (observer, diagnostician, remediator) via shared sessions |
+| **Parallel** | Multiple diagnostician agents analyze different aspects simultaneously, posting to the same session |
+| **Swarm** | Agents self-organize around incidents; session entries create shared context without central coordination |
+| **Hierarchical** | Admin creates session → diagnosticians investigate → remediator executes; role permissions enforce the hierarchy |
+| **Human-in-the-Loop** | Remediation actions can require `approved_by`; humans review session entries before approving |
+
+---
+
 ## Integration with Spring Boot
 
-The agent layer can be integrated with Spring Boot auto-configuration:
+The agent layer is auto-configured when `agenttel-agent` is on the classpath:
 
 ```java
 @Configuration
@@ -918,11 +1046,15 @@ public class AgentConfig {
 
     @Bean
     public McpServer mcpServer(AgentContextProvider provider,
-                                RemediationExecutor executor) throws IOException {
+                                RemediationExecutor executor,
+                                ToolPermissionRegistry permissionRegistry,
+                                SessionManager sessionManager) throws IOException {
         McpServer server = new AgentTelMcpServerBuilder()
             .port(8081)
             .contextProvider(provider)
             .remediationExecutor(executor)
+            .permissionRegistry(permissionRegistry)
+            .sessionManager(sessionManager)
             .build();
         server.start();
         return server;
