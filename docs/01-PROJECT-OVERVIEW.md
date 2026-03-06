@@ -83,7 +83,7 @@ agenttel/
 ├── agenttel-genai/               # GenAI instrumentation (optional framework deps)
 ├── agenttel-agent/               # Agent interface layer (MCP, health, incidents, reporting)
 ├── agenttel-spring-boot-starter/ # Spring Boot auto-configuration
-├── agenttel-javaagent-extension/ # Zero-code OTel javaagent extension
+├── agenttel-javaagent/ # Zero-code OTel javaagent extension
 ├── agenttel-web/                 # Browser SDK (TypeScript) — frontend telemetry
 ├── agenttel-instrument/          # IDE MCP server (Python) — instrumentation automation
 ├── agenttel-testing/             # Test utilities
@@ -103,7 +103,7 @@ agenttel/
 | `agenttel-genai` | `io.agenttel:agenttel-genai` | OTel SDK + optional GenAI libs | LangChain4j, Spring AI, Anthropic/OpenAI/Bedrock instrumentation |
 | `agenttel-agent` | `io.agenttel:agenttel-agent` | OTel SDK, Jackson | MCP server, health aggregation, incident context, remediation, trend analysis, SLO reports, executive summaries, cross-stack context |
 | `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot | Auto-configuration for Spring Boot applications |
-| `agenttel-javaagent-extension` | `io.agenttel:agenttel-javaagent-extension` | OTel Javaagent | Zero-code enrichment for any JVM app — no Spring dependency |
+| `agenttel-javaagent` | `io.agenttel:agenttel-javaagent` | OTel Javaagent | Zero-code enrichment for any JVM app — no Spring dependency |
 | `agenttel-web` | `@agenttel/web` (npm) | TypeScript, ES2020+ | Browser telemetry SDK — page loads, navigation, API calls, journeys, anomaly detection, cross-stack correlation |
 | `agenttel-instrument` | `agenttel-instrument` (pip) | Python 3.11+ | IDE MCP server — codebase analysis, config generation, validation, auto-improvements |
 | `agenttel-testing` | `io.agenttel:agenttel-testing` | OTel SDK Testing | Test utilities for verifying span enrichment |

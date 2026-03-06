@@ -186,7 +186,7 @@ Full annotation params    →   ✅ Operation profiles         →   Convention-
 **Implemented in v0.2:**
 - `agenttel.operations` YAML config — define per-operation baselines and decision metadata entirely in `application.yml`, making `@AgentOperation` annotations optional. When both are present, YAML config takes priority.
 - Topology moved to OTel Resource attributes — `agenttel.topology.*` attributes are set once per service instance via `AgentTelResourceProvider` (OTel SPI), no longer duplicated on every span.
-- `agenttel-javaagent-extension` module — zero-code OTel javaagent extension. Drop into `-Dotel.javaagent.extensions` path with an `agenttel.yml` config file. No Spring dependency, works with any JVM app.
+- `agenttel-javaagent` module — zero-code OTel javaagent extension. Drop into `-Dotel.javaagent.extensions` path with an `agenttel.yml` config file. No Spring dependency, works with any JVM app.
 - Operation profiles — reusable sets of operational defaults (`agenttel.profiles` in YAML, `@AgentOperation(profile = "...")` in annotations). Define common patterns once, reference from operations.
 
 The core principle remains: **telemetry should carry enough context for AI agents to reason and act autonomously**. The question is how that context gets into the telemetry — and the answer should evolve from "developers annotate code" to "the platform injects it automatically."

@@ -1,5 +1,5 @@
 site_name: AgentTel
-site_description: Agent-Ready Telemetry
+site_description: Agent-Ready Telemetry for OpenTelemetry
 site_url: https://rrohitramsen.github.io/AgentTel
 repo_url: https://github.com/rrohitramsen/AgentTel
 repo_name: rrohitramsen/AgentTel
@@ -27,7 +27,6 @@ theme:
     code: JetBrains Mono
   features:
     - navigation.sections
-    - navigation.expand
     - navigation.top
     - navigation.indexes
     - search.suggest
@@ -35,6 +34,7 @@ theme:
     - content.code.copy
     - content.tabs.link
     - toc.follow
+    - navigation.tabs
   icon:
     repo: fontawesome/brands/github
 
@@ -47,12 +47,21 @@ nav:
   - Concepts:
     - Architecture: concepts/architecture.md
     - Semantic Conventions: concepts/semantic-conventions.md
-    - Design Considerations: concepts/design-considerations.md
+    - Design Philosophy: concepts/design-philosophy.md
   - Guides:
-    - Agent Layer: guides/agent-layer.md
+    - MCP Server & Agent Tools: guides/mcp-server.md
+    - Incident Response: guides/incident-response.md
+    - Zero-Code Mode: guides/zero-code-mode.md
+    - Anomaly Detection: guides/anomaly-detection.md
+    - Frontend Telemetry: guides/frontend-telemetry.md
+    - Instrumentation Agent: guides/instrumentation-agent.md
+    - Multi-Agent Patterns: guides/multi-agent.md
     - GenAI Instrumentation: guides/genai-instrumentation.md
-    - API Documentation: guides/api-documentation.md
   - Reference:
+    - Attribute Dictionary: reference/attribute-dictionary.md
+    - Event Catalog: reference/event-catalog.md
+    - Configuration: reference/configuration.md
+    - MCP Tools: reference/mcp-tools.md
     - API Reference: reference/api-reference.md
     - Javadoc: reference/javadoc.md
   - Project:
@@ -87,9 +96,13 @@ markdown_extensions:
   - md_in_html
   - toc:
       permalink: true
+      toc_depth: 2
 
 extra_css:
   - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mermaid-fix.js
 
 extra:
   social:
