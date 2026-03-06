@@ -29,7 +29,7 @@ Open `build/docs/javadoc/index.html` in a browser to view.
 | `io.agenttel.agent.health` | agenttel-agent | Service health aggregation |
 | `io.agenttel.agent.incident` | agenttel-agent | Incident context building |
 | `io.agenttel.agent.remediation` | agenttel-agent | Remediation action framework |
-| `io.agenttel.extension` | agenttel-javaagent-extension | OTel javaagent extension |
+| `io.agenttel.extension` | agenttel-javaagent | OTel javaagent extension |
 | `io.agenttel.spring.autoconfigure` | agenttel-spring-boot-starter | Spring Boot auto-configuration |
 | `io.agenttel.testing` | agenttel-testing | Test utilities |
 

@@ -32,11 +32,10 @@ import java.util.logging.Logger;
 /**
  * OTel javaagent extension that enriches spans with AgentTel attributes.
  *
- * <p>This is the zero-code entry point for AgentTel. Users add this jar to the
- * OTel javaagent's extensions path:
+ * <p>This is the zero-code entry point for AgentTel. The AgentTel javaagent bundles
+ * the OTel javaagent with this extension:
  * <pre>
- * java -javaagent:opentelemetry-javaagent.jar \
- *      -Dotel.javaagent.extensions=agenttel-javaagent-extension.jar \
+ * java -javaagent:agenttel-javaagent.jar \
  *      -Dagenttel.config.file=agenttel.yml \
  *      -jar myapp.jar
  * </pre>

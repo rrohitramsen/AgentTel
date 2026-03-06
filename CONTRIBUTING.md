@@ -63,7 +63,7 @@ agenttel-core/                # Runtime engine (span enrichment, baselines, anom
 agenttel-genai/               # GenAI instrumentation (LangChain4j, Spring AI, provider SDKs)
 agenttel-agent/               # Agent interface layer (MCP server, health, incidents, reporting)
 agenttel-spring-boot-starter/ # Spring Boot auto-configuration
-agenttel-javaagent-extension/ # Zero-code OTel javaagent extension
+agenttel-javaagent/ # Zero-code OTel javaagent extension
 agenttel-web/                 # Browser telemetry SDK (TypeScript)
 agenttel-instrument/          # IDE MCP server for instrumentation automation (Python)
 agenttel-testing/             # Test utilities
@@ -150,7 +150,7 @@ Open a [GitHub issue](https://github.com/rrohitramsen/AgentTel/issues/new?templa
 - All agent actions must be tracked for auditability.
 - Reporting components (TrendAnalyzer, SloReportGenerator, etc.) should produce concise output optimized for LLM context windows.
 
-### agenttel-javaagent-extension
+### agenttel-javaagent
 
 - Must not depend on Spring.
 - Uses OTel SPI (`AutoConfigurationCustomizerProvider`) for zero-code integration.

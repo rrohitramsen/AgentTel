@@ -16,7 +16,7 @@ AI agents need to autonomously diagnose and resolve production incidents.
 </p>
 
 [Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
-[Try the Docker Demo](getting-started/quick-start.md#try-the-docker-demo){ .md-button }
+[Browse the Reference](reference/attribute-dictionary.md){ .md-button }
 
 </div>
 
@@ -40,6 +40,16 @@ AgentTel closes these gaps at the instrumentation layer — enriching every span
 
 </div>
 
+**What changes on a span:**
+
+| | Standard OTel Span | With AgentTel | Why It Matters |
+|---|---|---|---|
+| **Identity** | `http.method=POST`, `http.route=/api/payments` | + `topology.team=payments-platform`, `tier=critical` | Agent knows who owns this, how critical it is, and who to page |
+| **Baselines** | *(none)* | + `baseline.latency_p50_ms=45`, `baseline.error_rate=0.001` | Agent can tell if current behavior is normal or anomalous |
+| **Decisions** | *(none)* | + `decision.retryable=true`, `decision.runbook_url=...` | Agent knows what it's allowed to do without asking a human |
+| **Anomaly** | *(none)* | + `anomaly.detected=true`, `anomaly.score=0.92` | Agent gets alerted in real time, not after a threshold breach |
+| **Causality** | *(none)* | + `cause.category=dependency`, `cause.hint=stripe-api timeout` | Agent skips root-cause investigation and jumps to remediation |
+
 ---
 
 ## How It Works
@@ -47,6 +57,7 @@ AgentTel closes these gaps at the instrumentation layer — enriching every span
 AgentTel enriches telemetry across the full stack — all configurable via YAML or code, no manual instrumentation required:
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'lineColor': '#6366f1'}}}%%
 graph LR
     B1["Your Backend<br/>(JVM)"] --> AT1["AgentTel Core"]
     B2["Your Frontend<br/>(Browser)"] --> AT2["AgentTel Web SDK"]
@@ -60,13 +71,13 @@ graph LR
     E -->|"MCP Tools<br/>(15 tools)"| AT1
     B2 -->|"W3C Trace Context"| B1
 
-    style B1 fill:#4a1d96,stroke:#7c3aed,color:#fff
-    style B2 fill:#4a1d96,stroke:#7c3aed,color:#fff
-    style AT1 fill:#7c3aed,stroke:#a78bfa,color:#fff
-    style AT2 fill:#7c3aed,stroke:#a78bfa,color:#fff
-    style C fill:#6366f1,stroke:#818cf8,color:#fff
-    style D fill:#4f46e5,stroke:#6366f1,color:#fff
-    style E fill:#4338ca,stroke:#6366f1,color:#fff
+    style B1 fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style B2 fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style AT1 fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style AT2 fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style C fill:#818cf8,stroke:#6366f1,color:#1e1b4b
+    style D fill:#a5b4fc,stroke:#6366f1,color:#1e1b4b
+    style E fill:#818cf8,stroke:#6366f1,color:#1e1b4b
 ```
 
 | Level | Where | What It Adds | Example |
@@ -86,7 +97,7 @@ graph LR
 
 <div class="feature-card" markdown>
 
-### Enriched Spans
+### [Enriched Spans](concepts/semantic-conventions/)
 
 Every operation span carries baselines (P50/P99 latency, error rate), decision metadata (retryable, idempotent, runbook URL), and anomaly scores — all the context an AI agent needs.
 
@@ -94,15 +105,15 @@ Every operation span carries baselines (P50/P99 latency, error rate), decision m
 
 <div class="feature-card" markdown>
 
-### MCP Server
+### [MCP Server](guides/mcp-server/)
 
-Built-in [Model Context Protocol](https://modelcontextprotocol.io) server exposes tools like `get_service_health`, `get_incident_context`, and `execute_remediation` over JSON-RPC.
+Built-in Model Context Protocol server exposes tools like `get_service_health`, `get_incident_context`, and `execute_remediation` over JSON-RPC.
 
 </div>
 
 <div class="feature-card" markdown>
 
-### Zero-Code Mode
+### [Zero-Code Mode](guides/zero-code-mode/)
 
 Drop-in OTel javaagent extension for any JVM app. No Spring dependency, no code changes — just a YAML config file and a JVM flag.
 
@@ -110,7 +121,7 @@ Drop-in OTel javaagent extension for any JVM app. No Spring dependency, no code 
 
 <div class="feature-card" markdown>
 
-### GenAI Instrumentation
+### [GenAI Instrumentation](guides/genai-instrumentation/)
 
 Full observability for LangChain4j, Spring AI, Anthropic SDK, OpenAI SDK, and AWS Bedrock — with token tracking and cost calculation.
 
@@ -118,15 +129,15 @@ Full observability for LangChain4j, Spring AI, Anthropic SDK, OpenAI SDK, and AW
 
 <div class="feature-card" markdown>
 
-### Frontend Telemetry
+### [Frontend Telemetry](guides/frontend-telemetry/)
 
-Browser SDK (`@agenttel/web`) with auto-instrumentation of page loads, navigation, API calls, and errors — plus journey tracking, anomaly detection, and W3C cross-stack correlation.
+Browser SDK with auto-instrumentation of page loads, navigation, API calls, and errors — plus journey tracking, anomaly detection, and W3C cross-stack correlation.
 
 </div>
 
 <div class="feature-card" markdown>
 
-### Anomaly Detection
+### [Anomaly Detection](guides/anomaly-detection/)
 
 Real-time z-score anomaly detection on latency and error rates — backend and frontend. Rolling baselines learn from live traffic; static baselines come from config.
 
@@ -134,7 +145,7 @@ Real-time z-score anomaly detection on latency and error rates — backend and f
 
 <div class="feature-card" markdown>
 
-### Incident Context
+### [Incident Context](guides/incident-response/)
 
 Structured incident packages: what's happening, what changed, what's affected, and what to do — with cross-stack context linking frontend and backend telemetry.
 
@@ -142,7 +153,7 @@ Structured incident packages: what's happening, what changed, what's affected, a
 
 <div class="feature-card" markdown>
 
-### Multi-Agent Support
+### [Multi-Agent Support](guides/multi-agent/)
 
 Role-based tool permissions, shared incident sessions (blackboard pattern), and agent identity tracking — enabling coordinator, parallel, swarm, and hierarchical agent patterns.
 
@@ -150,7 +161,7 @@ Role-based tool permissions, shared incident sessions (blackboard pattern), and 
 
 <div class="feature-card" markdown>
 
-### Instrumentation Agent
+### [Instrumentation Agent](guides/instrumentation-agent/)
 
 IDE MCP server that analyzes your codebase, generates AgentTel config, validates instrumentation, and auto-applies improvements — for both backend and frontend.
 
@@ -163,6 +174,7 @@ IDE MCP server that analyzes your codebase, generates AgentTel config, validates
 ## Module Architecture
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'lineColor': '#6366f1'}}}%%
 graph TB
     subgraph App["Your Application"]
         YML["application.yml / agenttel.yml"]
@@ -175,7 +187,7 @@ graph TB
 
     subgraph Integration["Integration Layer"]
         SBS["agenttel-spring-boot-starter<br/><small>Auto-config, BPP, AOP</small>"]
-        JAE["agenttel-javaagent-extension<br/><small>Zero-code OTel extension</small>"]
+        JAE["agenttel-javaagent<br/><small>Zero-code OTel extension</small>"]
     end
 
     subgraph Core["Core Libraries"]
@@ -205,19 +217,19 @@ graph TB
     WEB --> OTEL
     INS -.->|"generates config"| App
 
-    style App fill:#1e1b4b,stroke:#4338ca,color:#e0e7ff
-    style Frontend fill:#312e81,stroke:#4f46e5,color:#e0e7ff
-    style Integration fill:#312e81,stroke:#4f46e5,color:#e0e7ff
-    style Core fill:#3730a3,stroke:#6366f1,color:#e0e7ff
-    style Tooling fill:#3730a3,stroke:#6366f1,color:#e0e7ff
-    style Foundation fill:#4338ca,stroke:#818cf8,color:#e0e7ff
-    style SBS fill:#7c3aed,stroke:#a78bfa,color:#fff
-    style JAE fill:#7c3aed,stroke:#a78bfa,color:#fff
-    style WEB fill:#7c3aed,stroke:#a78bfa,color:#fff
-    style INS fill:#6366f1,stroke:#818cf8,color:#fff
-    style COR fill:#6366f1,stroke:#818cf8,color:#fff
-    style GEN fill:#6366f1,stroke:#818cf8,color:#fff
-    style AGT fill:#6366f1,stroke:#818cf8,color:#fff
+    style App fill:none,stroke:#818cf8,color:#818cf8
+    style Frontend fill:none,stroke:#818cf8,color:#818cf8
+    style Integration fill:none,stroke:#818cf8,color:#818cf8
+    style Core fill:none,stroke:#818cf8,color:#818cf8
+    style Tooling fill:none,stroke:#818cf8,color:#818cf8
+    style Foundation fill:none,stroke:#818cf8,color:#818cf8
+    style SBS fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style JAE fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style WEB fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style INS fill:#818cf8,stroke:#6366f1,color:#1e1b4b
+    style COR fill:#818cf8,stroke:#6366f1,color:#1e1b4b
+    style GEN fill:#818cf8,stroke:#6366f1,color:#1e1b4b
+    style AGT fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style API fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style OTEL fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
 ```

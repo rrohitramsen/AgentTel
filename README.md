@@ -404,7 +404,7 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 | `agenttel-core` | `io.agenttel:agenttel-core` | Runtime engine — span enrichment, static + rolling baselines, z-score anomaly detection, pattern matching, SLO tracking, structured events. |
 | `agenttel-genai` | `io.agenttel:agenttel-genai` | GenAI instrumentation — LangChain4j wrappers, Spring AI enrichment, Anthropic/OpenAI/Bedrock SDK instrumentation, cost calculation. |
 | `agenttel-agent` | `io.agenttel:agenttel-agent` | Agent interface layer — MCP server, health aggregation, incident context, remediation, trend analysis, SLO reports, executive summaries, cross-stack context. |
-| `agenttel-javaagent-extension` | `io.agenttel:agenttel-javaagent-extension` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
+| `agenttel-javaagent` | `io.agenttel:agenttel-javaagent` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
 | `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
 | `agenttel-web` | `@agenttel/web` (npm) | Browser telemetry SDK — auto-instrumentation of page loads, navigation, API calls, errors, Web Vitals, journey tracking, anomaly detection, W3C trace propagation. |
 | `agenttel-instrument` | `agenttel-instrument` (pip) | IDE MCP server — codebase analysis, config generation, validation, improvement suggestions, and auto-apply for both backend and frontend instrumentation. |
@@ -503,7 +503,7 @@ implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 | `io.agenttel` | `agenttel-core` | Runtime engine |
 | `io.agenttel` | `agenttel-genai` | GenAI instrumentation |
 | `io.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents, reporting) |
-| `io.agenttel` | `agenttel-javaagent-extension` | Zero-code OTel javaagent extension |
+| `io.agenttel` | `agenttel-javaagent` | Zero-code OTel javaagent extension |
 | `io.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
 | `io.agenttel` | `agenttel-testing` | Test utilities |
 
@@ -524,13 +524,12 @@ implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 For applications where you cannot add a library dependency, use the javaagent extension. No code changes, no Spring dependency:
 
 ```bash
-java -javaagent:opentelemetry-javaagent.jar \
-     -Dotel.javaagent.extensions=agenttel-javaagent-extension.jar \
+java -javaagent:agenttel-javaagent.jar \
      -Dagenttel.config.file=agenttel.yml \
      -jar myapp.jar
 ```
 
-The extension reads configuration from `agenttel.yml` (same YAML format as above), system properties (`-Dagenttel.topology.team=payments`), or environment variables (`AGENTTEL_TOPOLOGY_TEAM=payments`). It registers as an OTel `AutoConfigurationCustomizerProvider` via SPI, adding topology to the Resource and enriching spans with baselines and decisions.
+The javaagent bundles the OTel agent with AgentTel enrichment in a single JAR. It reads configuration from `agenttel.yml`, system properties (`-Dagenttel.topology.team=payments`), or environment variables (`AGENTTEL_TOPOLOGY_TEAM=payments`).
 
 ## FAQ
 

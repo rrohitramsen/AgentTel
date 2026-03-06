@@ -5,7 +5,7 @@ Get up and running with AgentTel in minutes. Choose your integration path:
 | Path | Best For | Effort |
 |------|----------|--------|
 | [Spring Boot Starter](#backend-spring-boot) | Spring Boot applications | Add dependency + YAML config |
-| [JavaAgent Extension](#zero-code-mode-javaagent-extension) | Any JVM app (no code changes) | JVM flag + YAML config |
+| [JavaAgent](#zero-code-mode-javaagent) | Any JVM app (no code changes) | JVM flag + YAML config |
 | [Frontend SDK](#frontend-browser-sdk) | Browser / SPA applications | `npm install` + init call |
 | [Instrument Agent](#instrument-agent-ide-tooling) | AI-assisted setup in your IDE | Run MCP server, ask your agent |
 
@@ -235,18 +235,19 @@ Affected Deps: stripe-api
 
 ---
 
-## Zero-Code Mode (JavaAgent Extension)
+## Zero-Code Mode (JavaAgent)
 
-For applications where you cannot add a library dependency, use the javaagent extension. No code changes, no Spring dependency:
+For applications where you cannot add a library dependency, use the AgentTel javaagent. No code changes, no Spring dependency — a single JAR that bundles the OTel agent with AgentTel enrichment:
 
 ```bash
-java -javaagent:opentelemetry-javaagent.jar \
-     -Dotel.javaagent.extensions=agenttel-javaagent-extension.jar \
+java -javaagent:agenttel-javaagent.jar \
      -Dagenttel.config.file=agenttel.yml \
      -jar myapp.jar
 ```
 
-The extension reads configuration from `agenttel.yml` (same YAML format as above), system properties (`-Dagenttel.topology.team=payments`), or environment variables (`AGENTTEL_TOPOLOGY_TEAM=payments`).
+The javaagent reads configuration from `agenttel.yml` (same YAML format as above), system properties (`-Dagenttel.topology.team=payments`), or environment variables (`AGENTTEL_TOPOLOGY_TEAM=payments`).
+
+See the [Zero-Code Mode Guide](../guides/zero-code-mode.md) for full details including Docker/Kubernetes deployment.
 
 ---
 
@@ -430,5 +431,6 @@ Once running, add it as an MCP server in your IDE and ask your AI assistant:
 ## Next Steps
 
 - [Architecture](../concepts/architecture.md) — understand how AgentTel works under the hood
-- [Agent Layer](../guides/agent-layer.md) — deep dive into MCP server, incidents, and remediation
-- [API Reference](../reference/api-reference.md) — full configuration and annotation reference
+- [MCP Server & Agent Tools](../guides/mcp-server.md) — set up the agent interface layer
+- [Attribute Dictionary](../reference/attribute-dictionary.md) — every attribute AgentTel adds to spans
+- [Configuration Reference](../reference/configuration.md) — all configuration properties

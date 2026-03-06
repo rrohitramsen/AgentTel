@@ -1,11 +1,31 @@
-/* Hero section on home page */
+/* ============================================
+   AgentTel Documentation — Custom Styles
+   Deep Purple + Indigo palette
+   ============================================ */
+
+/* --- Layout: wider content area --- */
+.md-grid {
+  max-width: 72rem;
+}
+
+/* --- Body text readability --- */
+.md-typeset {
+  font-size: 0.82rem;
+  line-height: 1.75;
+}
+
+.md-typeset p {
+  margin-bottom: 1em;
+}
+
+/* --- Hero section (home page) --- */
 .md-typeset .hero {
   text-align: center;
-  padding: 2rem 1rem 3rem;
+  padding: 3rem 1rem 4rem;
 }
 
 .md-typeset .hero h1 {
-  font-size: 3.2rem;
+  font-size: 3.4rem;
   font-weight: 800;
   margin-bottom: 0;
   background: linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);
@@ -15,21 +35,22 @@
 }
 
 .md-typeset .hero .hero-tagline {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   color: var(--md-default-fg-color--light);
   margin-top: 0.5rem;
   margin-bottom: 2rem;
   font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 .md-typeset .hero .hero-description {
   font-size: 1.1rem;
   max-width: 700px;
-  margin: 0 auto 2rem;
+  margin: 0 auto 2.5rem;
   line-height: 1.7;
 }
 
-/* Feature grid */
+/* --- Feature grid --- */
 .md-typeset .feature-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -39,19 +60,23 @@
 
 .md-typeset .feature-card {
   border: 1px solid var(--md-default-fg-color--lightest);
+  border-left: 3px solid #7c3aed;
   border-radius: 8px;
   padding: 1.5rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .md-typeset .feature-card:hover {
   border-color: var(--md-accent-fg-color);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-left-color: #6366f1;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.12);
+  transform: translateY(-2px);
 }
 
 .md-typeset .feature-card h3 {
   margin-top: 0;
   font-size: 1.1rem;
+  color: var(--md-default-fg-color);
 }
 
 .md-typeset .feature-card p {
@@ -60,7 +85,7 @@
   margin-bottom: 0;
 }
 
-/* "What is" section */
+/* --- "What is" section --- */
 .md-typeset .what-is {
   max-width: 800px;
   margin: 0 auto;
@@ -71,8 +96,219 @@
   text-align: center;
 }
 
-/* Mermaid diagram sizing */
+/* --- Mermaid diagram sizing and theming --- */
 .md-typeset .mermaid {
   text-align: center;
   margin: 1.5rem 0;
+}
+
+/* Light mode: Mermaid edge and label theming */
+[data-md-color-scheme="default"] {
+  --md-mermaid-label-fg-color: #1e1b4b;
+  --md-mermaid-label-bg-color: #fff;
+  --md-mermaid-edge-color: #6366f1;
+}
+/* Node text colors are fixed via javascripts/mermaid-fix.js */
+
+/* --- Section spacing --- */
+.md-typeset h2 {
+  margin-top: 2.5em;
+  padding-top: 1em;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset h2:first-child,
+.md-typeset h1 + h2 {
+  border-top: none;
+  margin-top: 1em;
+  padding-top: 0;
+}
+
+/* --- Reference tables (attribute dictionary, config, events) --- */
+.md-typeset table:not([class]) {
+  font-size: 0.75rem;
+  display: table;
+  width: 100%;
+  table-layout: auto;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: rgba(124, 58, 237, 0.08);
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 0.6em 1em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: rgba(124, 58, 237, 0.15);
+}
+
+.md-typeset table:not([class]) td {
+  padding: 0.5em 1em;
+  vertical-align: top;
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) td {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.md-typeset table:not([class]) code {
+  font-size: 0.72rem;
+  padding: 0.15em 0.35em;
+  white-space: nowrap;
+}
+
+/* Allow reference tables to scroll horizontally */
+.md-typeset__scrollwrap {
+  overflow-x: auto;
+}
+
+.md-typeset__table {
+  display: block;
+  overflow-x: auto;
+}
+
+/* --- Admonition accent colors --- */
+.md-typeset .admonition.info,
+.md-typeset details.info {
+  border-color: #6366f1;
+}
+
+.md-typeset .info > .admonition-title,
+.md-typeset .info > summary {
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: #7c3aed;
+}
+
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+/* --- Navigation tabs styling --- */
+.md-tabs {
+  background-color: rgba(74, 29, 150, 0.95);
+}
+
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: rgba(49, 46, 129, 0.95);
+}
+
+/* --- Quick nav links for reference pages --- */
+.md-typeset .quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0 2rem;
+}
+
+.md-typeset .quick-nav a {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.md-typeset .quick-nav a:hover {
+  background-color: rgba(124, 58, 237, 0.08);
+  border-color: #7c3aed;
+}
+
+/* --- Attribute detail cards (for data dictionary) --- */
+.md-typeset .attr-detail {
+  border-left: 3px solid #6366f1;
+  padding-left: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.md-typeset .attr-detail h4 {
+  margin-top: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+}
+
+/* --- Badge-like labels --- */
+.md-typeset .badge {
+  display: inline-block;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.md-typeset .badge-resource {
+  background-color: rgba(124, 58, 237, 0.15);
+  color: #7c3aed;
+}
+
+.md-typeset .badge-span {
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+}
+
+.md-typeset .badge-event {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .badge-resource {
+  background-color: rgba(167, 139, 250, 0.2);
+  color: #a78bfa;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .badge-span {
+  background-color: rgba(129, 140, 248, 0.2);
+  color: #818cf8;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .badge-event {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+/* --- Code blocks: tighter in dense pages --- */
+.md-typeset pre {
+  margin: 1em 0;
+}
+
+.md-typeset pre > code {
+  font-size: 0.78rem;
+}
+
+/* --- Blockquotes (used for "Set by" notes) --- */
+.md-typeset blockquote {
+  font-size: 0.8rem;
+  border-left-color: #7c3aed;
+  padding: 0.5em 1em;
+}
+
+/* --- Responsive adjustments --- */
+@media (max-width: 768px) {
+  .md-typeset .hero h1 {
+    font-size: 2.4rem;
+  }
+
+  .md-typeset .hero .hero-tagline {
+    font-size: 1.2rem;
+  }
+
+  .md-typeset .feature-grid {
+    grid-template-columns: 1fr;
+  }
 }
