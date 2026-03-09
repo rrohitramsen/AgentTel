@@ -66,11 +66,11 @@ async def handle(arguments: dict[str, str]) -> str:
             break
 
     # Build the Gradle dependency snippet
-    gradle_dep = 'implementation("io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")'
+    gradle_dep = 'implementation("dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")'
 
     # Build the Maven dependency snippet
     maven_dep = """<dependency>
-    <groupId>io.agenttel</groupId>
+    <groupId>dev.agenttel</groupId>
     <artifactId>agenttel-spring-boot-starter</artifactId>
     <version>0.1.0-alpha</version>
 </dependency>"""
