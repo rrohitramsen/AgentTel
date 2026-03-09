@@ -1,8 +1,9 @@
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
+
 plugins {
     java
     `java-library`
-    `maven-publish`
-    signing
+    id("com.vanniktech.maven.publish") version "0.34.0" apply false
 }
 
 // Centralized version properties
@@ -25,7 +26,7 @@ extra["openaiSdkVersion"] = "4.0.0"
 extra["bedrockSdkVersion"] = "2.30.0"
 
 allprojects {
-    group = "io.agenttel"
+    group = "dev.agenttel"
     version = "0.1.0-alpha"
 
     repositories {
@@ -105,68 +106,39 @@ subprojects {
 
     // Publishing configuration for library modules only
     if (name in publishedModules) {
-        apply(plugin = "maven-publish")
-        apply(plugin = "signing")
+        apply(plugin = "com.vanniktech.maven.publish")
 
-        java {
-            withSourcesJar()
-            withJavadocJar()
-        }
-
-        publishing {
-            publications {
-                create<MavenPublication>("mavenJava") {
-                    from(components["java"])
-
-                    pom {
-                        name.set(project.name)
-                        description.set(project.description ?: "AgentTel - Agent-ready telemetry for Java")
-                        url.set("https://github.com/rrohitramsen/AgentTel")
-
-                        licenses {
-                            license {
-                                name.set("Apache License 2.0")
-                                url.set("https://www.apache.org/licenses/LICENSE-2.0")
-                            }
-                        }
-
-                        developers {
-                            developer {
-                                id.set("rrohitramsen")
-                                name.set("Rohit")
-                            }
-                        }
-
-                        scm {
-                            connection.set("scm:git:git://github.com/rrohitramsen/AgentTel.git")
-                            developerConnection.set("scm:git:ssh://github.com/rrohitramsen/AgentTel.git")
-                            url.set("https://github.com/rrohitramsen/AgentTel")
-                        }
-                    }
-                }
+        configure<MavenPublishBaseExtension> {
+            publishToMavenCentral()
+            if (project.findProperty("signingInMemoryKey") != null ||
+                System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey") != null) {
+                signAllPublications()
             }
 
-            repositories {
-                maven {
-                    name = "OSSRH"
-                    val releasesUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-                    val snapshotsUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-                    url = if (version.toString().endsWith("SNAPSHOT")) snapshotsUrl else releasesUrl
+            pom {
+                name.set(project.name)
+                description.set(project.description ?: "AgentTel - Agent-ready telemetry for Java")
+                url.set("https://github.com/rrohitramsen/AgentTel")
 
-                    credentials {
-                        username = findProperty("mavenCentralUsername") as String? ?: System.getenv("ORG_GRADLE_PROJECT_mavenCentralUsername")
-                        password = findProperty("mavenCentralPassword") as String? ?: System.getenv("ORG_GRADLE_PROJECT_mavenCentralPassword")
+                licenses {
+                    license {
+                        name.set("Apache License 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
                     }
                 }
-            }
-        }
 
-        signing {
-            val signingKey = findProperty("signingInMemoryKey") as String? ?: System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey")
-            val signingPassword = findProperty("signingInMemoryKeyPassword") as String? ?: System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKeyPassword")
-            if (signingKey != null && signingPassword != null) {
-                useInMemoryPgpKeys(signingKey, signingPassword)
-                sign(publishing.publications["mavenJava"])
+                developers {
+                    developer {
+                        id.set("rrohitramsen")
+                        name.set("Rohit")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:git://github.com/rrohitramsen/AgentTel.git")
+                    developerConnection.set("scm:git:ssh://github.com/rrohitramsen/AgentTel.git")
+                    url.set("https://github.com/rrohitramsen/AgentTel")
+                }
             }
         }
     }

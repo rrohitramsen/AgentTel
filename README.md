@@ -140,21 +140,21 @@ AgentTel supports multiple integration paths — pick what fits your stack:
 <dependencies>
     <!-- Core: span enrichment, baselines, anomaly detection, SLO tracking -->
     <dependency>
-        <groupId>io.agenttel</groupId>
+        <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-spring-boot-starter</artifactId>
         <version>0.1.0-alpha</version>
     </dependency>
 
     <!-- Optional: GenAI instrumentation -->
     <dependency>
-        <groupId>io.agenttel</groupId>
+        <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-genai</artifactId>
         <version>0.1.0-alpha</version>
     </dependency>
 
     <!-- Optional: Agent interface layer (MCP server, incident context, remediation) -->
     <dependency>
-        <groupId>io.agenttel</groupId>
+        <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-agent</artifactId>
         <version>0.1.0-alpha</version>
     </dependency>
@@ -167,13 +167,13 @@ AgentTel supports multiple integration paths — pick what fits your stack:
 // build.gradle.kts
 dependencies {
     // Core: span enrichment, baselines, anomaly detection, SLO tracking
-    implementation("io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")
+    implementation("dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")
 
     // Optional: GenAI instrumentation
-    implementation("io.agenttel:agenttel-genai:0.1.0-alpha")
+    implementation("dev.agenttel:agenttel-genai:0.1.0-alpha")
 
     // Optional: Agent interface layer (MCP server, incident context, remediation)
-    implementation("io.agenttel:agenttel-agent:0.1.0-alpha")
+    implementation("dev.agenttel:agenttel-agent:0.1.0-alpha")
 }
 ```
 
@@ -400,15 +400,15 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 
 | Module | Artifact | Description |
 |--------|----------|-------------|
-| `agenttel-api` | `io.agenttel:agenttel-api` | Annotations, attribute constants, enums, data models. Zero runtime dependencies. |
-| `agenttel-core` | `io.agenttel:agenttel-core` | Runtime engine — span enrichment, static + rolling baselines, z-score anomaly detection, pattern matching, SLO tracking, structured events. |
-| `agenttel-genai` | `io.agenttel:agenttel-genai` | GenAI instrumentation — LangChain4j wrappers, Spring AI enrichment, Anthropic/OpenAI/Bedrock SDK instrumentation, cost calculation. |
-| `agenttel-agent` | `io.agenttel:agenttel-agent` | Agent interface layer — MCP server, health aggregation, incident context, remediation, trend analysis, SLO reports, executive summaries, cross-stack context. |
-| `agenttel-javaagent` | `io.agenttel:agenttel-javaagent` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
-| `agenttel-spring-boot-starter` | `io.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
+| `agenttel-api` | `dev.agenttel:agenttel-api` | Annotations, attribute constants, enums, data models. Zero runtime dependencies. |
+| `agenttel-core` | `dev.agenttel:agenttel-core` | Runtime engine — span enrichment, static + rolling baselines, z-score anomaly detection, pattern matching, SLO tracking, structured events. |
+| `agenttel-genai` | `dev.agenttel:agenttel-genai` | GenAI instrumentation — LangChain4j wrappers, Spring AI enrichment, Anthropic/OpenAI/Bedrock SDK instrumentation, cost calculation. |
+| `agenttel-agent` | `dev.agenttel:agenttel-agent` | Agent interface layer — MCP server, health aggregation, incident context, remediation, trend analysis, SLO reports, executive summaries, cross-stack context. |
+| `agenttel-javaagent` | `dev.agenttel:agenttel-javaagent` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
+| `agenttel-spring-boot-starter` | `dev.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
 | `agenttel-web` | `@agenttel/web` (npm) | Browser telemetry SDK — auto-instrumentation of page loads, navigation, API calls, errors, Web Vitals, journey tracking, anomaly detection, W3C trace propagation. |
 | `agenttel-instrument` | `agenttel-instrument` (pip) | IDE MCP server — codebase analysis, config generation, validation, improvement suggestions, and auto-apply for both backend and frontend instrumentation. |
-| `agenttel-testing` | `io.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
+| `agenttel-testing` | `dev.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
 
 ## Documentation
 
@@ -475,7 +475,7 @@ AgentTel publishes standard Maven artifacts to Maven Central. Your application c
 
 ```xml
 <dependency>
-    <groupId>io.agenttel</groupId>
+    <groupId>dev.agenttel</groupId>
     <artifactId>agenttel-spring-boot-starter</artifactId>
     <version>0.1.0-alpha</version>
 </dependency>
@@ -484,13 +484,13 @@ AgentTel publishes standard Maven artifacts to Maven Central. Your application c
 ### Gradle (Kotlin DSL)
 
 ```kotlin
-implementation("io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")
+implementation("dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")
 ```
 
 ### Gradle (Groovy DSL)
 
 ```groovy
-implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
+implementation 'dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 ```
 
 ### All Available Artifacts
@@ -499,13 +499,13 @@ implementation 'io.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 
 | Group ID | Artifact ID | Description |
 |----------|------------|-------------|
-| `io.agenttel` | `agenttel-api` | Annotations and constants (zero dependencies) |
-| `io.agenttel` | `agenttel-core` | Runtime engine |
-| `io.agenttel` | `agenttel-genai` | GenAI instrumentation |
-| `io.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents, reporting) |
-| `io.agenttel` | `agenttel-javaagent` | Zero-code OTel javaagent extension |
-| `io.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
-| `io.agenttel` | `agenttel-testing` | Test utilities |
+| `dev.agenttel` | `agenttel-api` | Annotations and constants (zero dependencies) |
+| `dev.agenttel` | `agenttel-core` | Runtime engine |
+| `dev.agenttel` | `agenttel-genai` | GenAI instrumentation |
+| `dev.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents, reporting) |
+| `dev.agenttel` | `agenttel-javaagent` | Zero-code OTel javaagent extension |
+| `dev.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
+| `dev.agenttel` | `agenttel-testing` | Test utilities |
 
 **npm (Browser):**
 

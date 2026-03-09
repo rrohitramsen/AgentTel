@@ -32,14 +32,19 @@ tasks.shadowJar {
     mergeServiceFiles()
 }
 
+// Disable the default jar — the agentJar replaces it
+tasks.named<Jar>("jar") {
+    enabled = false
+}
+
 // Step 2: Bundle the extension inside the upstream OTel javaagent
 tasks.register<Jar>("agentJar") {
     dependsOn(tasks.shadowJar, otel)
     group = "build"
     description = "Builds the AgentTel javaagent — OTel agent + AgentTel extension in a single JAR"
 
-    // Use a fixed filename to avoid conflict with the default jar task
-    archiveFileName.set("agenttel-javaagent.jar")
+    // Use empty classifier so this becomes the main artifact
+    archiveClassifier.set("")
 
     // Extract the upstream OTel javaagent
     from(zipTree(otel.singleFile))
@@ -63,4 +68,17 @@ tasks.register<Jar>("agentJar") {
 
 tasks.named("assemble") {
     dependsOn("agentJar")
+}
+
+// Wire the agentJar as the main artifact for publishing
+afterEvaluate {
+    val agentJarTask = tasks.named<Jar>("agentJar")
+    configurations.named("runtimeElements") {
+        outgoing.artifacts.clear()
+        outgoing.artifact(agentJarTask)
+    }
+    configurations.named("apiElements") {
+        outgoing.artifacts.clear()
+        outgoing.artifact(agentJarTask)
+    }
 }

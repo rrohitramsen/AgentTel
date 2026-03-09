@@ -25,7 +25,7 @@ All GenAI library dependencies are `compileOnly` — they activate only when the
 ```xml
 <dependencies>
     <dependency>
-        <groupId>io.agenttel</groupId>
+        <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-genai</artifactId>
         <version>0.1.0-alpha</version>
     </dependency>
@@ -66,7 +66,7 @@ All GenAI library dependencies are `compileOnly` — they activate only when the
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.agenttel:agenttel-genai:0.1.0-alpha")
+    implementation("dev.agenttel:agenttel-genai:0.1.0-alpha")
 
     // Include whichever GenAI libraries you use:
     implementation("dev.langchain4j:langchain4j-core:1.0.0")
