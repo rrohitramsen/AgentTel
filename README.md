@@ -4,6 +4,7 @@
 </p>
 
 <p align="center">
+  <a href="https://central.sonatype.com/search?q=dev.agenttel"><img src="https://img.shields.io/maven-central/v/dev.agenttel/agenttel-core" alt="Maven Central"></a>
   <a href="https://github.com/rrohitramsen/AgentTel/actions"><img src="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
   <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/JDK-17%2B-orange.svg" alt="JDK 17+"></a>
