@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agenttel_cli.analyze.scanner import SourceScanner
-from agenttel_cli.analyze.endpoint_detector import EndpointDetector
-from agenttel_cli.analyze.dependency_detector import DependencyDetector
-from agenttel_cli.analyze.config_generator import ConfigGenerator
+from ..analyze.scanner import SourceScanner
+from ..analyze.endpoint_detector import EndpointDetector
+from ..analyze.dependency_detector import DependencyDetector
+from ..analyze.config_generator import ConfigGenerator
 
 from ..mcp.models import ToolDefinition
 

@@ -6,6 +6,7 @@ const config: Config = {
   roots: ['<rootDir>/__tests__'],
   moduleFileExtensions: ['ts', 'tsx', 'js'],
   testMatch: ['**/*.test.ts'],
+  setupFiles: ['<rootDir>/__tests__/setup.ts'],
 };
 
 export default config;

@@ -1,0 +1,142 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_TEMPO",
+      "label": "Tempo",
+      "description": "Tempo data source for traces",
+      "type": "datasource",
+      "pluginId": "tempo"
+    }
+  ],
+  "title": "AgentTel Agentic",
+  "uid": "agenttel-agentic",
+  "description": "AI agent observability — invocations, orchestration, tool calls, costs, guardrails, and human checkpoints",
+  "tags": ["agenttel", "agentic", "ai-agent"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "title": "Agent Invocations",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"invoke_agent\" } | select(span.agenttel.agentic.agent.name, span.agenttel.agentic.agent.type, span.agenttel.agentic.invocation.goal, span.agenttel.agentic.invocation.status, span.agenttel.agentic.invocation.steps, duration)"
+        }
+      ],
+      "description": "All agent invocations with goal, status, and step count"
+    },
+    {
+      "title": "Invocation Success Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"invoke_agent\" && span.agenttel.agentic.invocation.status = \"success\" } | count()"
+        }
+      ],
+      "description": "Successful agent invocations"
+    },
+    {
+      "title": "Avg Steps per Invocation",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"invoke_agent\" } | avg(span.agenttel.agentic.invocation.steps)"
+        }
+      ],
+      "description": "Average reasoning steps per agent invocation"
+    },
+    {
+      "title": "Orchestration Sessions",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"agenttel.agentic.session\" } | select(span.agenttel.agentic.agent.name, span.agenttel.agentic.orchestration.pattern, span.agenttel.agentic.cost.total_usd, duration)"
+        }
+      ],
+      "description": "Multi-agent orchestration sessions"
+    },
+    {
+      "title": "Tool Call Latency",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"agenttel.agentic.tool_call\" } | select(span.agenttel.agentic.step.tool_name, span.agenttel.agentic.step.tool_status, duration)"
+        }
+      ],
+      "description": "Tool call performance and success/failure status"
+    },
+    {
+      "title": "Cost Summary",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 10 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"invoke_agent\" && span.agenttel.agentic.cost.total_usd > 0 } | select(span.agenttel.agentic.agent.name, span.agenttel.agentic.cost.total_usd, span.agenttel.agentic.cost.input_tokens, span.agenttel.agentic.cost.output_tokens, span.agenttel.agentic.cost.llm_calls)"
+        }
+      ],
+      "description": "LLM cost rollup per agent invocation"
+    },
+    {
+      "title": "Error Classification",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"invoke_agent\" && span.agenttel.agentic.invocation.status != \"success\" } | select(span.agenttel.agentic.agent.name, span.agenttel.agentic.invocation.status, span.agenttel.agentic.error.source, span.agenttel.agentic.error.category, span.agenttel.agentic.error.retryable)"
+        }
+      ],
+      "description": "Failed invocations with error classification"
+    },
+    {
+      "title": "Human Checkpoints",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"agenttel.agentic.human_input\" } | select(span.agenttel.agentic.human.checkpoint_type, span.agenttel.agentic.human.decision, span.agenttel.agentic.human.wait_ms, duration)"
+        }
+      ],
+      "description": "Human-in-the-loop checkpoints with wait time and decisions"
+    },
+    {
+      "title": "Guardrail Activations",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 22 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name = \"agenttel.agentic.guardrail\" && span.agenttel.agentic.guardrail.triggered = true } | select(span.agenttel.agentic.guardrail.name, span.agenttel.agentic.guardrail.action, span.agenttel.agentic.guardrail.reason)"
+        }
+      ],
+      "description": "Guardrail activations showing blocked/modified/logged actions"
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

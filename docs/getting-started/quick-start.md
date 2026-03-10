@@ -7,6 +7,7 @@ Get up and running with AgentTel in minutes. Choose your integration path:
 | [Spring Boot Starter](#backend-spring-boot) | Spring Boot applications | Add dependency + YAML config |
 | [JavaAgent](#zero-code-mode-javaagent) | Any JVM app (no code changes) | JVM flag + YAML config |
 | [Frontend SDK](#frontend-browser-sdk) | Browser / SPA applications | `npm install` + init call |
+| [Agent SDK](#agent-sdk) | AI agent observability | Add dependency + AgentTracer |
 | [Instrument Agent](#instrument-agent-ide-tooling) | AI-assisted setup in your IDE | Run MCP server, ask your agent |
 
 ## Try the Docker Demo
@@ -362,6 +363,109 @@ agenttel.shutdown();
 
 !!! tip
     The SDK uses `data-agenttel-target` attributes to identify interaction targets without capturing PII. Add `data-agenttel-target="pay-button"` to your HTML elements for clean span names.
+
+---
+
+## Agent SDK
+
+Add observability to your AI agent's lifecycle — invocations, reasoning steps, tool calls, orchestration patterns, cost tracking, and safety guardrails.
+
+### 1. Add Dependency
+
+=== "Maven"
+
+    ```xml
+    <dependency>
+        <groupId>dev.agenttel</groupId>
+        <artifactId>agenttel-agentic</artifactId>
+        <version>0.1.0-alpha</version>
+    </dependency>
+    ```
+
+=== "Gradle (Kotlin)"
+
+    ```kotlin
+    implementation("dev.agenttel:agenttel-agentic:0.1.0-alpha")
+    ```
+
+### 2. Instrument Your Agent
+
+Choose your integration style — programmatic, annotation, or YAML config:
+
+=== "Programmatic"
+
+    ```java
+    import io.agenttel.agentic.trace.AgentTracer;
+    import io.agenttel.agentic.AgentType;
+    import io.agenttel.agentic.StepType;
+
+    AgentTracer tracer = AgentTracer.create(openTelemetry)
+        .agentName("incident-responder")
+        .agentType(AgentType.SINGLE)
+        .build();
+
+    try (AgentInvocation inv = tracer.invoke("Diagnose high latency")) {
+        inv.step(StepType.THOUGHT, "Need to check service metrics");
+
+        try (ToolCallScope tool = inv.toolCall("get_service_health")) {
+            // call tool...
+            tool.success();
+        }
+
+        inv.step(StepType.OBSERVATION, "Error rate elevated at 5.2%");
+        inv.complete(true);
+    }
+    ```
+
+=== "@AgentMethod Annotation"
+
+    ```java
+    @AgentMethod(name = "incident-responder", type = "single", maxSteps = 100)
+    public IncidentReport diagnose(String incidentId) {
+        // Automatically wrapped in AgentInvocation
+        // On success: complete(true), on exception: span records error
+        return analyzeAndRespond(incidentId);
+    }
+    ```
+
+=== "YAML Config"
+
+    ```yaml
+    # application.yml
+    agenttel:
+      agentic:
+        agents:
+          incident-responder:
+            type: single
+            framework: custom
+            max-steps: 100
+            loop-threshold: 5
+    ```
+
+    ```java
+    // Use @AgentMethod with name only — identity comes from YAML
+    @AgentMethod(name = "incident-responder")
+    public IncidentReport diagnose(String incidentId) {
+        return analyzeAndRespond(incidentId);
+    }
+    ```
+
+### 3. What You Get
+
+```
+invoke_agent
+  agenttel.agentic.agent.name        = "incident-responder"
+  agenttel.agentic.agent.type        = "single"
+  agenttel.agentic.invocation.goal   = "Diagnose high latency"
+  agenttel.agentic.invocation.status = "success"
+  agenttel.agentic.invocation.steps  = 3
+  └── agenttel.agentic.step  (type=thought)
+  └── agenttel.agentic.tool_call  (tool=get_service_health, status=success)
+  └── agenttel.agentic.step  (type=observation)
+```
+
+!!! tip
+    With Spring Boot, just add the dependency — `AgentTracer`, `AgentConfigRegistry`, and `AgentCostAggregator` beans are created automatically. See the [Agent Observability Guide](../guides/agent-observability.md) for the full API.
 
 ---
 

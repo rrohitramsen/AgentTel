@@ -166,7 +166,7 @@ export class JourneyTracker {
 
   private matchesStep(route: string, stepPattern: string): boolean {
     const regex = new RegExp(
-      '^' + stepPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/:\\w+/g, '[^/]+') + '$',
+      '^' + stepPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/:\w+/g, '[^/]+') + '$',
     );
     return regex.test(route);
   }

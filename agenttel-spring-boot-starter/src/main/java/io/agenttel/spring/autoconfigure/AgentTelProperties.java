@@ -24,6 +24,7 @@ public class AgentTelProperties {
     private AnomalyDetectionProperties anomalyDetection = new AnomalyDetectionProperties();
     private DeploymentProperties deployment = new DeploymentProperties();
     private Map<String, List<String>> agentRoles = new LinkedHashMap<>();
+    private AgenticProperties agentic = new AgenticProperties();
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -45,6 +46,8 @@ public class AgentTelProperties {
     public void setDeployment(DeploymentProperties deployment) { this.deployment = deployment; }
     public Map<String, List<String>> getAgentRoles() { return agentRoles; }
     public void setAgentRoles(Map<String, List<String>> agentRoles) { this.agentRoles = agentRoles; }
+    public AgenticProperties getAgentic() { return agentic; }
+    public void setAgentic(AgenticProperties agentic) { this.agentic = agentic; }
 
     public static class TopologyProperties {
         private String team = "";
@@ -205,5 +208,48 @@ public class AgentTelProperties {
         public void setEscalationLevel(String escalationLevel) { this.escalationLevel = escalationLevel; }
         public boolean isSafeToRestart() { return safeToRestart; }
         public void setSafeToRestart(boolean safeToRestart) { this.safeToRestart = safeToRestart; }
+    }
+
+    /**
+     * Configuration for the agentic layer: agent identity, safety guardrails.
+     * Bind to {@code agenttel.agentic.*}.
+     */
+    public static class AgenticProperties {
+        private int loopThreshold = 3;
+        private long defaultMaxSteps = 0;
+        private Map<String, AgentProperties> agents = new LinkedHashMap<>();
+
+        public int getLoopThreshold() { return loopThreshold; }
+        public void setLoopThreshold(int loopThreshold) { this.loopThreshold = loopThreshold; }
+        public long getDefaultMaxSteps() { return defaultMaxSteps; }
+        public void setDefaultMaxSteps(long defaultMaxSteps) { this.defaultMaxSteps = defaultMaxSteps; }
+        public Map<String, AgentProperties> getAgents() { return agents; }
+        public void setAgents(Map<String, AgentProperties> agents) { this.agents = agents; }
+    }
+
+    /**
+     * Per-agent configuration: identity and guardrails.
+     * Map key is the agent name (e.g., "incident-responder").
+     */
+    public static class AgentProperties {
+        private String type = "";
+        private String framework = "";
+        private String version = "";
+        private long maxSteps = 0;
+        private int loopThreshold = 0;
+        private double costBudgetUsd = 0;
+
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        public String getFramework() { return framework; }
+        public void setFramework(String framework) { this.framework = framework; }
+        public String getVersion() { return version; }
+        public void setVersion(String version) { this.version = version; }
+        public long getMaxSteps() { return maxSteps; }
+        public void setMaxSteps(long maxSteps) { this.maxSteps = maxSteps; }
+        public int getLoopThreshold() { return loopThreshold; }
+        public void setLoopThreshold(int loopThreshold) { this.loopThreshold = loopThreshold; }
+        public double getCostBudgetUsd() { return costBudgetUsd; }
+        public void setCostBudgetUsd(double costBudgetUsd) { this.costBudgetUsd = costBudgetUsd; }
     }
 }

@@ -20,6 +20,7 @@ Complete reference for every configuration property in AgentTel -- backend (Spri
 | [Anomaly Detection](#anomaly-detection) | 2 | Detection tuning |
 | [Deployment](#deployment) | 3 | Deployment metadata |
 | [Agent Roles](#agent-roles) | 1 per role | Role-based permissions |
+| [Agentic](#agentic) | 3 global + 6 per agent | Agent identity and safety guardrails |
 | [Frontend SDK](#frontend-sdk) | ~25 | Browser telemetry configuration |
 
 ---
@@ -318,6 +319,60 @@ Built-in defaults: `observer` (READ), `diagnostician` (READ + DIAGNOSE), `operat
 
 ---
 
+## Agentic {#agentic}
+
+Configuration for the agent observability layer (`agenttel-agentic`). Defines agent identity, safety guardrails, and per-agent overrides. These settings are applied automatically when `AgentTracer.invoke()` is called or when a method annotated with `@AgentMethod` executes.
+
+### Global Defaults
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `agenttel.agentic.loop-threshold` | int | `3` | Global default for loop detection threshold |
+| `agenttel.agentic.default-max-steps` | long | `0` (unlimited) | Global default max steps per invocation |
+
+### Per-Agent Configuration
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `agenttel.agentic.agents.<name>.type` | string | `""` | Agent type: `single`, `orchestrator`, `worker`, `evaluator`, `critic`, `router` |
+| `agenttel.agentic.agents.<name>.framework` | string | `""` | Framework name (e.g., `langchain4j`, `spring-ai`, `custom`) |
+| `agenttel.agentic.agents.<name>.version` | string | `""` | Agent version string |
+| `agenttel.agentic.agents.<name>.max-steps` | long | `0` | Max steps guardrail (0 = use global default) |
+| `agenttel.agentic.agents.<name>.loop-threshold` | int | `0` | Loop detection threshold (0 = use global default) |
+| `agenttel.agentic.agents.<name>.cost-budget-usd` | double | `0` | Cost budget in USD (0 = unlimited) |
+
+!!! example "Example"
+    ```yaml
+    agenttel:
+      agentic:
+        loop-threshold: 3
+        default-max-steps: 50
+        agents:
+          incident-responder:
+            type: react
+            framework: langchain4j
+            version: "2.0"
+            max-steps: 100
+            loop-threshold: 5
+            cost-budget-usd: 2.0
+          code-reviewer:
+            type: worker
+            max-steps: 20
+    ```
+
+!!! tip "Tuning"
+    - Per-agent `max-steps` and `loop-threshold` override global defaults
+    - Use `cost-budget-usd` to set spending limits for agents that make many LLM calls
+    - Agent names in YAML must match the name passed to `AgentTracer.invoke()` or `@AgentMethod(name = ...)`
+
+!!! info "Config Priority"
+    ```
+    YAML config  >  @AgentMethod annotation  >  AgentTracer.Builder defaults
+    ```
+    When both YAML config and `@AgentMethod` define the same agent, YAML values take precedence. This follows the same priority model as `@AgentOperation` for operations.
+
+---
+
 ## Frontend SDK {#frontend-sdk}
 
 Configuration for the `@agenttel/web` browser SDK, passed as a JavaScript object to `initAgentTel()`.
@@ -539,4 +594,18 @@ agenttel:
     diagnostician: [READ, DIAGNOSE]
     operator: [READ, DIAGNOSE, REMEDIATE]
     admin: [READ, DIAGNOSE, REMEDIATE, ADMIN]
+  agentic:
+    loop-threshold: 3
+    default-max-steps: 50
+    agents:
+      incident-responder:
+        type: react
+        framework: langchain4j
+        version: "2.0"
+        max-steps: 100
+        loop-threshold: 5
+        cost-budget-usd: 2.0
+      code-reviewer:
+        type: worker
+        max-steps: 20
 ```

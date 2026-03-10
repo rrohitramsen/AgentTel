@@ -22,10 +22,12 @@ dependencies {
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
 
     compileOnly(project(":agenttel-agent"))
+    compileOnly(project(":agenttel-agentic"))
 
     annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor:${springBootVersion}")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
 
+    testImplementation(project(":agenttel-agentic"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("io.opentelemetry:opentelemetry-sdk-testing")

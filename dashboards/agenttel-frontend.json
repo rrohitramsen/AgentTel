@@ -1,0 +1,116 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_TEMPO",
+      "label": "Tempo",
+      "description": "Tempo data source for traces",
+      "type": "datasource",
+      "pluginId": "tempo"
+    }
+  ],
+  "title": "AgentTel Frontend",
+  "uid": "agenttel-frontend",
+  "description": "Frontend observability — page loads, user journeys, API calls, anomalies, and cross-stack correlation",
+  "tags": ["agenttel", "frontend", "browser"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "title": "Page Load Performance",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name =~ \"page_load.*\" } | select(span.agenttel.client.page.route, span.agenttel.client.page.business_criticality, span.agenttel.client.baseline.page_load_p50_ms, duration)"
+        }
+      ],
+      "description": "Page load times by route with baseline comparison"
+    },
+    {
+      "title": "Client Anomalies",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.agenttel.client.anomaly.detected = true } | select(span.agenttel.client.anomaly.pattern, span.agenttel.client.anomaly.score, span.agenttel.client.page.route, span.agenttel.client.interaction.target)"
+        }
+      ],
+      "description": "Detected client-side anomalies (rage clicks, error loops, slow loads, cascades)"
+    },
+    {
+      "title": "API Call Latency",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ name =~ \"fetch.*\" && span.agenttel.client.interaction.type = \"api_call\" } | select(name, span.http.method, span.http.status_code, span.agenttel.client.interaction.response_time_ms)"
+        }
+      ],
+      "description": "Frontend API call latency and status codes"
+    },
+    {
+      "title": "Journey Completions",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.agenttel.client.interaction.type = \"journey_complete\" } | select(span.agenttel.client.journey.name, span.agenttel.client.journey.total_steps, span.agenttel.client.journey.started_at)"
+        }
+      ],
+      "description": "Completed user journeys/funnels"
+    },
+    {
+      "title": "Journey Abandonments",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.agenttel.client.interaction.type = \"journey_abandon\" } | select(span.agenttel.client.journey.name, span.agenttel.client.journey.step, span.agenttel.client.journey.total_steps, span.agenttel.client.anomaly.score)"
+        }
+      ],
+      "description": "Abandoned user journeys with drop-off step and anomaly score"
+    },
+    {
+      "title": "Frontend-Backend Correlation",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.agenttel.client.correlation.backend_trace_id != \"\" } | select(name, span.agenttel.client.correlation.backend_trace_id, span.agenttel.client.correlation.backend_operation, span.http.status_code)"
+        }
+      ],
+      "description": "Frontend API calls correlated with backend traces via W3C Trace Context"
+    },
+    {
+      "title": "Rage Clicks",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "datasource": "${DS_TEMPO}",
+          "queryType": "traceql",
+          "query": "{ span.agenttel.client.anomaly.pattern = \"RAGE_CLICK\" } | select(span.agenttel.client.interaction.target, span.agenttel.client.page.route, span.agenttel.client.anomaly.score)"
+        }
+      ],
+      "description": "Rage click events indicating user frustration on specific UI elements"
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

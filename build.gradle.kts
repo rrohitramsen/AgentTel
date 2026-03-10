@@ -36,7 +36,7 @@ allprojects {
 
 // Published library modules (not examples)
 val publishedModules = setOf("agenttel-api", "agenttel-core", "agenttel-genai",
-    "agenttel-agent", "agenttel-javaagent", "agenttel-spring-boot-starter", "agenttel-testing")
+    "agenttel-agent", "agenttel-agentic", "agenttel-javaagent", "agenttel-spring-boot-starter", "agenttel-testing")
 
 // Aggregated Javadoc across all published library modules
 tasks.register<Javadoc>("aggregatedJavadoc") {
