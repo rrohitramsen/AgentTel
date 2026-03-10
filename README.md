@@ -30,6 +30,10 @@ Modern observability tools generate massive volumes of telemetry — traces, met
 
 AgentTel closes these gaps at the instrumentation layer.
 
+<p align="center">
+  <img src="docs/assets/images/agenttel-overview.png" alt="AgentTel — How it works" width="800"/>
+</p>
+
 ## Design Philosophy
 
 **Core principle: telemetry should carry enough context for AI agents to reason and act autonomously.**
