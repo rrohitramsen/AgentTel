@@ -30,10 +30,6 @@ Modern observability tools generate massive volumes of telemetry — traces, met
 
 AgentTel closes these gaps at the instrumentation layer.
 
-<p align="center">
-  <img src="docs/assets/images/agenttel-overview.png" alt="AgentTel — How it works" width="800"/>
-</p>
-
 ## Design Philosophy
 
 **Core principle: telemetry should carry enough context for AI agents to reason and act autonomously.**
@@ -47,6 +43,10 @@ AgentTel enriches telemetry at three levels — all configurable via YAML, no co
 | **Decisions** | Span attributes (per operation) | What an agent is allowed to do | retryable, runbook URL, escalation level |
 
 Topology is set once on the OTel Resource and automatically associated with all telemetry by the SDK. Baselines and decision metadata are attached per-operation on spans. This avoids redundant data on every span while ensuring agents always have the full context.
+
+<p align="center">
+  <img src="docs/assets/images/agenttel-overview.png" alt="AgentTel — How it works" width="800"/>
+</p>
 
 ## Quick Demo
 
