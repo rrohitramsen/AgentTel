@@ -4,6 +4,36 @@ All notable changes to AgentTel are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha] - 2026-03-10
+
+### Added
+
+**Agentic Observability (agenttel-agentic)**
+- `AgentTracer` for tracing agent invocations with full lifecycle support (steps, tool calls, tasks, handoffs)
+- `AgentInvocation` with auto-closing scope, step counting, loop detection, and cost aggregation
+- `AgentType` enum (SINGLE, REACT, PLAN_AND_EXECUTE, MULTI_AGENT, CUSTOM)
+- `StepType` enum (THOUGHT, OBSERVATION, ACTION, PLANNING, EVALUATION, REFLECTION)
+- `AgentCostAggregator` SpanProcessor for rolling up GenAI token costs to parent agent spans
+- `LoopDetector` with configurable threshold for detecting repetitive tool call patterns
+- `AgentConfig` and `AgentConfigRegistry` for config-driven agent identity and guardrails
+- `@AgentMethod` annotation for zero-code agent invocation wrapping via AOP
+- `AgentMethodAspect` for automatic `AgentInvocation` scope management on annotated methods
+- `AgenticAttributes` attribute keys for agent spans (agent.name, agent.type, agent.framework, etc.)
+- `AgenticAssertions` fluent test assertions for agent span verification
+
+**Config-Driven Agent Observability**
+- YAML configuration for agent identity (`agenttel.agentic.agents.*`): type, framework, version, maxSteps, loopThreshold, costBudgetUsd
+- Global agentic defaults (`agenttel.agentic.loop-threshold`, `agenttel.agentic.default-max-steps`)
+- Config priority: YAML > `@AgentMethod` annotation > programmatic `AgentTracer.Builder` defaults
+- `AgentTelAgenticAutoConfiguration` wiring config registry, tracer, and AOP aspect
+
+**Spring Boot Starter Enhancements**
+- `McpServer` exposed as a proper Spring bean for testability and injection
+- `McpServer.getPort()` returns actual bound port (supports port 0 for random assignment)
+
+### Fixed
+- `PaymentServiceIntegrationTest` BindException when MCP port 8081 is already in use
+
 ## [0.1.0-alpha] - 2025-02-27
 
 ### Added
@@ -54,4 +84,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Grafana dashboard templates (overview + GenAI)
 - Spring Boot and LangChain4j example applications
 
+[0.2.0-alpha]: https://github.com/rrohitramsen/AgentTel/releases/tag/v0.2.0-alpha
 [0.1.0-alpha]: https://github.com/rrohitramsen/AgentTel/releases/tag/v0.1.0-alpha

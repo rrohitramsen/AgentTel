@@ -4,7 +4,7 @@ What's been built, what's next, and where AgentTel is heading.
 
 ---
 
-## Current Release: v0.1.0-alpha
+## Current Release: v0.2.0-alpha
 
 Everything below is **implemented and available**.
 
@@ -141,7 +141,7 @@ Everything below is **implemented and available**.
 
 | AgentTel | Java | OTel SDK | Spring Boot | LangChain4j | Spring AI |
 |----------|------|----------|-------------|-------------|-----------|
-| 0.1.0-alpha | 17, 21 | 1.59.0+ | 3.4.x | 1.0.0+ | 1.0.0+ |
+| 0.2.0-alpha | 17, 21 | 1.59.0+ | 3.4.x | 1.0.0+ | 1.0.0+ |
 | 0.2.0-alpha | 17, 21 | 1.60.0+ | 3.4.x, 3.5.x | 1.0.0+ | 1.0.0+ |
 | 0.3.0-beta | 17, 21, 25 | 1.62.0+ | 3.x | 1.x | 1.x |
 | 1.0.0 | 17+ | 1.x | 3.x | 1.x | 1.x |
@@ -150,10 +150,10 @@ Everything below is **implemented and available**.
 
 | AgentTel | TypeScript | Browsers |
 |----------|------------|----------|
-| 0.1.0-alpha | 4.7+ | Chrome, Firefox, Safari, Edge (ES2020+) |
+| 0.2.0-alpha | 4.7+ | Chrome, Firefox, Safari, Edge (ES2020+) |
 
 **Tooling**
 
 | AgentTel | Python (instrument agent) |
 |----------|---------------------------|
-| 0.1.0-alpha | 3.11+ |
+| 0.2.0-alpha | 3.11+ |

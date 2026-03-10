@@ -47,21 +47,21 @@ Teardown: `docker compose -f docker/docker-compose.yml down -v`
         <dependency>
             <groupId>dev.agenttel</groupId>
             <artifactId>agenttel-spring-boot-starter</artifactId>
-            <version>0.1.0-alpha</version>
+            <version>0.2.0-alpha</version>
         </dependency>
 
         <!-- Optional: GenAI instrumentation -->
         <dependency>
             <groupId>dev.agenttel</groupId>
             <artifactId>agenttel-genai</artifactId>
-            <version>0.1.0-alpha</version>
+            <version>0.2.0-alpha</version>
         </dependency>
 
         <!-- Optional: Agent interface layer (MCP server, incident context, remediation) -->
         <dependency>
             <groupId>dev.agenttel</groupId>
             <artifactId>agenttel-agent</artifactId>
-            <version>0.1.0-alpha</version>
+            <version>0.2.0-alpha</version>
         </dependency>
     </dependencies>
     ```
@@ -71,13 +71,13 @@ Teardown: `docker compose -f docker/docker-compose.yml down -v`
     ```kotlin
     dependencies {
         // Core: span enrichment, baselines, anomaly detection, SLO tracking
-        implementation("dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")
+        implementation("dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha")
 
         // Optional: GenAI instrumentation
-        implementation("dev.agenttel:agenttel-genai:0.1.0-alpha")
+        implementation("dev.agenttel:agenttel-genai:0.2.0-alpha")
 
         // Optional: Agent interface layer (MCP server, incident context, remediation)
-        implementation("dev.agenttel:agenttel-agent:0.1.0-alpha")
+        implementation("dev.agenttel:agenttel-agent:0.2.0-alpha")
     }
     ```
 
@@ -86,13 +86,13 @@ Teardown: `docker compose -f docker/docker-compose.yml down -v`
     ```groovy
     dependencies {
         // Core: span enrichment, baselines, anomaly detection, SLO tracking
-        implementation 'dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
+        implementation 'dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha'
 
         // Optional: GenAI instrumentation
-        implementation 'dev.agenttel:agenttel-genai:0.1.0-alpha'
+        implementation 'dev.agenttel:agenttel-genai:0.2.0-alpha'
 
         // Optional: Agent interface layer (MCP server, incident context, remediation)
-        implementation 'dev.agenttel:agenttel-agent:0.1.0-alpha'
+        implementation 'dev.agenttel:agenttel-agent:0.2.0-alpha'
     }
     ```
 
@@ -378,14 +378,14 @@ Add observability to your AI agent's lifecycle — invocations, reasoning steps,
     <dependency>
         <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-agentic</artifactId>
-        <version>0.1.0-alpha</version>
+        <version>0.2.0-alpha</version>
     </dependency>
     ```
 
 === "Gradle (Kotlin)"
 
     ```kotlin
-    implementation("dev.agenttel:agenttel-agentic:0.1.0-alpha")
+    implementation("dev.agenttel:agenttel-agentic:0.2.0-alpha")
     ```
 
 ### 2. Instrument Your Agent

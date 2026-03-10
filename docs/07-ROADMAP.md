@@ -6,7 +6,7 @@ AgentTel follows a phased release plan, building from core instrumentation throu
 
 ## Release History
 
-### v0.1.0-alpha — Foundation + GenAI + Agent Layer
+### v0.2.0-alpha — Foundation + GenAI + Agent Layer
 
 **Status: Implemented**
 
@@ -200,7 +200,7 @@ Enabling multi-agent orchestration patterns (coordinator, parallel, swarm, hiera
 
 | AgentTel Version | Java | OTel SDK | Spring Boot | LangChain4j | Spring AI |
 |-----------------|------|----------|-------------|-------------|-----------|
-| 0.1.0-alpha | 17, 21 | 1.59.0+ | 3.4.x | 1.0.0+ | 1.0.0+ |
+| 0.2.0-alpha | 17, 21 | 1.59.0+ | 3.4.x | 1.0.0+ | 1.0.0+ |
 | 0.2.0-alpha (planned) | 17, 21 | 1.60.0+ | 3.4.x, 3.5.x | 1.0.0+ | 1.0.0+ |
 | 0.3.0-beta (planned) | 17, 21, 25 | 1.62.0+ | 3.x | 1.x | 1.x |
 | 1.0.0 (planned) | 17+ | 1.x | 3.x | 1.x | 1.x |
@@ -209,10 +209,10 @@ Enabling multi-agent orchestration patterns (coordinator, parallel, swarm, hiera
 
 | AgentTel Version | TypeScript | Browsers |
 |-----------------|------------|----------|
-| 0.1.0-alpha | 4.7+ | Chrome, Firefox, Safari, Edge (ES2020+) |
+| 0.2.0-alpha | 4.7+ | Chrome, Firefox, Safari, Edge (ES2020+) |
 
 **Tooling**
 
 | AgentTel Version | Python (instrument agent) |
 |-----------------|---------------------------|
-| 0.1.0-alpha | 3.11+ |
+| 0.2.0-alpha | 3.11+ |

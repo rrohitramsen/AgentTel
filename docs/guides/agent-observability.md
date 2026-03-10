@@ -30,14 +30,14 @@ Instrument your AI agent's lifecycle — invocations, reasoning steps, tool call
     <dependency>
         <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-agentic</artifactId>
-        <version>0.1.0-alpha</version>
+        <version>0.2.0-alpha</version>
     </dependency>
     ```
 
 === "Gradle (Kotlin)"
 
     ```kotlin
-    implementation("dev.agenttel:agenttel-agentic:0.1.0-alpha")
+    implementation("dev.agenttel:agenttel-agentic:0.2.0-alpha")
     ```
 
 ---

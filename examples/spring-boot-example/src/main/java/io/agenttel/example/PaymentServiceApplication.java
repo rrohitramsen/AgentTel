@@ -15,7 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @OpenAPIDefinition(
         info = @Info(
                 title = "AgentTel Payment Service API",
-                version = "0.1.0-alpha",
+                version = "0.2.0-alpha",
                 description = "Demo payment service instrumented with AgentTel for agent-ready telemetry. "
                         + "All endpoints are enriched with baselines, decision metadata, and anomaly detection."
         )

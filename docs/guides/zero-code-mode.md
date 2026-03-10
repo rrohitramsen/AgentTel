@@ -29,7 +29,7 @@ The AgentTel javaagent is a single JAR that bundles the OpenTelemetry agent with
 # Build from source
 ./gradlew :agenttel-javaagent:assemble
 
-# Output: agenttel-javaagent/build/libs/agenttel-javaagent-0.1.0-alpha.jar
+# Output: agenttel-javaagent/build/libs/agenttel-javaagent-0.2.0-alpha.jar
 ```
 
 ### 2. Create Configuration
@@ -345,7 +345,7 @@ Common OTel properties:
 ./gradlew :agenttel-javaagent:test
 
 # Output JAR:
-# agenttel-javaagent/build/libs/agenttel-javaagent-0.1.0-alpha.jar
+# agenttel-javaagent/build/libs/agenttel-javaagent-0.2.0-alpha.jar
 ```
 
 The build uses a two-step process:

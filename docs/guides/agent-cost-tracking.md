@@ -64,17 +64,17 @@ When both `agenttel-agentic` and `agenttel-genai` are on the classpath, cost tra
         <dependency>
             <groupId>dev.agenttel</groupId>
             <artifactId>agenttel-spring-boot-starter</artifactId>
-            <version>0.1.0-alpha</version>
+            <version>0.2.0-alpha</version>
         </dependency>
         <dependency>
             <groupId>dev.agenttel</groupId>
             <artifactId>agenttel-agentic</artifactId>
-            <version>0.1.0-alpha</version>
+            <version>0.2.0-alpha</version>
         </dependency>
         <dependency>
             <groupId>dev.agenttel</groupId>
             <artifactId>agenttel-genai</artifactId>
-            <version>0.1.0-alpha</version>
+            <version>0.2.0-alpha</version>
         </dependency>
     </dependencies>
     ```
@@ -83,9 +83,9 @@ When both `agenttel-agentic` and `agenttel-genai` are on the classpath, cost tra
 
     ```kotlin
     dependencies {
-        implementation("dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha")
-        implementation("dev.agenttel:agenttel-agentic:0.1.0-alpha")
-        implementation("dev.agenttel:agenttel-genai:0.1.0-alpha")
+        implementation("dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha")
+        implementation("dev.agenttel:agenttel-agentic:0.2.0-alpha")
+        implementation("dev.agenttel:agenttel-genai:0.2.0-alpha")
     }
     ```
 
