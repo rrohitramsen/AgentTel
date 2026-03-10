@@ -1,5 +1,6 @@
 package io.agenttel.example;
 
+import io.agenttel.agent.mcp.McpServer;
 import io.agenttel.api.attributes.AgentTelAttributes;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpEntity;
@@ -32,7 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = {
                 "otel.traces.exporter=none",
                 "otel.metrics.exporter=none",
-                "otel.logs.exporter=none"
+                "otel.logs.exporter=none",
+                "agenttel.mcp.port=0"
         }
 )
 class PaymentServiceIntegrationTest {
@@ -61,6 +64,9 @@ class PaymentServiceIntegrationTest {
 
     @Autowired
     private InMemorySpanExporter spanExporter;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
     @BeforeEach
     void resetSpans() {
@@ -126,8 +132,12 @@ class PaymentServiceIntegrationTest {
         // Give the MCP server time to start
         Thread.sleep(500);
 
+        // Get the actual MCP server port (may be random when configured with port=0)
+        McpServer mcpServer = applicationContext.getBean(McpServer.class);
+        int mcpPort = mcpServer.getPort();
+
         ResponseEntity<String> response = restTemplate.getForEntity(
-                "http://localhost:8081/health", String.class);
+                "http://localhost:" + mcpPort + "/health", String.class);
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).contains("\"status\":\"ok\"");
     }

@@ -153,6 +153,14 @@ Structured incident packages: what's happening, what changed, what's affected, a
 
 <div class="feature-card" markdown>
 
+### [Agent Observability](guides/agent-observability/)
+
+Full lifecycle tracing for AI agents — invocations, reasoning steps, tool calls, task decomposition, orchestration patterns, cost aggregation, guardrails, human checkpoints, and quality signals with 70+ semantic attributes.
+
+</div>
+
+<div class="feature-card" markdown>
+
 ### [Multi-Agent Support](guides/multi-agent/)
 
 Role-based tool permissions, shared incident sessions (blackboard pattern), and agent identity tracking — enabling coordinator, parallel, swarm, and hierarchical agent patterns.
@@ -193,6 +201,7 @@ graph TB
     subgraph Core["Core Libraries"]
         COR["agenttel-core<br/><small>SpanProcessor, Baselines,<br/>Anomaly Detection, SLO Tracking</small>"]
         GEN["agenttel-genai<br/><small>LangChain4j, Spring AI,<br/>Anthropic, OpenAI, Bedrock</small>"]
+        AGC["agenttel-agentic<br/><small>Agent Tracing, Orchestration,<br/>Cost, Guardrails, Quality</small>"]
         AGT["agenttel-agent<br/><small>MCP Server, Health, Incidents,<br/>Remediation, Reporting</small>"]
     end
 
@@ -208,10 +217,12 @@ graph TB
     App --> Integration
     SBS --> COR
     SBS --> GEN
+    SBS --> AGC
     SBS --> AGT
     JAE --> COR
     COR --> API
     GEN --> API
+    AGC --> API
     AGT --> COR
     API --> OTEL
     WEB --> OTEL
@@ -229,6 +240,7 @@ graph TB
     style INS fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style COR fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style GEN fill:#818cf8,stroke:#6366f1,color:#1e1b4b
+    style AGC fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style AGT fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style API fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style OTEL fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b

@@ -26,6 +26,7 @@ import io.agenttel.core.topology.TopologyRegistry;
 import io.opentelemetry.api.OpenTelemetry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -198,21 +199,28 @@ public class AgentTelAgentAutoConfiguration {
     }
 
     @Bean
-    public ApplicationRunner agentTelMcpServerStarter(
+    @ConditionalOnMissingBean
+    public McpServer agentTelMcpServer(
             AgentContextProvider contextProvider,
             RemediationExecutor remediationExecutor,
             ToolPermissionRegistry permissionRegistry,
-            SessionManager sessionManager) {
+            SessionManager sessionManager,
+            @Value("${agenttel.mcp.port:8081}") int mcpPort) {
+        return new AgentTelMcpServerBuilder()
+                .port(mcpPort)
+                .contextProvider(contextProvider)
+                .remediationExecutor(remediationExecutor)
+                .permissionRegistry(permissionRegistry)
+                .sessionManager(sessionManager)
+                .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "agentTelMcpServerStarter")
+    public ApplicationRunner agentTelMcpServerStarter(McpServer mcpServer) {
         return args -> {
-            McpServer server = new AgentTelMcpServerBuilder()
-                    .port(8081)
-                    .contextProvider(contextProvider)
-                    .remediationExecutor(remediationExecutor)
-                    .permissionRegistry(permissionRegistry)
-                    .sessionManager(sessionManager)
-                    .build();
-            server.start();
-            log.info("AgentTel MCP server started on port 8081 with multi-agent support");
+            mcpServer.start();
+            log.info("AgentTel MCP server started on port {}", mcpServer.getPort());
         };
     }
 }

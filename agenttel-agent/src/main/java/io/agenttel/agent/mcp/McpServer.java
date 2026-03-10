@@ -90,9 +90,13 @@ public class McpServer {
     }
 
     /**
-     * Returns the port this server is bound to.
+     * Returns the actual port this server is bound to.
+     * If started with port 0, this returns the OS-assigned port.
      */
     public int getPort() {
+        if (httpServer != null) {
+            return httpServer.getAddress().getPort();
+        }
         return port;
     }
 

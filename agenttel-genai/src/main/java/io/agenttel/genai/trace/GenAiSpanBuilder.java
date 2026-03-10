@@ -110,6 +110,31 @@ public class GenAiSpanBuilder {
         }
     }
 
+    /**
+     * Set token detail attributes (reasoning tokens, cached tokens) on a span.
+     */
+    public static void setTokenDetails(Span span, long reasoningTokens,
+                                        long cachedReadTokens, long cachedWriteTokens) {
+        if (reasoningTokens > 0) {
+            span.setAttribute(AgentTelGenAiAttributes.GENAI_REASONING_TOKENS, reasoningTokens);
+        }
+        if (cachedReadTokens > 0) {
+            span.setAttribute(AgentTelGenAiAttributes.GENAI_CACHED_READ_TOKENS, cachedReadTokens);
+        }
+        if (cachedWriteTokens > 0) {
+            span.setAttribute(AgentTelGenAiAttributes.GENAI_CACHED_WRITE_TOKENS, cachedWriteTokens);
+        }
+    }
+
+    /**
+     * Set time-to-first-token on a span.
+     */
+    public static void setTimeToFirstToken(Span span, long ttftMs) {
+        if (ttftMs > 0) {
+            span.setAttribute(AgentTelGenAiAttributes.GENAI_TIME_TO_FIRST_TOKEN_MS, ttftMs);
+        }
+    }
+
     private String getRequestModel(Span span) {
         // Span interface doesn't expose getAttribute directly,
         // so we rely on responseModel being passed in.

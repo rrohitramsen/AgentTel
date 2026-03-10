@@ -38,4 +38,16 @@ public final class AgentTelGenAiAttributes {
     // --- Cache ---
     public static final AttributeKey<Boolean> GENAI_CACHE_HIT =
             AttributeKey.booleanKey("agenttel.genai.cache_hit");
+
+    // --- Token Details ---
+    public static final AttributeKey<Long> GENAI_REASONING_TOKENS =
+            AttributeKey.longKey("agenttel.genai.reasoning_tokens");
+    public static final AttributeKey<Long> GENAI_CACHED_READ_TOKENS =
+            AttributeKey.longKey("agenttel.genai.cached_read_tokens");
+    public static final AttributeKey<Long> GENAI_CACHED_WRITE_TOKENS =
+            AttributeKey.longKey("agenttel.genai.cached_write_tokens");
+
+    // --- Latency Details ---
+    public static final AttributeKey<Long> GENAI_TIME_TO_FIRST_TOKEN_MS =
+            AttributeKey.longKey("agenttel.genai.time_to_first_token_ms");
 }

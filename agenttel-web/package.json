@@ -5,6 +5,13 @@
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
   "sideEffects": false,
   "files": [
     "dist/"
@@ -16,18 +23,21 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist/"
+    "clean": "rm -rf dist/",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationDir dist/types",
+    "prepublishOnly": "npm run clean && npm run build && npm run build:types && npm test"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "rollup": "^4.0.0",
-    "@rollup/plugin-typescript": "^11.0.0",
     "@rollup/plugin-terser": "^0.4.0",
-    "tslib": "^2.6.0",
-    "jest": "^29.0.0",
-    "ts-jest": "^29.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
     "@types/jest": "^29.0.0",
-    "jest-environment-jsdom": "^29.0.0"
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0",
+    "rollup": "^4.0.0",
+    "ts-jest": "^29.0.0",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.6.0",
+    "typescript": "^5.4.0"
   },
   "keywords": [
     "telemetry",
@@ -38,6 +48,7 @@
     "browser",
     "frontend"
   ],
+  "author": "AgentTel Contributors",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

@@ -234,7 +234,7 @@ export class SpanFactory {
 function patternToRegex(pattern: string): RegExp {
   const escaped = pattern
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/:\\w+/g, '[^/]+');
+    .replace(/:\w+/g, '[^/]+');
   return new RegExp(`^${escaped}$`);
 }
 

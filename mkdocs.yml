@@ -51,6 +51,10 @@ nav:
   - Guides:
     - MCP Server & Agent Tools: guides/mcp-server.md
     - Incident Response: guides/incident-response.md
+    - Agent Observability: guides/agent-observability.md
+    - Orchestration Patterns: guides/orchestration-patterns.md
+    - Agent Cost Tracking: guides/agent-cost-tracking.md
+    - Guardrails & Safety: guides/guardrails-and-safety.md
     - Zero-Code Mode: guides/zero-code-mode.md
     - Anomaly Detection: guides/anomaly-detection.md
     - Frontend Telemetry: guides/frontend-telemetry.md
@@ -59,6 +63,7 @@ nav:
     - GenAI Instrumentation: guides/genai-instrumentation.md
   - Reference:
     - Attribute Dictionary: reference/attribute-dictionary.md
+    - Agentic Attributes: reference/agent-attributes.md
     - Event Catalog: reference/event-catalog.md
     - Configuration: reference/configuration.md
     - MCP Tools: reference/mcp-tools.md

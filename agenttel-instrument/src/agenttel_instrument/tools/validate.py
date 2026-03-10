@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agenttel_cli.validate.validator import ConfigValidator
-from agenttel_cli.validate.gap_detector import GapDetector
-from agenttel_cli.analyze.scanner import SourceScanner
-from agenttel_cli.analyze.endpoint_detector import EndpointDetector
+from ..validate.validator import ConfigValidator
+from ..validate.gap_detector import GapDetector
+from ..analyze.scanner import SourceScanner
+from ..analyze.endpoint_detector import EndpointDetector
 
 from ..mcp.models import ToolDefinition
 

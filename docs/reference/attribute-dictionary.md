@@ -2,7 +2,7 @@
 
 Complete reference for every attribute AgentTel adds to OpenTelemetry spans and resources. Each entry describes what the attribute is, why an AI agent needs it, and when it appears.
 
-> **Quick navigation:** [Topology](#topology) | [Baselines](#baselines) | [Decisions](#decisions) | [Anomaly](#anomaly) | [Error Classification](#error-classification) | [Causality](#causality) | [Severity](#severity) | [Change Correlation](#change-correlation) | [SLO](#slo) | [Deployment](#deployment) | [GenAI](#genai) | [Agent Identity](#agent-identity) | [Sessions](#sessions) | [Circuit Breaker](#circuit-breaker) | [Frontend](#frontend)
+> **Quick navigation:** [Topology](#topology) | [Baselines](#baselines) | [Decisions](#decisions) | [Anomaly](#anomaly) | [Error Classification](#error-classification) | [Causality](#causality) | [Severity](#severity) | [Change Correlation](#change-correlation) | [SLO](#slo) | [Deployment](#deployment) | [GenAI](#genai) | [Agent Identity](#agent-identity) | [Sessions](#sessions) | [Circuit Breaker](#circuit-breaker) | [Agentic](#agentic) | [Frontend](#frontend)
 
 ---
 
@@ -15,6 +15,86 @@ All `agenttel.*` attributes sorted alphabetically. Click any key to jump to its 
 | `agenttel.agent.id` | [Agent Identity](#agent-identity) |
 | `agenttel.agent.role` | [Agent Identity](#agent-identity) |
 | `agenttel.agent.session_id` | [Agent Identity](#agent-identity) |
+| `agenttel.agentic.agent.framework` | [Agentic](#agentic) |
+| `agenttel.agentic.agent.name` | [Agentic](#agentic) |
+| `agenttel.agentic.agent.type` | [Agentic](#agentic) |
+| `agenttel.agentic.agent.version` | [Agentic](#agentic) |
+| `agenttel.agentic.capability.system_prompt_hash` | [Agentic](#agentic) |
+| `agenttel.agentic.capability.tool_count` | [Agentic](#agentic) |
+| `agenttel.agentic.capability.tools` | [Agentic](#agentic) |
+| `agenttel.agentic.code.exit_code` | [Agentic](#agentic) |
+| `agenttel.agentic.code.language` | [Agentic](#agentic) |
+| `agenttel.agentic.code.sandboxed` | [Agentic](#agentic) |
+| `agenttel.agentic.code.status` | [Agentic](#agentic) |
+| `agenttel.agentic.conversation.id` | [Agentic](#agentic) |
+| `agenttel.agentic.conversation.message_count` | [Agentic](#agentic) |
+| `agenttel.agentic.conversation.speaker_role` | [Agentic](#agentic) |
+| `agenttel.agentic.conversation.turn` | [Agentic](#agentic) |
+| `agenttel.agentic.cost.cached_read_tokens` | [Agentic](#agentic) |
+| `agenttel.agentic.cost.cached_write_tokens` | [Agentic](#agentic) |
+| `agenttel.agentic.cost.input_tokens` | [Agentic](#agentic) |
+| `agenttel.agentic.cost.llm_calls` | [Agentic](#agentic) |
+| `agenttel.agentic.cost.output_tokens` | [Agentic](#agentic) |
+| `agenttel.agentic.cost.reasoning_tokens` | [Agentic](#agentic) |
+| `agenttel.agentic.cost.total_usd` | [Agentic](#agentic) |
+| `agenttel.agentic.error.category` | [Agentic](#agentic) |
+| `agenttel.agentic.error.retryable` | [Agentic](#agentic) |
+| `agenttel.agentic.error.source` | [Agentic](#agentic) |
+| `agenttel.agentic.eval.criteria` | [Agentic](#agentic) |
+| `agenttel.agentic.eval.feedback` | [Agentic](#agentic) |
+| `agenttel.agentic.eval.score` | [Agentic](#agentic) |
+| `agenttel.agentic.eval.scorer_name` | [Agentic](#agentic) |
+| `agenttel.agentic.eval.type` | [Agentic](#agentic) |
+| `agenttel.agentic.guardrail.action` | [Agentic](#agentic) |
+| `agenttel.agentic.guardrail.name` | [Agentic](#agentic) |
+| `agenttel.agentic.guardrail.reason` | [Agentic](#agentic) |
+| `agenttel.agentic.guardrail.triggered` | [Agentic](#agentic) |
+| `agenttel.agentic.handoff.chain_depth` | [Agentic](#agentic) |
+| `agenttel.agentic.handoff.from_agent` | [Agentic](#agentic) |
+| `agenttel.agentic.handoff.reason` | [Agentic](#agentic) |
+| `agenttel.agentic.handoff.to_agent` | [Agentic](#agentic) |
+| `agenttel.agentic.human.checkpoint_type` | [Agentic](#agentic) |
+| `agenttel.agentic.human.decision` | [Agentic](#agentic) |
+| `agenttel.agentic.human.wait_ms` | [Agentic](#agentic) |
+| `agenttel.agentic.invocation.goal` | [Agentic](#agentic) |
+| `agenttel.agentic.invocation.id` | [Agentic](#agentic) |
+| `agenttel.agentic.invocation.max_steps` | [Agentic](#agentic) |
+| `agenttel.agentic.invocation.status` | [Agentic](#agentic) |
+| `agenttel.agentic.invocation.steps` | [Agentic](#agentic) |
+| `agenttel.agentic.memory.items` | [Agentic](#agentic) |
+| `agenttel.agentic.memory.operation` | [Agentic](#agentic) |
+| `agenttel.agentic.memory.store_type` | [Agentic](#agentic) |
+| `agenttel.agentic.orchestration.aggregation` | [Agentic](#agentic) |
+| `agenttel.agentic.orchestration.coordinator_id` | [Agentic](#agentic) |
+| `agenttel.agentic.orchestration.parallel_branches` | [Agentic](#agentic) |
+| `agenttel.agentic.orchestration.pattern` | [Agentic](#agentic) |
+| `agenttel.agentic.orchestration.stage` | [Agentic](#agentic) |
+| `agenttel.agentic.orchestration.total_stages` | [Agentic](#agentic) |
+| `agenttel.agentic.quality.eval_score` | [Agentic](#agentic) |
+| `agenttel.agentic.quality.goal_achieved` | [Agentic](#agentic) |
+| `agenttel.agentic.quality.human_interventions` | [Agentic](#agentic) |
+| `agenttel.agentic.quality.loop_detected` | [Agentic](#agentic) |
+| `agenttel.agentic.quality.loop_iterations` | [Agentic](#agentic) |
+| `agenttel.agentic.reranker.input_documents` | [Agentic](#agentic) |
+| `agenttel.agentic.reranker.model` | [Agentic](#agentic) |
+| `agenttel.agentic.reranker.output_documents` | [Agentic](#agentic) |
+| `agenttel.agentic.reranker.top_score` | [Agentic](#agentic) |
+| `agenttel.agentic.retrieval.document_count` | [Agentic](#agentic) |
+| `agenttel.agentic.retrieval.query` | [Agentic](#agentic) |
+| `agenttel.agentic.retrieval.relevance_score_avg` | [Agentic](#agentic) |
+| `agenttel.agentic.retrieval.relevance_score_min` | [Agentic](#agentic) |
+| `agenttel.agentic.retrieval.store_type` | [Agentic](#agentic) |
+| `agenttel.agentic.retrieval.top_k` | [Agentic](#agentic) |
+| `agenttel.agentic.step.iteration` | [Agentic](#agentic) |
+| `agenttel.agentic.step.number` | [Agentic](#agentic) |
+| `agenttel.agentic.step.tool_name` | [Agentic](#agentic) |
+| `agenttel.agentic.step.tool_status` | [Agentic](#agentic) |
+| `agenttel.agentic.step.type` | [Agentic](#agentic) |
+| `agenttel.agentic.task.depth` | [Agentic](#agentic) |
+| `agenttel.agentic.task.id` | [Agentic](#agentic) |
+| `agenttel.agentic.task.name` | [Agentic](#agentic) |
+| `agenttel.agentic.task.parent_id` | [Agentic](#agentic) |
+| `agenttel.agentic.task.status` | [Agentic](#agentic) |
 | `agenttel.anomaly.detected` | [Anomaly](#anomaly) |
 | `agenttel.anomaly.latency_z_score` | [Anomaly](#anomaly) |
 | `agenttel.anomaly.pattern` | [Anomaly](#anomaly) |
@@ -962,6 +1042,38 @@ Circuit breaker state change tracking. Set on **event attributes** when circuit 
 
 ---
 
+## Agentic {#agentic}
+
+Agent lifecycle instrumentation attributes from the `agenttel-agentic` module. These attributes instrument the AI agent runtime — invocations, reasoning, orchestration, cost, quality, and safety.
+
+> **Set by:** `agenttel-agentic` module classes — `AgentTracer`, `AgentInvocation`, scope classes (`ToolCallScope`, `TaskScope`, `HandoffScope`, etc.), `AgentCostAggregator`, `GuardrailRecorder`, `LoopDetector`, and `QualityTracker`.
+
+The `agenttel.agentic.*` namespace contains 70+ attributes across 17 categories. For the complete reference with all enum values, span names, and detailed descriptions, see the **[Agentic Attributes Reference](agent-attributes.md)**.
+
+**Summary of categories:**
+
+| Category | Key Attributes | Span Name |
+|----------|---------------|-----------|
+| Agent Identity | `agent.name`, `agent.type`, `agent.framework` | `invoke_agent` |
+| Invocation | `invocation.id`, `invocation.goal`, `invocation.status`, `invocation.steps` | `invoke_agent` |
+| Step / Reasoning | `step.number`, `step.type`, `step.iteration` | `agenttel.agentic.step` |
+| Tool Calls | `step.tool_name`, `step.tool_status` | `agenttel.agentic.tool_call` |
+| Task Tracking | `task.id`, `task.name`, `task.depth`, `task.parent_id` | `agenttel.agentic.task` |
+| Orchestration | `orchestration.pattern`, `orchestration.stage`, `orchestration.parallel_branches` | `agenttel.agentic.session` |
+| Handoff | `handoff.from_agent`, `handoff.to_agent`, `handoff.chain_depth` | `agenttel.agentic.handoff` |
+| Cost | `cost.total_usd`, `cost.input_tokens`, `cost.output_tokens`, `cost.llm_calls` | On `invoke_agent` / session |
+| Quality | `quality.goal_achieved`, `quality.loop_detected`, `quality.eval_score` | On `invoke_agent` |
+| Guardrail | `guardrail.triggered`, `guardrail.name`, `guardrail.action` | `agenttel.agentic.guardrail` |
+| Human Checkpoint | `human.checkpoint_type`, `human.decision`, `human.wait_ms` | `agenttel.agentic.human_input` |
+| Code Execution | `code.language`, `code.status`, `code.sandboxed` | `agenttel.agentic.code_execution` |
+| Evaluation | `eval.scorer_name`, `eval.score`, `eval.type` | `agenttel.agentic.evaluate` |
+| Retrieval | `retrieval.query`, `retrieval.document_count`, `retrieval.relevance_score_avg` | `agenttel.agentic.retriever` |
+| Reranker | `reranker.model`, `reranker.input_documents`, `reranker.top_score` | `agenttel.agentic.reranker` |
+| Memory | `memory.operation`, `memory.store_type`, `memory.items` | `agenttel.agentic.memory` |
+| Error Classification | `error.source`, `error.category`, `error.retryable` | On `invoke_agent` |
+
+---
+
 ## Frontend {#frontend}
 
 Client-side telemetry from the `@agenttel/web` browser SDK. These attributes provide full-stack observability by tracking user-facing behavior, client-side anomalies, and cross-stack trace correlation.
@@ -1106,7 +1218,7 @@ Set once per browser application at SDK initialization.
 
 ## Java Constant Reference
 
-All backend attribute keys are defined as typed `AttributeKey<T>` constants in `io.agenttel.api.attributes.AgentTelAttributes`. GenAI attributes have additional constants in `io.agenttel.genai.conventions.AgentTelGenAiAttributes` and `io.agenttel.genai.conventions.GenAiAttributes`.
+All backend attribute keys are defined as typed `AttributeKey<T>` constants in `io.agenttel.api.attributes.AgentTelAttributes`. Agentic attributes are in `io.agenttel.api.attributes.AgenticAttributes`. GenAI attributes have additional constants in `io.agenttel.genai.conventions.AgentTelGenAiAttributes` and `io.agenttel.genai.conventions.GenAiAttributes`.
 
 Using these constants instead of raw strings provides compile-time type safety:
 
@@ -1140,6 +1252,7 @@ The constant name follows the pattern: `CATEGORY_FIELD_NAME`
 | `agenttel.agent.*` | `AGENT_` | `AGENT_ROLE` |
 | `agenttel.session.*` | `SESSION_` | `SESSION_ID` |
 | `agenttel.circuit_breaker.*` | `CIRCUIT_BREAKER_` | `CIRCUIT_BREAKER_NEW_STATE` |
+| `agenttel.agentic.*` | Various (e.g., `AGENT_NAME`) | `AgenticAttributes.AGENT_NAME` |
 
 ---
 
@@ -1164,4 +1277,5 @@ The following table summarizes when and where each category of attributes is set
 | Agent Identity | `AgentActionTracker` | Agent action execution | Span attributes |
 | Sessions | `SessionManager` | Session creation | Span attributes |
 | Circuit Breaker | `AgentTelEventEmitter` | Circuit breaker state transition | Event attributes |
+| Agentic | `agenttel-agentic` module | Agent invocations, steps, tool calls, orchestrations | Span attributes |
 | Frontend | `@agenttel/web` SDK | Various (page load, API call, interaction, journey) | Span + Resource attributes |

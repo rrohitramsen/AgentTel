@@ -120,6 +120,63 @@ Full observability for AI/ML workloads on the JVM:
 | **OpenAI SDK** | Client wrapper | Chat completions with token/cost tracking |
 | **AWS Bedrock** | Client wrapper | Converse API with token/cost tracking |
 
+### Agent Observability (agenttel-agentic)
+
+Full lifecycle tracing for AI agents with 70+ semantic attributes:
+
+| Feature | Description |
+|---------|-------------|
+| **Invocation Lifecycle** | Goal, status, step count, max steps for each agent execution |
+| **Reasoning Steps** | Thought, action, observation, evaluation, revision tracking |
+| **Tool Calls** | Tool name, success/error/timeout status per call |
+| **Task Decomposition** | Nested task breakdown with depth and parent tracking |
+| **Orchestration Patterns** | Sequential, parallel, evaluator-optimizer, handoff, ReAct, orchestrator-workers |
+| **Cost Aggregation** | Automatic LLM cost rollup from GenAI spans to agent sessions |
+| **Guardrails** | Block, warn, log, escalate actions with named guardrails |
+| **Human Checkpoints** | Approval, feedback, correction gates with wait time tracking |
+| **Loop Detection** | Detects stuck reasoning loops (identical tool calls) |
+| **Quality Signals** | Goal achievement, human interventions, eval scores |
+| **RAG Pipeline** | Retriever and reranker spans with relevance scoring |
+| **Error Classification** | Source (LLM/tool/agent/guardrail/timeout/network), retryability |
+
+Three integration styles — programmatic, annotation, or YAML config:
+
+**Programmatic:**
+```java
+AgentTracer tracer = AgentTracer.create(openTelemetry)
+    .agentName("incident-responder")
+    .agentType(AgentType.SINGLE)
+    .build();
+
+try (AgentInvocation inv = tracer.invoke("Diagnose high latency")) {
+    inv.step(StepType.THOUGHT, "Need to check service metrics");
+    try (ToolCallScope tool = inv.toolCall("get_service_health")) {
+        tool.success();
+    }
+    inv.complete(true);
+}
+```
+
+**@AgentMethod annotation (Spring Boot):**
+```java
+@AgentMethod(name = "incident-responder", type = "single", maxSteps = 100)
+public IncidentReport diagnose(String incidentId) {
+    // Automatically wrapped in AgentInvocation — no manual tracer calls
+    return analyzeAndRespond(incidentId);
+}
+```
+
+**YAML config (Spring Boot):**
+```yaml
+agenttel:
+  agentic:
+    agents:
+      incident-responder:
+        type: single
+        max-steps: 100
+        loop-threshold: 5
+```
+
 ## Quick Start
 
 AgentTel supports multiple integration paths — pick what fits your stack:
@@ -405,6 +462,7 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 | `agenttel-core` | `dev.agenttel:agenttel-core` | Runtime engine — span enrichment, static + rolling baselines, z-score anomaly detection, pattern matching, SLO tracking, structured events. |
 | `agenttel-genai` | `dev.agenttel:agenttel-genai` | GenAI instrumentation — LangChain4j wrappers, Spring AI enrichment, Anthropic/OpenAI/Bedrock SDK instrumentation, cost calculation. |
 | `agenttel-agent` | `dev.agenttel:agenttel-agent` | Agent interface layer — MCP server, health aggregation, incident context, remediation, trend analysis, SLO reports, executive summaries, cross-stack context. |
+| `agenttel-agentic` | `dev.agenttel:agenttel-agentic` | Agent observability — lifecycle, reasoning, orchestration patterns (ReAct, sequential, parallel, handoff, evaluator-optimizer), cost aggregation, quality signals, guardrails, loop detection. |
 | `agenttel-javaagent` | `dev.agenttel:agenttel-javaagent` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
 | `agenttel-spring-boot-starter` | `dev.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
 | `agenttel-web` | `@agenttel/web` (npm) | Browser telemetry SDK — auto-instrumentation of page loads, navigation, API calls, errors, Web Vitals, journey tracking, anomaly detection, W3C trace propagation. |
@@ -504,6 +562,7 @@ implementation 'dev.agenttel:agenttel-spring-boot-starter:0.1.0-alpha'
 | `dev.agenttel` | `agenttel-core` | Runtime engine |
 | `dev.agenttel` | `agenttel-genai` | GenAI instrumentation |
 | `dev.agenttel` | `agenttel-agent` | Agent interface layer (MCP, health, incidents, reporting) |
+| `dev.agenttel` | `agenttel-agentic` | Agent observability (lifecycle, orchestration, cost, quality) |
 | `dev.agenttel` | `agenttel-javaagent` | Zero-code OTel javaagent extension |
 | `dev.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
 | `dev.agenttel` | `agenttel-testing` | Test utilities |
