@@ -44,6 +44,10 @@ AgentTel enriches telemetry at three levels — all configurable via YAML, no co
 
 Topology is set once on the OTel Resource and automatically associated with all telemetry by the SDK. Baselines and decision metadata are attached per-operation on spans. This avoids redundant data on every span while ensuring agents always have the full context.
 
+<p align="center">
+  <img src="docs/assets/images/agenttel-overview.png" alt="AgentTel — How it works" width="800"/>
+</p>
+
 ## Quick Demo
 
 Try AgentTel in one command — starts a demo payment service with OTel Collector and Jaeger:
