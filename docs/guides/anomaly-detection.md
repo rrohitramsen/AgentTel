@@ -122,6 +122,43 @@ agenttel:
 
 See [Configuration Reference](../reference/configuration.md#anomaly-detection) for the full list.
 
+### Python Usage
+
+The Python SDK provides the same anomaly detection:
+
+```python
+from agenttel.anomaly.detector import AnomalyDetector
+from agenttel.anomaly.patterns import PatternMatcher
+from agenttel.baseline.rolling import RollingBaselineProvider
+
+# Anomaly detector with configurable threshold
+detector = AnomalyDetector(z_score_threshold=3.0)
+result = detector.detect(current_value=312.0, baseline_mean=45.0, baseline_stddev=20.0)
+# result.is_anomaly = True, result.z_score = 13.35, result.score = 1.0
+
+# Rolling baselines learned from traffic
+baselines = RollingBaselineProvider(window_size=1000, min_samples=10)
+baselines.record("POST /api/payments", latency_ms=45.0, is_error=False)
+
+# Pattern matching
+matcher = PatternMatcher()
+patterns = matcher.detect(
+    current_latency=312.0, baseline_p50=45.0,
+    current_error_rate=0.052, baseline_error_rate=0.001,
+    failing_dependencies=["stripe-api", "postgres"]
+)
+# patterns = [AnomalyPattern.LATENCY_DEGRADATION, AnomalyPattern.CASCADE_FAILURE]
+```
+
+When using FastAPI integration, anomaly detection is automatic:
+
+```python
+from agenttel.fastapi import instrument_fastapi
+
+app = FastAPI()
+instrument_fastapi(app)  # Anomaly detection runs on every span
+```
+
 ---
 
 ## Span Attributes

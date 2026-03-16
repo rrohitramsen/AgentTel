@@ -43,6 +43,7 @@ nav:
   - Getting Started:
     - Overview: getting-started/overview.md
     - Quick Start: getting-started/quick-start.md
+    - "Quick Start: Python": getting-started/quick-start-python.md
     - FAQ: getting-started/faq.md
   - Concepts:
     - Architecture: concepts/architecture.md
@@ -60,6 +61,8 @@ nav:
     - Frontend Telemetry: guides/frontend-telemetry.md
     - Instrumentation Agent: guides/instrumentation-agent.md
     - Multi-Agent Patterns: guides/multi-agent.md
+    - Python FastAPI: guides/python-fastapi.md
+    - Python GenAI: guides/python-genai.md
     - GenAI Instrumentation: guides/genai-instrumentation.md
   - Reference:
     - Attribute Dictionary: reference/attribute-dictionary.md
@@ -68,6 +71,7 @@ nav:
     - Configuration: reference/configuration.md
     - MCP Tools: reference/mcp-tools.md
     - API Reference: reference/api-reference.md
+    - Python API: reference/python-api.md
     - Javadoc: reference/javadoc.md
   - Project:
     - Roadmap: project/roadmap.md

@@ -39,29 +39,55 @@ The complete autonomous agent workflow:
 
 ### Recording Metrics
 
-```java
-ServiceHealthAggregator health = new ServiceHealthAggregator(rollingBaselines, sloTracker);
+=== "Java"
 
-// Called from SpanProcessor or interceptor
-health.recordSpan("POST /api/payments", 312.0, false);
-health.recordDependencyCall("stripe-api", 2100.0, true);
-```
+    ```java
+    ServiceHealthAggregator health = new ServiceHealthAggregator(rollingBaselines, sloTracker);
+
+    // Called from SpanProcessor or interceptor
+    health.recordSpan("POST /api/payments", 312.0, false);
+    health.recordDependencyCall("stripe-api", 2100.0, true);
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agent.health import ServiceHealthAggregator
+
+    health = ServiceHealthAggregator()
+    health.record_span("POST /api/payments", latency_ms=312.0, is_error=False)
+    health.record_dependency("stripe-api", latency_ms=2100.0, is_error=True)
+
+    summary = health.get_summary()
+    # summary.status = "DEGRADED"
+    # summary.operations = [...]
+    ```
 
 ### Querying Health
 
-```java
-// Full service summary
-ServiceHealthSummary summary = health.getHealthSummary("payment-service");
-// summary.status()       --> DEGRADED
-// summary.operations()   --> List<OperationSummary>
-// summary.dependencies() --> List<DependencySummary>
+=== "Java"
 
-// Single operation
-Optional<OperationSummary> op = health.getOperationHealth("POST /api/payments");
-// op.errorRate()      --> 0.052
-// op.latencyP50Ms()   --> 312.0
-// op.deviationStatus() --> "elevated"
-```
+    ```java
+    // Full service summary
+    ServiceHealthSummary summary = health.getHealthSummary("payment-service");
+    // summary.status()       --> DEGRADED
+    // summary.operations()   --> List<OperationSummary>
+    // summary.dependencies() --> List<DependencySummary>
+
+    // Single operation
+    Optional<OperationSummary> op = health.getOperationHealth("POST /api/payments");
+    // op.errorRate()      --> 0.052
+    // op.latencyP50Ms()   --> 312.0
+    // op.deviationStatus() --> "elevated"
+    ```
+
+=== "Python"
+
+    ```python
+    summary = health.get_summary()
+    for op in summary.operations:
+        print(f"{op.name}: error_rate={op.error_rate}, p50={op.latency_p50_ms}")
+    ```
 
 ### Health Status Determination
 
@@ -105,18 +131,30 @@ Plus: severity (LOW/MEDIUM/HIGH/CRITICAL) and similar past incidents.
 
 ### Change Tracking
 
-```java
-IncidentContextBuilder builder = new IncidentContextBuilder(
-    healthAggregator, topology, rollingBaselines, remediationRegistry);
+=== "Java"
 
-// Record changes for correlation
-builder.recordDeployment("v2.1.0", "2025-01-15T14:00:00Z");
-builder.recordConfigChange("Updated rate limit to 500 rps");
+    ```java
+    IncidentContextBuilder builder = new IncidentContextBuilder(
+        healthAggregator, topology, rollingBaselines, remediationRegistry);
 
-// Record historical incidents for pattern matching
-builder.recordHistoricalIncident("inc-2024-dec-03", "2024-12-03T10:00:00Z",
-    "Increased timeout to 10s", "stripe-api timeout");
-```
+    // Record changes for correlation
+    builder.recordDeployment("v2.1.0", "2025-01-15T14:00:00Z");
+    builder.recordConfigChange("Updated rate limit to 500 rps");
+
+    // Record historical incidents for pattern matching
+    builder.recordHistoricalIncident("inc-2024-dec-03", "2024-12-03T10:00:00Z",
+        "Increased timeout to 10s", "stripe-api timeout");
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agent.incident import IncidentContextBuilder
+
+    builder = IncidentContextBuilder(health_aggregator=health, engine=engine)
+    context = builder.build("POST /api/payments")
+    # context.severity, context.what_is_happening, context.suggested_actions
+    ```
 
 ### Change Correlation Engine
 
@@ -227,20 +265,45 @@ RemediationAction circuitBreak = RemediationAction.builder("circuit_break_stripe
 
 ### Registering Actions
 
-```java
-RemediationRegistry registry = new RemediationRegistry();
+=== "Java"
 
-// Operation-specific actions
-registry.register(rollback);
-registry.register(circuitBreak);
+    ```java
+    RemediationRegistry registry = new RemediationRegistry();
 
-// Global actions (apply to all operations)
-registry.registerGlobal(RemediationAction.builder("enable_debug_logging", "*")
-    .description("Enable DEBUG logging for 5 minutes")
-    .type(RemediationAction.ActionType.CUSTOM)
-    .requiresApproval(false)
-    .build());
-```
+    // Operation-specific actions
+    registry.register(rollback);
+    registry.register(circuitBreak);
+
+    // Global actions (apply to all operations)
+    registry.registerGlobal(RemediationAction.builder("enable_debug_logging", "*")
+        .description("Enable DEBUG logging for 5 minutes")
+        .type(RemediationAction.ActionType.CUSTOM)
+        .requiresApproval(false)
+        .build());
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agent.remediation import RemediationRegistry, RemediationExecutor
+
+    registry = RemediationRegistry()
+    registry.register(
+        name="circuit_break_stripe",
+        description="Enable circuit breaker on stripe-api",
+        handler=lambda: toggle_circuit_breaker("stripe-api"),
+        requires_approval=False
+    )
+    registry.register(
+        name="rollback_deployment",
+        description="Rollback to previous version",
+        handler=lambda: kubectl_rollout_undo(),
+        requires_approval=True
+    )
+
+    executor = RemediationExecutor(registry)
+    result = executor.execute("circuit_break_stripe", reason="Error rate at 12%")
+    ```
 
 ### Executing Actions
 

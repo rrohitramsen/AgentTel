@@ -103,18 +103,32 @@ customizer.addTracerProviderCustomizer(
 
 For non-Spring applications, register the aggregator manually:
 
-```java
-AgentCostAggregator costAggregator = new AgentCostAggregator();
+=== "Java"
 
-SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-    .addSpanProcessor(costAggregator)
-    .addSpanProcessor(BatchSpanProcessor.builder(exporter).build())
-    .build();
+    ```java
+    AgentCostAggregator costAggregator = new AgentCostAggregator();
 
-OpenTelemetry otel = OpenTelemetrySdk.builder()
-    .setTracerProvider(tracerProvider)
-    .build();
-```
+    SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
+        .addSpanProcessor(costAggregator)
+        .addSpanProcessor(BatchSpanProcessor.builder(exporter).build())
+        .build();
+
+    OpenTelemetry otel = OpenTelemetrySdk.builder()
+        .setTracerProvider(tracerProvider)
+        .build();
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.cost import AgentCostAggregator
+
+    aggregator = AgentCostAggregator()
+    aggregator.record(input_tokens=1000, output_tokens=500, cost_usd=0.003, model="gpt-4o")
+
+    summary = aggregator.summary()
+    # summary.total_cost_usd, summary.total_input_tokens, etc.
+    ```
 
 !!! warning
     Register `AgentCostAggregator` **before** the `BatchSpanProcessor` (exporter) so that cost attributes are set on parent spans before they are exported.
@@ -125,31 +139,43 @@ OpenTelemetry otel = OpenTelemetrySdk.builder()
 
 For multi-agent orchestrations, costs aggregate at the session level:
 
-```java
-try (SequentialOrchestration seq = tracer.orchestrate(
-        OrchestrationPattern.SEQUENTIAL, 3)) {
+=== "Java"
 
-    try (AgentInvocation s1 = seq.stage("researcher", 1)) {
-        // GenAI calls here → costs tracked per-invocation
-        chatModel.generate(messages);  // cost_usd = 0.003
-        s1.complete(true);
+    ```java
+    try (SequentialOrchestration seq = tracer.orchestrate(
+            OrchestrationPattern.SEQUENTIAL, 3)) {
+
+        try (AgentInvocation s1 = seq.stage("researcher", 1)) {
+            // GenAI calls here → costs tracked per-invocation
+            chatModel.generate(messages);  // cost_usd = 0.003
+            s1.complete(true);
+        }
+
+        try (AgentInvocation s2 = seq.stage("writer", 2)) {
+            chatModel.generate(messages);  // cost_usd = 0.008
+            chatModel.generate(messages);  // cost_usd = 0.005
+            s2.complete(true);
+        }
+
+        try (AgentInvocation s3 = seq.stage("reviewer", 3)) {
+            chatModel.generate(messages);  // cost_usd = 0.004
+            s3.complete(true);
+        }
+
+        seq.complete();
     }
+    // Session span gets: cost.total_usd = 0.020, cost.llm_calls = 4
+    ```
 
-    try (AgentInvocation s2 = seq.stage("writer", 2)) {
-        chatModel.generate(messages);  // cost_usd = 0.008
-        chatModel.generate(messages);  // cost_usd = 0.005
-        s2.complete(true);
-    }
+=== "Python"
 
-    try (AgentInvocation s3 = seq.stage("reviewer", 3)) {
-        chatModel.generate(messages);  // cost_usd = 0.004
-        s3.complete(true);
-    }
+    ```python
+    from agenttel.agentic.orchestration import SequentialOrchestration
 
-    seq.complete();
-}
-// Session span gets: cost.total_usd = 0.020, cost.llm_calls = 4
-```
+    orch = SequentialOrchestration(tracer, stages=["research", "write", "review"])
+    # GenAI costs are automatically tracked per-stage
+    # Session span gets aggregated totals
+    ```
 
 The aggregator uses `ConcurrentHashMap` with `DoubleAdder` and `LongAdder` for thread-safe accumulation across parallel branches.
 

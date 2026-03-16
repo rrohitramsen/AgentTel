@@ -16,6 +16,31 @@ The `agenttel-genai` module provides observability for AI/ML workloads on the JV
 
 All GenAI library dependencies are `compileOnly` — they activate only when the corresponding library is on the classpath. Users provide their own runtime versions.
 
+### Python SDK
+
+The Python SDK provides equivalent GenAI instrumentation. See the [Python GenAI Guide](python-genai.md) for complete documentation. Quick overview:
+
+| Framework | Installation | What You Get |
+|-----------|-------------|-------------|
+| **OpenAI** | `pip install agenttel[openai]` | Chat completions with token/cost tracking |
+| **Anthropic** | `pip install agenttel[anthropic]` | Messages API with token/cost tracking |
+| **LangChain** | `pip install agenttel[langchain]` | ChatModel and Retriever callback handler |
+| **AWS Bedrock** | `pip install agenttel[bedrock]` | `invoke_model` and `converse` wrapping |
+
+```python
+from agenttel.genai import instrument_openai, instrument_anthropic
+from openai import OpenAI
+from anthropic import Anthropic
+
+# One-line instrumentation
+client = instrument_openai(OpenAI())
+response = client.chat.completions.create(model="gpt-4o", messages=[...])
+# Span created automatically with gen_ai.* attributes and cost tracking
+
+anthropic_client = instrument_anthropic(Anthropic())
+response = anthropic_client.messages.create(model="claude-sonnet-4-20250514", ...)
+```
+
 ---
 
 ## Dependency Setup

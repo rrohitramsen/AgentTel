@@ -22,15 +22,30 @@ AgentTel provides first-class support for multi-agent orchestration patterns ide
 
 All orchestrations start from an `AgentTracer`:
 
-```java
-AgentTracer tracer = AgentTracer.create(openTelemetry)
-    .agentName("coordinator")
-    .agentType(AgentType.ORCHESTRATOR)
-    .build();
+=== "Java"
 
-// The pattern determines the return type
-Orchestration orch = tracer.orchestrate(OrchestrationPattern.SEQUENTIAL);
-```
+    ```java
+    AgentTracer tracer = AgentTracer.create(openTelemetry)
+        .agentName("coordinator")
+        .agentType(AgentType.ORCHESTRATOR)
+        .build();
+
+    // The pattern determines the return type
+    Orchestration orch = tracer.orchestrate(OrchestrationPattern.SEQUENTIAL);
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.tracer import AgentTracer
+    from agenttel.agentic.orchestration import SequentialOrchestration
+    from agenttel.enums import AgentType, OrchestrationPattern
+
+    tracer = (AgentTracer.create(otel)
+        .agent_name("coordinator")
+        .agent_type(AgentType.ORCHESTRATOR)
+        .build())
+    ```
 
 Every orchestration creates a root span named `agenttel.agentic.session` with `orchestration.pattern` set.
 
@@ -40,31 +55,44 @@ Every orchestration creates a root span named `agenttel.agentic.session` with `o
 
 Agents execute in order. Each stage's output feeds into the next.
 
-```java
-try (SequentialOrchestration seq = tracer.orchestrate(
-        OrchestrationPattern.SEQUENTIAL, 3)) {
+=== "Java"
 
-    // Stage 1: Research
-    try (AgentInvocation stage1 = seq.stage("researcher", 1)) {
-        stage1.step(StepType.ACTION, "Searching knowledge base");
-        stage1.complete(true);
+    ```java
+    try (SequentialOrchestration seq = tracer.orchestrate(
+            OrchestrationPattern.SEQUENTIAL, 3)) {
+
+        // Stage 1: Research
+        try (AgentInvocation stage1 = seq.stage("researcher", 1)) {
+            stage1.step(StepType.ACTION, "Searching knowledge base");
+            stage1.complete(true);
+        }
+
+        // Stage 2: Draft
+        try (AgentInvocation stage2 = seq.stage("writer", 2)) {
+            stage2.step(StepType.ACTION, "Drafting response");
+            stage2.complete(true);
+        }
+
+        // Stage 3: Review
+        try (AgentInvocation stage3 = seq.stage("reviewer", 3)) {
+            stage3.step(StepType.EVALUATION, "Checking accuracy");
+            stage3.complete(true);
+        }
+
+        seq.complete();
     }
+    ```
 
-    // Stage 2: Draft
-    try (AgentInvocation stage2 = seq.stage("writer", 2)) {
-        stage2.step(StepType.ACTION, "Drafting response");
-        stage2.complete(true);
-    }
+=== "Python"
 
-    // Stage 3: Review
-    try (AgentInvocation stage3 = seq.stage("reviewer", 3)) {
-        stage3.step(StepType.EVALUATION, "Checking accuracy");
-        stage3.complete(true);
-    }
+    ```python
+    from agenttel.agentic.orchestration import SequentialOrchestration
 
-    seq.complete();
-}
-```
+    def run_stages(stages):
+        orch = SequentialOrchestration(tracer, stages=["research", "draft", "review"])
+        results = orch.run(stages)
+        return results
+    ```
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'lineColor': '#6366f1'}}}%%
@@ -96,40 +124,53 @@ graph LR
 
 Multiple agents execute concurrently. Results are aggregated with a named strategy.
 
-```java
-try (ParallelOrchestration par = (ParallelOrchestration)
-        tracer.orchestrate(OrchestrationPattern.PARALLEL)) {
+=== "Java"
 
-    // Launch branches concurrently
-    CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> {
-        try (AgentInvocation branch = par.branch("sentiment-analyzer")) {
-            branch.complete(true);
-            return "positive";
-        }
-    });
+    ```java
+    try (ParallelOrchestration par = (ParallelOrchestration)
+            tracer.orchestrate(OrchestrationPattern.PARALLEL)) {
 
-    CompletableFuture<String> f2 = CompletableFuture.supplyAsync(() -> {
-        try (AgentInvocation branch = par.branch("topic-extractor")) {
-            branch.complete(true);
-            return "technology";
-        }
-    });
+        // Launch branches concurrently
+        CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> {
+            try (AgentInvocation branch = par.branch("sentiment-analyzer")) {
+                branch.complete(true);
+                return "positive";
+            }
+        });
 
-    CompletableFuture<String> f3 = CompletableFuture.supplyAsync(() -> {
-        try (AgentInvocation branch = par.branch("summarizer")) {
-            branch.complete(true);
-            return "AI advances in 2025";
-        }
-    });
+        CompletableFuture<String> f2 = CompletableFuture.supplyAsync(() -> {
+            try (AgentInvocation branch = par.branch("topic-extractor")) {
+                branch.complete(true);
+                return "technology";
+            }
+        });
 
-    // Wait for all branches
-    CompletableFuture.allOf(f1, f2, f3).join();
+        CompletableFuture<String> f3 = CompletableFuture.supplyAsync(() -> {
+            try (AgentInvocation branch = par.branch("summarizer")) {
+                branch.complete(true);
+                return "AI advances in 2025";
+            }
+        });
 
-    // Record aggregation strategy
-    par.aggregate("merge");
-    par.complete();
-}
-```
+        // Wait for all branches
+        CompletableFuture.allOf(f1, f2, f3).join();
+
+        // Record aggregation strategy
+        par.aggregate("merge");
+        par.complete();
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.orchestration import ParallelOrchestration
+
+    def analyze_parallel(tasks):
+        orch = ParallelOrchestration(tracer, max_workers=3)
+        results = orch.run(tasks)
+        return results
+    ```
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'lineColor': '#6366f1'}}}%%
@@ -171,39 +212,52 @@ graph TB
 
 An iterative generate-evaluate loop where a generator produces output and an evaluator scores it. The loop continues until the quality threshold is met.
 
-```java
-try (EvalLoopOrchestration evalLoop = (EvalLoopOrchestration)
-        tracer.orchestrate(OrchestrationPattern.EVALUATOR_OPTIMIZER)) {
+=== "Java"
 
-    double score = 0;
-    int iteration = 0;
-    String output = "";
+    ```java
+    try (EvalLoopOrchestration evalLoop = (EvalLoopOrchestration)
+            tracer.orchestrate(OrchestrationPattern.EVALUATOR_OPTIMIZER)) {
 
-    while (score < 0.8 && iteration < 5) {
-        iteration++;
+        double score = 0;
+        int iteration = 0;
+        String output = "";
 
-        // Generate
-        try (AgentInvocation gen = evalLoop.generate("writer", iteration)) {
-            output = llm.generate(prompt + (iteration > 1 ? "\nFeedback: " + feedback : ""));
-            gen.complete(true);
-        }
+        while (score < 0.8 && iteration < 5) {
+            iteration++;
 
-        // Evaluate
-        try (EvalLoopOrchestration.EvalInvocation eval =
-                evalLoop.evaluate("critic", iteration)) {
-            score = evaluator.score(output);
-            eval.score(score);
-
-            if (score < 0.8) {
-                eval.feedback("Needs more specific examples");
+            // Generate
+            try (AgentInvocation gen = evalLoop.generate("writer", iteration)) {
+                output = llm.generate(prompt + (iteration > 1 ? "\nFeedback: " + feedback : ""));
+                gen.complete(true);
             }
-            eval.complete(score >= 0.8);
-        }
-    }
 
-    evalLoop.complete();
-}
-```
+            // Evaluate
+            try (EvalLoopOrchestration.EvalInvocation eval =
+                    evalLoop.evaluate("critic", iteration)) {
+                score = evaluator.score(output);
+                eval.score(score);
+
+                if (score < 0.8) {
+                    eval.feedback("Needs more specific examples");
+                }
+                eval.complete(score >= 0.8);
+            }
+        }
+
+        evalLoop.complete();
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.orchestration import EvalLoopOrchestration
+
+    def generate_with_eval(prompt):
+        orch = EvalLoopOrchestration(tracer, max_iterations=5, threshold=0.8)
+        result = orch.run(generator=generate_fn, evaluator=evaluate_fn)
+        return result
+    ```
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'lineColor': '#6366f1'}}}%%

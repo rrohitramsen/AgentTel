@@ -93,15 +93,30 @@ The MCP (Model Context Protocol) server exposes telemetry as tools that AI agent
 
 ### Starting the Server
 
-```java
-McpServer mcp = new AgentTelMcpServerBuilder()
-    .port(8081)
-    .contextProvider(agentContextProvider)
-    .remediationExecutor(remediationExecutor)
-    .build();
+=== "Java"
 
-mcp.start();
-```
+    ```java
+    McpServer mcp = new AgentTelMcpServerBuilder()
+        .port(8081)
+        .contextProvider(agentContextProvider)
+        .remediationExecutor(remediationExecutor)
+        .build();
+
+    mcp.start();
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agent.mcp_server import McpServer
+
+    server = McpServer(
+        engine=engine,
+        host="0.0.0.0",
+        port=8091
+    )
+    await server.start()
+    ```
 
 ### Endpoints
 
@@ -135,20 +150,40 @@ For complete parameter tables, example outputs, and usage guidance for every too
 
 You can extend the MCP server with domain-specific tools:
 
-```java
-McpServer server = builder.build();
+=== "Java"
 
-server.registerTool(
-    new McpToolDefinition(
-        "search_logs",
-        "Search recent application logs for a pattern",
-        Map.of("query", new ParameterDefinition("string", "Search query"),
-               "timeframe", new ParameterDefinition("string", "Time range (e.g., '1h', '30m')")),
-        List.of("query")
-    ),
-    args -> logService.search(args.get("query"), args.get("timeframe"))
-);
-```
+    ```java
+    McpServer server = builder.build();
+
+    server.registerTool(
+        new McpToolDefinition(
+            "search_logs",
+            "Search recent application logs for a pattern",
+            Map.of("query", new ParameterDefinition("string", "Search query"),
+                   "timeframe", new ParameterDefinition("string", "Time range (e.g., '1h', '30m')")),
+            List.of("query")
+        ),
+        args -> logService.search(args.get("query"), args.get("timeframe"))
+    );
+    ```
+
+=== "Python"
+
+    ```python
+    async def search_logs(args: dict) -> str:
+        return log_service.search(args["query"], args.get("timeframe", "1h"))
+
+    server.register_tool(
+        name="search_logs",
+        description="Search recent application logs for a pattern",
+        handler=search_logs,
+        parameters={
+            "query": {"type": "string", "description": "Search query"},
+            "timeframe": {"type": "string", "description": "Time range"}
+        },
+        required=["query"]
+    )
+    ```
 
 ---
 
@@ -287,6 +322,25 @@ public class AgentConfig {
         return server;
     }
 }
+```
+
+---
+
+## Integration with FastAPI
+
+```python
+from fastapi import FastAPI
+from agenttel.fastapi import instrument_fastapi
+from agenttel.agent.mcp_server import McpServer
+
+app = FastAPI()
+engine = instrument_fastapi(app)
+
+# Start MCP server alongside the app
+@app.on_event("startup")
+async def start_mcp():
+    server = McpServer(engine=engine, port=8091)
+    await server.start()
 ```
 
 ---

@@ -15,7 +15,7 @@
 
 ---
 
-AgentTel enriches [OpenTelemetry](https://opentelemetry.io) telemetry with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards. Works across the full stack: JVM backends (Java, Kotlin, Scala) and browser frontends (TypeScript/JavaScript).
+AgentTel enriches [OpenTelemetry](https://opentelemetry.io) telemetry with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards. Works across the full stack: JVM backends (Java, Kotlin, Scala), Python backends (FastAPI, Django, Flask), and browser frontends (TypeScript/JavaScript).
 
 Standard observability answers *"What happened?"* AgentTel adds *"What does an AI agent need to know to act on this?"*
 
@@ -188,6 +188,7 @@ AgentTel supports multiple integration paths — pick what fits your stack:
 | Path | Best For | Effort |
 |------|----------|--------|
 | Spring Boot Starter | Spring Boot applications | Add dependency + YAML config |
+| **Python SDK** | **FastAPI / Python services** | **`pip install` + YAML config** |
 | JavaAgent Extension | Any JVM app (no code changes) | JVM flag + YAML config |
 | Web SDK | Browser/SPA applications | `npm install` + init call |
 | Instrument Agent | IDE-assisted setup | Run MCP server in IDE |
@@ -376,6 +377,55 @@ Affected Deps: stripe-api
   - [MEDIUM] enable_circuit_breakers: Circuit break stripe-api
 ```
 
+### Backend: Python (FastAPI)
+
+#### 1. Install
+
+```bash
+pip install agenttel[fastapi]
+
+# Optional extras
+pip install agenttel[openai]       # OpenAI instrumentation
+pip install agenttel[anthropic]    # Anthropic instrumentation
+pip install agenttel[langchain]    # LangChain instrumentation
+pip install agenttel[all]          # Everything
+```
+
+#### 2. Configure
+
+```yaml
+# agenttel.yml
+agenttel:
+  topology:
+    service-name: payment-service
+    team: payments-platform
+    tier: critical
+    domain: commerce
+    on-call-channel: "#payments-oncall"
+  operations:
+    "POST /api/payments":
+      expected-latency-p50: 45ms
+      expected-latency-p99: 200ms
+      retryable: true
+      runbook-url: "https://wiki/runbooks/process-payment"
+  slo:
+    availability:
+      target: 0.999
+      type: availability
+```
+
+#### 3. Instrument
+
+```python
+from fastapi import FastAPI
+from agenttel.fastapi import instrument_fastapi
+
+app = FastAPI()
+instrument_fastapi(app)  # One-line integration
+```
+
+All spans are now enriched with topology, baselines, anomaly detection, and SLO tracking — identical attributes to the JVM SDK.
+
 ### Frontend: Browser SDK
 
 ```bash
@@ -456,6 +506,9 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 │                      OpenTelemetry SDK                               │
 └─────────────────────────────────────────────────────────────────────┘
 
+  agenttel-python (Python SDK — full feature parity)
+  Core · FastAPI · GenAI · Agent/MCP · Agentic Observability
+
   agenttel-instrument (IDE MCP Server — Python)
   Codebase analysis · Config generation · Validation · Auto-improvements
 ```
@@ -470,6 +523,7 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 | `agenttel-javaagent` | `dev.agenttel:agenttel-javaagent` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
 | `agenttel-spring-boot-starter` | `dev.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
 | `agenttel-web` | `@agenttel/web` (npm) | Browser telemetry SDK — auto-instrumentation of page loads, navigation, API calls, errors, Web Vitals, journey tracking, anomaly detection, W3C trace propagation. |
+| `agenttel-python` | `agenttel` (pip) | Python SDK — full feature parity with JVM SDK. Core enrichment, FastAPI integration, GenAI instrumentation, MCP agent interface, agentic observability. |
 | `agenttel-instrument` | `agenttel-instrument` (pip) | IDE MCP server — codebase analysis, config generation, validation, improvement suggestions, and auto-apply for both backend and frontend instrumentation. |
 | `agenttel-testing` | `dev.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
 
@@ -524,6 +578,18 @@ Each example includes a README with step-by-step instructions and curl commands 
 | Modern browsers | Chrome, Firefox, Safari, Edge (ES2020+) |
 | React (example) | 18+ |
 
+### Backend (Python)
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Python | 3.11+ |
+| OpenTelemetry SDK | 1.20.0+ |
+| FastAPI | 0.100.0+ (optional) |
+| OpenAI SDK | 1.0+ (optional) |
+| Anthropic SDK | 0.20+ (optional) |
+| LangChain | 0.1+ (optional) |
+| AWS Bedrock (boto3) | 1.28+ (optional) |
+
 ### Tooling
 
 | Component | Supported Versions |
@@ -577,10 +643,11 @@ implementation 'dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha'
 |---------|-------------|
 | `@agenttel/web` | Browser telemetry SDK with auto-instrumentation |
 
-**pip (Tooling):**
+**pip (Python SDK + Tooling):**
 
 | Package | Description |
 |---------|-------------|
+| `agenttel` | Python SDK — core, FastAPI, GenAI, agent/MCP, agentic observability |
 | `agenttel-instrument` | IDE MCP server for instrumentation automation |
 
 ## Zero-Code Mode (JavaAgent Extension)
