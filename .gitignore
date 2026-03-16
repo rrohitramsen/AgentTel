@@ -26,6 +26,11 @@ dist/
 # Python
 __pycache__/
 *.pyc
+*.py[cod]
+*.egg-info/
+*.egg
+.venv/
+.pytest_cache/
 
 # Secrets
 .env

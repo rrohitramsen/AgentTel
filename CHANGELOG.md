@@ -4,6 +4,59 @@ All notable changes to AgentTel are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0-alpha] - 2026-03-16
+
+### Added
+
+**Python SDK (agenttel-python) — Full Feature Parity**
+
+Core (`agenttel`):
+- Semantic attributes (~60 constants) matching `AgentTelAttributes.java`
+- All enums (`ServiceTier`, `ErrorCategory`, `DependencyType`, etc.)
+- Pydantic data models (`OperationBaseline`, `DependencyDescriptor`, `SloStatus`, etc.)
+- YAML configuration loader from `agenttel.yml`
+- `AgentTelSpanProcessor` — OTel SpanProcessor with baseline/anomaly/SLO enrichment
+- `AgentTelEngine` — high-level orchestrator wiring all components
+- Rolling baseline provider with thread-safe ring buffer
+- Composite baseline provider (rolling + static with priority ordering)
+- Z-score anomaly detection with pattern matching (latency degradation, error spike, cascade failure)
+- SLO tracker with error budget calculation and alert levels
+- Error classifier (exception type + message pattern matching)
+- Causality tracker with dependency state changes and causal chain analysis
+- Topology registry for service metadata
+- Structured event emitter
+
+FastAPI Integration (`agenttel[fastapi]`):
+- `instrument_fastapi()` — one-line FastAPI integration
+- `AgentTelMiddleware` — route resolution, topology, operation context
+- `@agent_operation` decorator for per-endpoint configuration
+- Auto-configuration from `agenttel.yml`
+
+GenAI Instrumentation (`agenttel[openai,anthropic,langchain,bedrock]`):
+- OpenAI SDK wrapper (sync + streaming)
+- Anthropic SDK wrapper (sync + streaming)
+- LangChain callback handler (ChatModel, Retriever)
+- AWS Bedrock wrapper (`invoke_model` + `converse`)
+- `ModelCostCalculator` with built-in pricing for 20+ models
+- `GenAiSpanBuilder` for consistent span creation
+
+Agent Interface (`agenttel[agent]`):
+- MCP server (JSON-RPC 2.0 over HTTP) with 15 built-in tools
+- `ServiceHealthAggregator` — per-operation stats and dependency health
+- `AgentIdentity` and `ToolPermissionRegistry` — role-based access control
+- `IncidentContextBuilder` — aggregated incident context for LLM consumption
+- `RemediationRegistry` and `RemediationExecutor` — with audit logging
+- `SloReportGenerator` and `TrendAnalyzer`
+
+Agentic Observability (`agenttel`):
+- 70+ agentic semantic attributes
+- `AgentTracer` — builder pattern API for agent tracing
+- 10 scope context managers: invocation, step, tool call, task, handoff, human checkpoint, code execution, evaluation, retriever, reranker
+- Orchestration patterns: sequential, parallel, eval-loop
+- `AgentCostAggregator` — token usage and cost tracking
+- `LoopDetector` and `QualityTracker` — quality metrics
+- `GuardrailRecorder` — guardrail trigger recording
+
 ## [0.2.0-alpha] - 2026-03-10
 
 ### Added

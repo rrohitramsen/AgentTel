@@ -4,9 +4,23 @@ What's been built, what's next, and where AgentTel is heading.
 
 ---
 
-## Current Release: v0.2.0-alpha
+## Current Release: v0.3.0-alpha
 
 Everything below is **implemented and available**.
+
+### Python SDK (agenttel-python)
+
+- Full feature parity with JVM SDK, packaged as `agenttel` on PyPI
+- Core: semantic attributes, Pydantic models, YAML config, rolling baselines, anomaly detection, SLO tracking, error classification, causality tracking
+- FastAPI integration: middleware, `@agent_operation` decorator, auto-configuration
+- GenAI instrumentation: OpenAI, Anthropic, LangChain, AWS Bedrock wrappers with cost calculation
+- Agent interface: MCP server (JSON-RPC 2.0) with 15 tools, RBAC, health aggregation, incident context, remediation
+- Agentic observability: `AgentTracer` with 10 scope context managers, orchestration patterns, cost/quality tracking
+- 74 tests across 9 test files
+
+---
+
+## Previous Release: v0.2.0-alpha
 
 ### Core Instrumentation
 
@@ -151,6 +165,12 @@ Everything below is **implemented and available**.
 | AgentTel | TypeScript | Browsers |
 |----------|------------|----------|
 | 0.2.0-alpha | 4.7+ | Chrome, Firefox, Safari, Edge (ES2020+) |
+
+**Backend (Python)**
+
+| AgentTel | Python | OTel SDK | FastAPI |
+|----------|--------|----------|---------|
+| 0.3.0-alpha | 3.11+ | 1.20.0+ | 0.100.0+ |
 
 **Tooling**
 

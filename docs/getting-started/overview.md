@@ -2,7 +2,7 @@
 
 ## Vision
 
-AgentTel is an open-source telemetry library and semantic convention extension for [OpenTelemetry](https://opentelemetry.io) that makes application telemetry **natively consumable by AI agents**. It works across the full stack — JVM backends (Java, Kotlin, Scala) and browser frontends (TypeScript/JavaScript) — bridging the gap between human-oriented observability and the structured, contextual data that autonomous systems require.
+AgentTel is an open-source telemetry library and semantic convention extension for [OpenTelemetry](https://opentelemetry.io) that makes application telemetry **natively consumable by AI agents**. It works across the full stack — JVM backends (Java, Kotlin, Scala), Python backends (FastAPI, Django, Flask), and browser frontends (TypeScript/JavaScript) — bridging the gap between human-oriented observability and the structured, contextual data that autonomous systems require.
 
 ## Motivation
 
@@ -82,8 +82,10 @@ agenttel/
 ├── agenttel-core/                # Runtime engine (OTel SDK dependency only)
 ├── agenttel-genai/               # GenAI instrumentation (optional framework deps)
 ├── agenttel-agent/               # Agent interface layer (MCP, health, incidents, reporting)
+├── agenttel-agentic/             # Agentic observability (agent tracing, orchestration)
 ├── agenttel-spring-boot-starter/ # Spring Boot auto-configuration
-├── agenttel-javaagent/ # Zero-code OTel javaagent extension
+├── agenttel-javaagent/           # Zero-code OTel javaagent extension
+├── agenttel-python/              # Python SDK (full feature parity with JVM SDK)
 ├── agenttel-web/                 # Browser SDK (TypeScript) — frontend telemetry
 ├── agenttel-instrument/          # IDE MCP server (Python) — instrumentation automation
 ├── agenttel-testing/             # Test utilities
@@ -105,6 +107,7 @@ agenttel/
 | `agenttel-spring-boot-starter` | `dev.agenttel:agenttel-spring-boot-starter` | Spring Boot | Auto-configuration for Spring Boot applications |
 | `agenttel-javaagent` | `dev.agenttel:agenttel-javaagent` | OTel Javaagent | Zero-code enrichment for any JVM app — no Spring dependency |
 | `agenttel-web` | `@agenttel/web` (npm) | TypeScript, ES2020+ | Browser telemetry SDK — page loads, navigation, API calls, journeys, anomaly detection, cross-stack correlation |
+| `agenttel-python` | `agenttel` (pip) | OTel SDK, Pydantic, PyYAML | Python SDK — core enrichment, FastAPI, GenAI, agent/MCP, agentic observability |
 | `agenttel-instrument` | `agenttel-instrument` (pip) | Python 3.11+ | IDE MCP server — codebase analysis, config generation, validation, auto-improvements |
 | `agenttel-testing` | `dev.agenttel:agenttel-testing` | OTel SDK Testing | Test utilities for verifying span enrichment |
 
