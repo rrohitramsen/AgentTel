@@ -40,40 +40,71 @@ Instrument your AI agent's lifecycle — invocations, reasoning steps, tool call
     implementation("dev.agenttel:agenttel-agentic:0.2.0-alpha")
     ```
 
+=== "Python"
+
+    ```bash
+    pip install agenttel
+    ```
+
 ---
 
 ## Quick Start
 
-```java
-import io.agenttel.agentic.trace.AgentTracer;
-import io.agenttel.agentic.AgentType;
-import io.agenttel.agentic.StepType;
+=== "Java"
 
-// 1. Create a tracer
-AgentTracer tracer = AgentTracer.create(openTelemetry)
-    .agentName("incident-responder")
-    .agentType(AgentType.SINGLE)
-    .framework("custom")
-    .build();
+    ```java
+    import io.agenttel.agentic.trace.AgentTracer;
+    import io.agenttel.agentic.AgentType;
+    import io.agenttel.agentic.StepType;
 
-// 2. Start an invocation
-try (AgentInvocation invocation = tracer.invoke("Diagnose high latency")) {
-    // 3. Record reasoning steps
-    invocation.step(StepType.THOUGHT, "Need to check service health metrics");
+    // 1. Create a tracer
+    AgentTracer tracer = AgentTracer.create(openTelemetry)
+        .agentName("incident-responder")
+        .agentType(AgentType.SINGLE)
+        .framework("custom")
+        .build();
 
-    // 4. Make a tool call
-    try (ToolCallScope tool = invocation.toolCall("get_service_health")) {
-        var health = mcpClient.call("get_service_health", params);
-        tool.success();
+    // 2. Start an invocation
+    try (AgentInvocation invocation = tracer.invoke("Diagnose high latency")) {
+        // 3. Record reasoning steps
+        invocation.step(StepType.THOUGHT, "Need to check service health metrics");
+
+        // 4. Make a tool call
+        try (ToolCallScope tool = invocation.toolCall("get_service_health")) {
+            var health = mcpClient.call("get_service_health", params);
+            tool.success();
+        }
+
+        // 5. Record another step
+        invocation.step(StepType.OBSERVATION, "Latency elevated on POST /api/payments");
+
+        // 6. Complete the invocation
+        invocation.complete(true);
     }
+    ```
 
-    // 5. Record another step
-    invocation.step(StepType.OBSERVATION, "Latency elevated on POST /api/payments");
+=== "Python"
 
-    // 6. Complete the invocation
-    invocation.complete(true);
-}
-```
+    ```python
+    from agenttel.agentic.tracer import AgentTracer
+    from agenttel.enums import AgentType, StepType
+
+    tracer = (AgentTracer.create(otel)
+        .agent_name("incident-responder")
+        .agent_type(AgentType.SINGLE)
+        .framework("custom")
+        .build())
+
+    with tracer.invoke("Diagnose high latency") as invocation:
+        invocation.step(StepType.THOUGHT, "Need to check service health metrics")
+
+        with invocation.tool_call("get_service_health") as tool:
+            health = mcp_client.call("get_service_health", params)
+            tool.set_result(health)
+
+        invocation.step(StepType.OBSERVATION, "Latency elevated on POST /api/payments")
+        invocation.complete(goal_achieved=True)
+    ```
 
 **Span output:**
 
@@ -104,14 +135,26 @@ Configure agent identity via the builder, YAML config, or `@AgentMethod` annotat
 
 ### Programmatic (Builder)
 
-```java
-AgentTracer tracer = AgentTracer.create(openTelemetry)
-    .agentName("code-reviewer")
-    .agentType(AgentType.WORKER)
-    .framework("langchain4j")
-    .agentVersion("2.1.0")
-    .build();
-```
+=== "Java"
+
+    ```java
+    AgentTracer tracer = AgentTracer.create(openTelemetry)
+        .agentName("code-reviewer")
+        .agentType(AgentType.WORKER)
+        .framework("langchain4j")
+        .agentVersion("2.1.0")
+        .build();
+    ```
+
+=== "Python"
+
+    ```python
+    tracer = (AgentTracer.create(otel)
+        .agent_name("code-reviewer")
+        .agent_type(AgentType.WORKER)
+        .framework("langchain")
+        .build())
+    ```
 
 ### YAML Configuration
 
@@ -170,23 +213,34 @@ public IncidentReport diagnose(String incidentId) {
 
 An invocation represents a complete goal-directed execution of an agent.
 
-```java
-// Basic invocation
-try (AgentInvocation inv = tracer.invoke("Analyze customer feedback")) {
-    // ... agent logic ...
-    inv.complete(true);  // goal achieved
-}
+=== "Java"
 
-// Invoke a named sub-agent
-try (AgentInvocation inv = tracer.invoke("summarizer", "Summarize findings")) {
-    inv.complete(true);
-}
+    ```java
+    // Basic invocation
+    try (AgentInvocation inv = tracer.invoke("Analyze customer feedback")) {
+        // ... agent logic ...
+        inv.complete(true);  // goal achieved
+    }
 
-// Invoke with explicit parent context
-try (AgentInvocation inv = tracer.invoke("analyst", "Check metrics", parentCtx)) {
-    inv.complete(InvocationStatus.ESCALATED);
-}
-```
+    // Invoke a named sub-agent
+    try (AgentInvocation inv = tracer.invoke("summarizer", "Summarize findings")) {
+        inv.complete(true);
+    }
+
+    // Invoke with explicit parent context
+    try (AgentInvocation inv = tracer.invoke("analyst", "Check metrics", parentCtx)) {
+        inv.complete(InvocationStatus.ESCALATED);
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    # Basic invocation
+    with tracer.invoke("Analyze customer feedback") as inv:
+        # ... agent logic ...
+        inv.complete(goal_achieved=True)
+    ```
 
 ### InvocationStatus Enum
 
@@ -264,18 +318,33 @@ for (int i = 0; i < maxRetries; i++) {
 
 Track external tool invocations with success/error/timeout status.
 
-```java
-try (ToolCallScope tool = invocation.toolCall("search_documents")) {
-    try {
-        var results = searchService.search(query);
-        tool.success();
-    } catch (TimeoutException e) {
-        tool.timeout();
-    } catch (Exception e) {
-        tool.error(e.getMessage());
+=== "Java"
+
+    ```java
+    try (ToolCallScope tool = invocation.toolCall("search_documents")) {
+        try {
+            var results = searchService.search(query);
+            tool.success();
+        } catch (TimeoutException e) {
+            tool.timeout();
+        } catch (Exception e) {
+            tool.error(e.getMessage());
+        }
     }
-}
-```
+    ```
+
+=== "Python"
+
+    ```python
+    with invocation.tool_call("search_documents") as tool:
+        try:
+            results = search_service.search(query)
+            tool.set_result(results)
+        except TimeoutError:
+            tool.set_error("timeout")
+        except Exception as e:
+            tool.set_error(str(e))
+    ```
 
 The `ToolCallScope` sets `agenttel.agentic.step.tool_name` and `agenttel.agentic.step.tool_status`.
 
@@ -285,22 +354,34 @@ The `ToolCallScope` sets `agenttel.agentic.step.tool_name` and `agenttel.agentic
 
 Track hierarchical task breakdown with depth and parent tracking.
 
-```java
-try (TaskScope mainTask = invocation.task("Analyze codebase")) {
-    // Nested sub-tasks
-    try (TaskScope subTask = mainTask.subTask("Parse source files")) {
-        // ...
-        subTask.complete();
-    }
+=== "Java"
 
-    try (TaskScope subTask = mainTask.subTask("Extract dependencies")) {
-        // ...
-        subTask.complete();
-    }
+    ```java
+    try (TaskScope mainTask = invocation.task("Analyze codebase")) {
+        // Nested sub-tasks
+        try (TaskScope subTask = mainTask.subTask("Parse source files")) {
+            // ...
+            subTask.complete();
+        }
 
-    mainTask.complete();
-}
-```
+        try (TaskScope subTask = mainTask.subTask("Extract dependencies")) {
+            // ...
+            subTask.complete();
+        }
+
+        mainTask.complete();
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    with invocation.task("Analyze codebase") as main_task:
+        with main_task.subtask("Parse source files") as sub:
+            ...
+        with main_task.subtask("Extract dependencies") as sub:
+            ...
+    ```
 
 Each `TaskScope` gets a unique `task.id`, tracks `task.depth` (0 for root, incrementing for children), and records `task.parent_id` for nested tasks.
 
@@ -310,20 +391,30 @@ Each `TaskScope` gets a unique `task.id`, tracks `task.depth` (0 for root, incre
 
 Track delegation from one agent to another.
 
-```java
-// Basic handoff
-try (HandoffScope handoff = invocation.handoff("specialist-agent", "Requires domain expertise")) {
-    // The target agent executes within this scope
-    try (AgentInvocation specialist = tracer.invoke("specialist-agent", "Handle domain task")) {
-        specialist.complete(true);
-    }
-}
+=== "Java"
 
-// Handoff with chain depth tracking
-try (HandoffScope handoff = invocation.handoff("escalation-agent", "Budget exceeded", 2)) {
-    // chain_depth=2 means this is the 3rd agent in the chain
-}
-```
+    ```java
+    // Basic handoff
+    try (HandoffScope handoff = invocation.handoff("specialist-agent", "Requires domain expertise")) {
+        // The target agent executes within this scope
+        try (AgentInvocation specialist = tracer.invoke("specialist-agent", "Handle domain task")) {
+            specialist.complete(true);
+        }
+    }
+
+    // Handoff with chain depth tracking
+    try (HandoffScope handoff = invocation.handoff("escalation-agent", "Budget exceeded", 2)) {
+        // chain_depth=2 means this is the 3rd agent in the chain
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    with invocation.handoff("specialist-agent", "Requires domain expertise") as handoff:
+        with tracer.invoke("specialist-agent", "Handle domain task") as specialist:
+            specialist.complete(goal_achieved=True)
+    ```
 
 ---
 
@@ -331,15 +422,25 @@ try (HandoffScope handoff = invocation.handoff("escalation-agent", "Budget excee
 
 Track human-in-the-loop interactions with automatic wait time computation.
 
-```java
-try (HumanCheckpointScope checkpoint =
-        invocation.humanCheckpoint(HumanCheckpointType.APPROVAL, "Approve deployment rollback")) {
+=== "Java"
 
-    boolean approved = awaitHumanApproval();
-    checkpoint.decision(approved ? "approved" : "rejected");
-    // wait_ms is automatically computed from scope open to decision()
-}
-```
+    ```java
+    try (HumanCheckpointScope checkpoint =
+            invocation.humanCheckpoint(HumanCheckpointType.APPROVAL, "Approve deployment rollback")) {
+
+        boolean approved = awaitHumanApproval();
+        checkpoint.decision(approved ? "approved" : "rejected");
+        // wait_ms is automatically computed from scope open to decision()
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    with invocation.human_checkpoint(HumanCheckpointType.APPROVAL, "Approve deployment rollback") as checkpoint:
+        approved = await_human_approval()
+        checkpoint.decision("approved" if approved else "rejected")
+    ```
 
 ### HumanCheckpointType Enum
 
@@ -356,19 +457,29 @@ try (HumanCheckpointScope checkpoint =
 
 Track code execution by agents with sandbox status.
 
-```java
-// Basic code execution
-try (CodeExecutionScope exec = invocation.codeExecution("python")) {
-    var result = sandbox.run(code);
-    exec.complete(result.exitCode());
-}
+=== "Java"
 
-// Sandboxed execution
-try (CodeExecutionScope exec = invocation.codeExecution("javascript", true)) {
-    var result = sandbox.run(code);
-    exec.complete(0);  // exit code
-}
-```
+    ```java
+    // Basic code execution
+    try (CodeExecutionScope exec = invocation.codeExecution("python")) {
+        var result = sandbox.run(code);
+        exec.complete(result.exitCode());
+    }
+
+    // Sandboxed execution
+    try (CodeExecutionScope exec = invocation.codeExecution("javascript", true)) {
+        var result = sandbox.run(code);
+        exec.complete(0);  // exit code
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    with invocation.code_execution("python") as exec_scope:
+        result = sandbox.run(code)
+        exec_scope.complete(result.exit_code)
+    ```
 
 The scope tracks `code.language`, `code.status` (success/error), `code.exit_code`, and `code.sandboxed`.
 
@@ -378,20 +489,31 @@ The scope tracks `code.language`, `code.status` (success/error), `code.exit_code
 
 First-class evaluation spans for output quality assessment.
 
-```java
-// Custom evaluation
-try (EvaluationScope eval = invocation.evaluate("quality-scorer", "relevance")) {
-    double score = scorer.evaluate(output);
-    eval.score(score);
-    eval.feedback("Response addresses the core question but misses edge cases");
-}
+=== "Java"
 
-// With eval type
-try (EvaluationScope eval =
-        invocation.evaluate("gpt4-judge", "accuracy", EvalType.LLM_JUDGE)) {
-    eval.score(0.85);
-}
-```
+    ```java
+    // Custom evaluation
+    try (EvaluationScope eval = invocation.evaluate("quality-scorer", "relevance")) {
+        double score = scorer.evaluate(output);
+        eval.score(score);
+        eval.feedback("Response addresses the core question but misses edge cases");
+    }
+
+    // With eval type
+    try (EvaluationScope eval =
+            invocation.evaluate("gpt4-judge", "accuracy", EvalType.LLM_JUDGE)) {
+        eval.score(0.85);
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    with invocation.evaluate("quality-scorer", "relevance") as eval_scope:
+        score = scorer.evaluate(output)
+        eval_scope.score(score)
+        eval_scope.feedback("Response addresses the core question but misses edge cases")
+    ```
 
 ### EvalType Enum
 
@@ -408,19 +530,33 @@ try (EvaluationScope eval =
 
 Track retrieval and reranking in RAG workflows.
 
-```java
-// Retriever
-try (RetrieverScope ret = invocation.retrieve("What is the refund policy?", "pgvector", 10)) {
-    var docs = vectorStore.search(query, 10);
-    ret.complete(docs.size(), avgRelevanceScore(docs), minRelevanceScore(docs));
-}
+=== "Java"
 
-// Reranker
-try (RerankerScope rerank = invocation.rerank("cross-encoder-v1", 10)) {
-    var reranked = reranker.rerank(docs, query);
-    rerank.complete(reranked.size(), reranked.get(0).score());
-}
-```
+    ```java
+    // Retriever
+    try (RetrieverScope ret = invocation.retrieve("What is the refund policy?", "pgvector", 10)) {
+        var docs = vectorStore.search(query, 10);
+        ret.complete(docs.size(), avgRelevanceScore(docs), minRelevanceScore(docs));
+    }
+
+    // Reranker
+    try (RerankerScope rerank = invocation.rerank("cross-encoder-v1", 10)) {
+        var reranked = reranker.rerank(docs, query);
+        rerank.complete(reranked.size(), reranked.get(0).score());
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    with invocation.retrieve("What is the refund policy?", "pgvector", 10) as ret:
+        docs = vector_store.search(query, 10)
+        ret.complete(len(docs), avg_relevance(docs), min_relevance(docs))
+
+    with invocation.rerank("cross-encoder-v1", 10) as rerank:
+        reranked = reranker.rerank(docs, query)
+        rerank.complete(len(reranked), reranked[0].score)
+    ```
 
 The retriever scope sets `retrieval.query`, `retrieval.store_type`, `retrieval.top_k`, `retrieval.document_count`, and relevance scores. The reranker scope sets `reranker.model`, `reranker.input_documents`, `reranker.output_documents`, and `reranker.top_score`.
 
@@ -482,16 +618,28 @@ try (AgentInvocation inv = tracer.invoke("Handle support query")) {
 
 Record guardrail activations as child spans.
 
-```java
-// On an invocation
-invocation.guardrail("content-filter", GuardrailAction.BLOCK,
-    "PII detected in output");
+=== "Java"
 
-// Via GuardrailRecorder (standalone)
-GuardrailRecorder recorder = new GuardrailRecorder(tracer);
-recorder.record("budget-limit", GuardrailAction.ESCALATE,
-    "Cost exceeded $10 threshold");
-```
+    ```java
+    // On an invocation
+    invocation.guardrail("content-filter", GuardrailAction.BLOCK,
+        "PII detected in output");
+
+    // Via GuardrailRecorder (standalone)
+    GuardrailRecorder recorder = new GuardrailRecorder(tracer);
+    recorder.record("budget-limit", GuardrailAction.ESCALATE,
+        "Cost exceeded $10 threshold");
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.guardrail import GuardrailRecorder
+    from agenttel.enums import GuardrailAction
+
+    recorder = GuardrailRecorder()
+    recorder.record("content-filter", GuardrailAction.BLOCK, "PII detected in output")
+    ```
 
 See the [Guardrails & Safety Guide](guardrails-and-safety.md) for more detail on guardrails, loop detection, and quality tracking.
 
@@ -501,16 +649,25 @@ See the [Guardrails & Safety Guide](guardrails-and-safety.md) for more detail on
 
 Track agent memory operations.
 
-```java
-// Read from memory
-tracer.memory(MemoryOperation.READ, "conversation_history", 5);
+=== "Java"
 
-// Write to memory
-tracer.memory(MemoryOperation.WRITE, "vector_store", 3);
+    ```java
+    // Read from memory
+    tracer.memory(MemoryOperation.READ, "conversation_history", 5);
 
-// Search memory
-tracer.memory(MemoryOperation.SEARCH, "knowledge_base", 10);
-```
+    // Write to memory
+    tracer.memory(MemoryOperation.WRITE, "vector_store", 3);
+
+    // Search memory
+    tracer.memory(MemoryOperation.SEARCH, "knowledge_base", 10);
+    ```
+
+=== "Python"
+
+    ```python
+    tracer.memory(MemoryOperation.READ, "conversation_history", 5)
+    tracer.memory(MemoryOperation.WRITE, "vector_store", 3)
+    ```
 
 ### MemoryOperation Enum
 
@@ -595,6 +752,34 @@ agenttel:
 
 !!! tip
     To customize the auto-configured `AgentTracer`, define your own `@Bean AgentTracer` — the auto-configuration backs off when a user-defined bean exists (`@ConditionalOnMissingBean`).
+
+---
+
+## FastAPI Integration
+
+When using the Python SDK with FastAPI, the `AgentTracer` is available through the engine:
+
+```python
+from fastapi import FastAPI
+from agenttel.fastapi import instrument_fastapi
+from agenttel.agentic.tracer import AgentTracer
+from agenttel.enums import AgentType, StepType
+
+app = FastAPI()
+engine = instrument_fastapi(app)
+
+tracer = (AgentTracer.create(engine.tracer_provider)
+    .agent_name("incident-responder")
+    .agent_type(AgentType.SINGLE)
+    .build())
+
+@app.post("/api/diagnose")
+async def diagnose(incident_id: str):
+    with tracer.invoke(f"Diagnose {incident_id}") as inv:
+        inv.step(StepType.THOUGHT, "Analyzing metrics")
+        inv.complete(goal_achieved=True)
+        return {"status": "resolved"}
+```
 
 ---
 

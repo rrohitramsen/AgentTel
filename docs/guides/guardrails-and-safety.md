@@ -21,37 +21,64 @@ Guardrails are safety checks that can block, warn, log, or escalate when conditi
 
 ### Recording on an Invocation
 
-```java
-try (AgentInvocation inv = tracer.invoke("Generate response")) {
-    String output = llm.generate(prompt);
+=== "Java"
 
-    if (containsPii(output)) {
-        inv.guardrail("pii-filter", GuardrailAction.BLOCK,
-            "PII detected in output: email address");
-        inv.complete(false);
-        return sanitize(output);
+    ```java
+    try (AgentInvocation inv = tracer.invoke("Generate response")) {
+        String output = llm.generate(prompt);
+
+        if (containsPii(output)) {
+            inv.guardrail("pii-filter", GuardrailAction.BLOCK,
+                "PII detected in output: email address");
+            inv.complete(false);
+            return sanitize(output);
+        }
+
+        inv.complete(true);
     }
+    ```
 
-    inv.complete(true);
-}
-```
+=== "Python"
+
+    ```python
+    with tracer.invoke("Generate response") as inv:
+        output = llm.generate(prompt)
+        if contains_pii(output):
+            recorder.record("pii-filter", GuardrailAction.BLOCK, "PII detected in output")
+            inv.complete(goal_achieved=False)
+            return sanitize(output)
+        inv.complete(goal_achieved=True)
+    ```
 
 ### GuardrailRecorder (Standalone)
 
 For guardrails that need to fire outside of an invocation scope:
 
-```java
-GuardrailRecorder recorder = new GuardrailRecorder(
-    openTelemetry.getTracer("my-agent"));
+=== "Java"
 
-// Records a guardrail span as a child of the current context
-recorder.record("content-policy", GuardrailAction.WARN,
-    "Response mentions competitor products");
+    ```java
+    GuardrailRecorder recorder = new GuardrailRecorder(
+        openTelemetry.getTracer("my-agent"));
 
-// With explicit parent context
-recorder.record("budget-limit", GuardrailAction.ESCALATE,
-    "Session cost exceeded $10", parentContext);
-```
+    // Records a guardrail span as a child of the current context
+    recorder.record("content-policy", GuardrailAction.WARN,
+        "Response mentions competitor products");
+
+    // With explicit parent context
+    recorder.record("budget-limit", GuardrailAction.ESCALATE,
+        "Session cost exceeded $10", parentContext);
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.guardrail import GuardrailRecorder
+    from agenttel.enums import GuardrailAction
+
+    recorder = GuardrailRecorder()
+    recorder.record("content-policy", GuardrailAction.WARN, "Response mentions competitor products")
+    recorder.record("budget-limit", GuardrailAction.ESCALATE, "Session cost exceeded $10")
+    ```
 
 ### GuardrailAction Enum
 
@@ -78,30 +105,50 @@ agenttel.agentic.guardrail
 
 Track human-in-the-loop interactions with automatic wait time measurement.
 
-```java
-try (AgentInvocation inv = tracer.invoke("Execute remediation")) {
-    inv.step(StepType.THOUGHT, "Recommending deployment rollback");
+=== "Java"
 
-    // Approval gate
-    try (HumanCheckpointScope checkpoint =
-            inv.humanCheckpoint(HumanCheckpointType.APPROVAL,
-                "Approve rollback of payment-service from v2.1.0 to v2.0.9")) {
+    ```java
+    try (AgentInvocation inv = tracer.invoke("Execute remediation")) {
+        inv.step(StepType.THOUGHT, "Recommending deployment rollback");
 
-        // This blocks until the human responds
-        ApprovalResult result = awaitApproval();
-        checkpoint.decision(result.approved() ? "approved" : "rejected");
+        // Approval gate
+        try (HumanCheckpointScope checkpoint =
+                inv.humanCheckpoint(HumanCheckpointType.APPROVAL,
+                    "Approve rollback of payment-service from v2.1.0 to v2.0.9")) {
 
-        // wait_ms is automatically computed from scope creation to decision()
+            // This blocks until the human responds
+            ApprovalResult result = awaitApproval();
+            checkpoint.decision(result.approved() ? "approved" : "rejected");
+
+            // wait_ms is automatically computed from scope creation to decision()
+        }
+
+        if (approved) {
+            inv.step(StepType.ACTION, "Executing rollback");
+            inv.complete(true);
+        } else {
+            inv.complete(InvocationStatus.HUMAN_INTERVENED);
+        }
     }
+    ```
 
-    if (approved) {
-        inv.step(StepType.ACTION, "Executing rollback");
-        inv.complete(true);
-    } else {
-        inv.complete(InvocationStatus.HUMAN_INTERVENED);
-    }
-}
-```
+=== "Python"
+
+    ```python
+    with tracer.invoke("Execute remediation") as inv:
+        inv.step(StepType.THOUGHT, "Recommending deployment rollback")
+
+        with inv.human_checkpoint(HumanCheckpointType.APPROVAL,
+                "Approve rollback of payment-service from v2.1.0 to v2.0.9") as checkpoint:
+            result = await_approval()
+            checkpoint.decision("approved" if result.approved else "rejected")
+
+        if approved:
+            inv.step(StepType.ACTION, "Executing rollback")
+            inv.complete(goal_achieved=True)
+        else:
+            inv.complete(status=InvocationStatus.HUMAN_INTERVENED)
+    ```
 
 ### HumanCheckpointType Enum
 
@@ -130,32 +177,54 @@ agenttel.agentic.human_input
 
 `LoopDetector` identifies stuck reasoning loops where an agent calls the same tool with the same arguments repeatedly.
 
-```java
-LoopDetector loopDetector = new LoopDetector(3);  // threshold: 3 identical calls
+=== "Java"
 
-try (AgentInvocation inv = tracer.invoke("Process data")) {
-    while (hasMoreWork()) {
-        String toolName = agent.nextToolCall();
-        String argsHash = hashArgs(agent.nextToolArgs());
+    ```java
+    LoopDetector loopDetector = new LoopDetector(3);  // threshold: 3 identical calls
 
-        // Check for loops before executing
-        if (loopDetector.recordCall(toolName, argsHash, inv.span())) {
-            inv.guardrail("loop-detector", GuardrailAction.BLOCK,
-                "Detected loop: " + toolName + " called " + 3 + " times");
-            inv.complete(InvocationStatus.FAILURE);
-            break;
-        }
+    try (AgentInvocation inv = tracer.invoke("Process data")) {
+        while (hasMoreWork()) {
+            String toolName = agent.nextToolCall();
+            String argsHash = hashArgs(agent.nextToolArgs());
 
-        try (ToolCallScope tool = inv.toolCall(toolName)) {
-            executeTool(toolName, agent.nextToolArgs());
-            tool.success();
+            // Check for loops before executing
+            if (loopDetector.recordCall(toolName, argsHash, inv.span())) {
+                inv.guardrail("loop-detector", GuardrailAction.BLOCK,
+                    "Detected loop: " + toolName + " called " + 3 + " times");
+                inv.complete(InvocationStatus.FAILURE);
+                break;
+            }
+
+            try (ToolCallScope tool = inv.toolCall(toolName)) {
+                executeTool(toolName, agent.nextToolArgs());
+                tool.success();
+            }
         }
     }
-}
 
-// Reset between invocations
-loopDetector.reset();
-```
+    // Reset between invocations
+    loopDetector.reset();
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.quality import LoopDetector
+
+    detector = LoopDetector(threshold=3)
+
+    with tracer.invoke("Process data") as inv:
+        while has_more_work():
+            tool_name = agent.next_tool_call()
+            if detector.record(tool_name):
+                # Loop detected
+                break
+            with inv.tool_call(tool_name) as tool:
+                execute_tool(tool_name)
+                tool.set_result("done")
+
+    detector.reset()
+    ```
 
 When the threshold is reached, `LoopDetector` automatically sets on the parent span:
 
@@ -217,22 +286,37 @@ agenttel.agentic.error.retryable = true
 
 `QualityTracker` aggregates quality metrics across an invocation and applies them to a span.
 
-```java
-QualityTracker quality = new QualityTracker();
+=== "Java"
 
-try (AgentInvocation inv = tracer.invoke("Generate report")) {
-    // Track events
-    quality.setGoalAchieved(true);
-    quality.recordHumanIntervention();
-    quality.setEvalScore(0.85);
+    ```java
+    QualityTracker quality = new QualityTracker();
 
-    // If loop detector fires
-    quality.setLoopDetected(true);
+    try (AgentInvocation inv = tracer.invoke("Generate report")) {
+        // Track events
+        quality.setGoalAchieved(true);
+        quality.recordHumanIntervention();
+        quality.setEvalScore(0.85);
 
-    // Apply all signals to the invocation span at completion
-    quality.applyTo(inv.span());
-}
-```
+        // If loop detector fires
+        quality.setLoopDetected(true);
+
+        // Apply all signals to the invocation span at completion
+        quality.applyTo(inv.span());
+    }
+    ```
+
+=== "Python"
+
+    ```python
+    from agenttel.agentic.quality import QualityTracker
+
+    tracker = QualityTracker()
+    tracker.record_goal_achieved(True)
+    tracker.record_human_intervention()
+
+    print(tracker.goal_achieved)      # True
+    print(tracker.human_interventions) # 1
+    ```
 
 ### QualityTracker Methods
 
@@ -289,55 +373,91 @@ try (AgentInvocation inv = tracer.invoke("Process batch")) {
 
 Putting it all together — an agent with guardrails, loop detection, human checkpoints, and quality tracking:
 
-```java
-LoopDetector loopDetector = new LoopDetector(3);
-QualityTracker quality = new QualityTracker();
+=== "Java"
 
-try (AgentInvocation inv = tracer.invoke("Resolve incident")) {
-    inv.maxSteps(20);
-    inv.tools(List.of("get_health", "get_logs", "execute_remediation"));
+    ```java
+    LoopDetector loopDetector = new LoopDetector(3);
+    QualityTracker quality = new QualityTracker();
 
-    // Step 1: Diagnose
-    inv.step(StepType.THOUGHT, "Checking service health");
+    try (AgentInvocation inv = tracer.invoke("Resolve incident")) {
+        inv.maxSteps(20);
+        inv.tools(List.of("get_health", "get_logs", "execute_remediation"));
 
-    try (ToolCallScope tool = inv.toolCall("get_health")) {
-        tool.success();
+        // Step 1: Diagnose
+        inv.step(StepType.THOUGHT, "Checking service health");
+
+        try (ToolCallScope tool = inv.toolCall("get_health")) {
+            tool.success();
+        }
+
+        inv.step(StepType.OBSERVATION, "Error rate elevated at 5.2%");
+
+        // Step 2: Check for loops
+        String argsHash = "service=payments";
+        if (loopDetector.recordCall("get_health", argsHash, inv.span())) {
+            quality.setLoopDetected(true);
+        }
+
+        // Step 3: Propose remediation
+        inv.step(StepType.THOUGHT, "Recommending circuit breaker activation");
+
+        // Step 4: Human approval
+        try (HumanCheckpointScope cp =
+                inv.humanCheckpoint(HumanCheckpointType.APPROVAL,
+                    "Activate circuit breaker for stripe-api?")) {
+            cp.decision("approved");
+            quality.recordHumanIntervention();
+        }
+
+        // Step 5: Execute
+        try (ToolCallScope tool = inv.toolCall("execute_remediation")) {
+            tool.success();
+        }
+
+        // Apply quality signals
+        quality.setGoalAchieved(true);
+        quality.setEvalScore(0.9);
+        quality.applyTo(inv.span());
+
+        inv.complete(true);
     }
 
-    inv.step(StepType.OBSERVATION, "Error rate elevated at 5.2%");
+    loopDetector.reset();
+    ```
 
-    // Step 2: Check for loops
-    String argsHash = "service=payments";
-    if (loopDetector.recordCall("get_health", argsHash, inv.span())) {
-        quality.setLoopDetected(true);
-    }
+=== "Python"
 
-    // Step 3: Propose remediation
-    inv.step(StepType.THOUGHT, "Recommending circuit breaker activation");
+    ```python
+    from agenttel.agentic.quality import LoopDetector, QualityTracker
+    from agenttel.agentic.guardrail import GuardrailRecorder
+    from agenttel.enums import StepType, GuardrailAction, HumanCheckpointType
 
-    // Step 4: Human approval
-    try (HumanCheckpointScope cp =
-            inv.humanCheckpoint(HumanCheckpointType.APPROVAL,
-                "Activate circuit breaker for stripe-api?")) {
-        cp.decision("approved");
-        quality.recordHumanIntervention();
-    }
+    detector = LoopDetector(threshold=3)
+    quality = QualityTracker()
+    guardrails = GuardrailRecorder()
 
-    // Step 5: Execute
-    try (ToolCallScope tool = inv.toolCall("execute_remediation")) {
-        tool.success();
-    }
+    with tracer.invoke("Resolve incident") as inv:
+        inv.step(StepType.THOUGHT, "Checking service health")
 
-    // Apply quality signals
-    quality.setGoalAchieved(true);
-    quality.setEvalScore(0.9);
-    quality.applyTo(inv.span());
+        with inv.tool_call("get_health") as tool:
+            tool.set_result("degraded")
 
-    inv.complete(true);
-}
+        inv.step(StepType.OBSERVATION, "Error rate elevated at 5.2%")
+        inv.step(StepType.THOUGHT, "Recommending circuit breaker activation")
 
-loopDetector.reset();
-```
+        with inv.human_checkpoint(HumanCheckpointType.APPROVAL,
+                "Activate circuit breaker for stripe-api?") as cp:
+            cp.decision("approved")
+            quality.record_human_intervention()
+
+        with inv.tool_call("execute_remediation") as tool:
+            tool.set_result("success")
+
+        quality.record_goal_achieved(True)
+        inv.complete(goal_achieved=True)
+
+    detector.reset()
+    ```
 
 ---
 
