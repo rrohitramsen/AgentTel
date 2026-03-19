@@ -10,22 +10,22 @@
 
 /* --- Body text readability --- */
 .md-typeset {
-  font-size: 0.82rem;
-  line-height: 1.75;
+  font-size: 0.76rem;
+  line-height: 1.65;
 }
 
 .md-typeset p {
-  margin-bottom: 1em;
+  margin-bottom: 0.8em;
 }
 
 /* --- Hero section (home page) --- */
 .md-typeset .hero {
   text-align: center;
-  padding: 3rem 1rem 4rem;
+  padding: 2.5rem 1rem 3rem;
 }
 
 .md-typeset .hero h1 {
-  font-size: 3.4rem;
+  font-size: 2.6rem;
   font-weight: 800;
   margin-bottom: 0;
   background: linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);
@@ -35,19 +35,19 @@
 }
 
 .md-typeset .hero .hero-tagline {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: var(--md-default-fg-color--light);
   margin-top: 0.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   font-weight: 400;
   letter-spacing: 0.02em;
 }
 
 .md-typeset .hero .hero-description {
-  font-size: 1.1rem;
-  max-width: 700px;
-  margin: 0 auto 2.5rem;
-  line-height: 1.7;
+  font-size: 0.92rem;
+  max-width: 680px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
 }
 
 /* --- Feature grid --- */
@@ -62,7 +62,7 @@
   border: 1px solid var(--md-default-fg-color--lightest);
   border-left: 3px solid #7c3aed;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1.2rem;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
@@ -75,12 +75,12 @@
 
 .md-typeset .feature-card h3 {
   margin-top: 0;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: var(--md-default-fg-color);
 }
 
 .md-typeset .feature-card p {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--md-default-fg-color--light);
   margin-bottom: 0;
 }
@@ -112,9 +112,14 @@
 
 /* --- Section spacing --- */
 .md-typeset h2 {
-  margin-top: 2.5em;
-  padding-top: 1em;
+  margin-top: 2em;
+  padding-top: 0.8em;
   border-top: 1px solid var(--md-default-fg-color--lightest);
+  font-size: 1.3rem;
+}
+
+.md-typeset h3 {
+  font-size: 1rem;
 }
 
 .md-typeset h2:first-child,
@@ -284,28 +289,28 @@
 
 /* --- Code blocks: tighter in dense pages --- */
 .md-typeset pre {
-  margin: 1em 0;
+  margin: 0.8em 0;
 }
 
 .md-typeset pre > code {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
 
 /* --- Blockquotes (used for "Set by" notes) --- */
 .md-typeset blockquote {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   border-left-color: #7c3aed;
-  padding: 0.5em 1em;
+  padding: 0.4em 0.8em;
 }
 
 /* --- Responsive adjustments --- */
 @media (max-width: 768px) {
   .md-typeset .hero h1 {
-    font-size: 2.4rem;
+    font-size: 2rem;
   }
 
   .md-typeset .hero .hero-tagline {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 
   .md-typeset .feature-grid {

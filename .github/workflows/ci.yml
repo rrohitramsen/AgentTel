@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  java-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,3 +39,84 @@ jobs:
           name: test-reports-jdk${{ matrix.java-version }}
           path: '**/build/reports/tests/'
           retention-days: 7
+
+  go-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: agenttel-go/go.sum
+
+      - name: Run tests
+        working-directory: agenttel-go
+        run: go test -race -count=1 -timeout=120s ./...
+
+      - name: Vet
+        working-directory: agenttel-go
+        run: go vet ./...
+
+  node-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install shared types
+        working-directory: agenttel-types
+        run: npm ci
+
+      - name: Typecheck shared types
+        working-directory: agenttel-types
+        run: npx tsc --noEmit
+
+      - name: Install Node.js SDK
+        working-directory: agenttel-node
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: agenttel-node
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: agenttel-node
+        run: npx vitest run
+
+  attribute-parity:
+    runs-on: ubuntu-latest
+    needs: [go-test, node-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate attribute parity across SDKs
+        run: |
+          echo "Checking attribute constant parity across Go and Node.js SDKs..."
+
+          # Extract Go attribute keys
+          grep -oP '"agenttel\.[^"]*"' agenttel-go/attributes/attributes.go | sort > /tmp/go-attrs.txt
+          grep -oP '"agenttel\.[^"]*"' agenttel-go/attributes/agentic.go | sort >> /tmp/go-attrs.txt
+          sort -u /tmp/go-attrs.txt -o /tmp/go-attrs.txt
+
+          # Extract Node.js attribute keys
+          grep -oP "'agenttel\.[^']*'" agenttel-node/src/attributes.ts | tr "'" '"' | sort > /tmp/node-attrs.txt
+          grep -oP "'agenttel\.[^']*'" agenttel-node/src/agentic-attributes.ts | tr "'" '"' | sort >> /tmp/node-attrs.txt
+          sort -u /tmp/node-attrs.txt -o /tmp/node-attrs.txt
+
+          # Compare
+          echo "Go attributes: $(wc -l < /tmp/go-attrs.txt)"
+          echo "Node.js attributes: $(wc -l < /tmp/node-attrs.txt)"
+
+          # Show differences if any
+          if diff /tmp/go-attrs.txt /tmp/node-attrs.txt > /tmp/attr-diff.txt 2>&1; then
+            echo "All attributes match across SDKs"
+          else
+            echo "WARNING: Attribute mismatch detected (non-blocking):"
+            cat /tmp/attr-diff.txt
+          fi

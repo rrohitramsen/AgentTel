@@ -5,6 +5,9 @@ Get up and running with AgentTel in minutes. Choose your integration path:
 | Path | Best For | Effort |
 |------|----------|--------|
 | [Spring Boot Starter](#backend-spring-boot) | Spring Boot applications | Add dependency + YAML config |
+| [Go SDK](#backend-go) | Go services (net/http, Gin, gRPC) | `go get` + YAML config |
+| [Node.js SDK](#backend-nodejs) | Express / Fastify services | `npm install` + YAML config |
+| [Python SDK](#backend-python) | FastAPI / Django / Flask services | `pip install` + YAML config |
 | [JavaAgent](#zero-code-mode-javaagent) | Any JVM app (no code changes) | JVM flag + YAML config |
 | [Frontend SDK](#frontend-browser-sdk) | Browser / SPA applications | `npm install` + init call |
 | [Agent SDK](#agent-sdk) | AI agent observability | Add dependency + AgentTracer |
@@ -233,6 +236,299 @@ Affected Deps: stripe-api
   - [HIGH] rollback_deployment: Rollback to previous version (NEEDS APPROVAL)
   - [MEDIUM] enable_circuit_breakers: Circuit break stripe-api
 ```
+
+---
+
+## Backend: Go
+
+Full-featured Go SDK with middleware for net/http, Gin, and gRPC.
+
+### 1. Install
+
+```bash
+go get go.agenttel.dev/agenttel@latest
+```
+
+### 2. Configure
+
+```yaml
+# agenttel.yml
+agenttel:
+  topology:
+    service-name: payment-service
+    team: payments-platform
+    tier: critical
+    domain: commerce
+  operations:
+    "POST /api/payments":
+      expected-latency-p50: 45ms
+      expected-latency-p99: 200ms
+      retryable: true
+  anomaly-detection:
+    z-score-threshold: 3.0
+```
+
+### 3. Instrument
+
+=== "net/http"
+
+    ```go
+    import (
+        agenttel "go.agenttel.dev/agenttel"
+        agmw "go.agenttel.dev/agenttel/middleware/http"
+    )
+
+    cfg, _ := agenttel.LoadConfigFile("agenttel.yml")
+    engine := agenttel.NewEngineBuilder(cfg).Build()
+
+    mux := http.NewServeMux()
+    // ... register handlers ...
+
+    handler := agmw.Middleware(mux,
+        agmw.WithBaselineProvider(engine.BaselineProvider()),
+        agmw.WithTopology(engine.TopologyRegistry()),
+    )
+    http.ListenAndServe(":8080", handler)
+    ```
+
+=== "Gin"
+
+    ```go
+    import agmw "go.agenttel.dev/agenttel/middleware/gin"
+
+    r := gin.Default()
+    r.Use(agmw.Middleware(engine.BaselineProvider(), engine.TopologyRegistry()))
+    ```
+
+=== "gRPC"
+
+    ```go
+    import agmw "go.agenttel.dev/agenttel/middleware/grpc"
+
+    srv := grpc.NewServer(
+        grpc.UnaryInterceptor(agmw.UnaryServerInterceptor(
+            engine.BaselineProvider(), engine.TopologyRegistry(),
+        )),
+    )
+    ```
+
+All spans are automatically enriched with topology, baselines, anomaly detection, and SLO tracking — identical attributes to the JVM SDK.
+
+### 4. GenAI Instrumentation (Optional)
+
+```go
+import "go.agenttel.dev/agenttel/genai"
+
+builder := genai.NewSpanBuilder(tracer)
+ctx, span := builder.StartChatSpan(ctx, "gpt-4o", "openai")
+// ... make LLM call ...
+genai.EndSpanSuccess(span, promptTokens, completionTokens, "gpt-4o")
+```
+
+### 5. Agentic Observability (Optional)
+
+```go
+import "go.agenttel.dev/agenttel/agentic"
+
+at := agentic.NewTracer(tracer).
+    AgentName("incident-responder").
+    AgentType(enums.AgentTypeSingle).
+    Build()
+
+ctx, inv := at.Invoke(ctx, "Diagnose high latency")
+defer inv.End()
+
+ctx, step := inv.Step(ctx, enums.StepTypeThought, "analyzing metrics")
+defer step.End()
+```
+
+### Compatibility
+
+| Component | Versions |
+|-----------|----------|
+| Go | 1.22+ |
+| OpenTelemetry SDK | 1.33.0+ |
+| net/http, Gin, gRPC | Latest |
+
+---
+
+## Backend: Node.js
+
+Full-featured Node.js SDK with middleware for Express and Fastify.
+
+### 1. Install
+
+```bash
+npm install @agenttel/node @opentelemetry/api @opentelemetry/sdk-trace-node
+```
+
+### 2. Configure
+
+```yaml
+# agenttel.yml
+agenttel:
+  topology:
+    service-name: payment-service
+    team: payments-platform
+    tier: critical
+    domain: commerce
+  operations:
+    "POST /api/payments":
+      expected-latency-p50: 45ms
+      expected-latency-p99: 200ms
+      retryable: true
+  anomaly-detection:
+    z-score-threshold: 3.0
+```
+
+### 3. Instrument
+
+=== "Express"
+
+    ```typescript
+    import { AgentTelEngineBuilder, expressMiddleware, loadConfig } from '@agenttel/node';
+
+    const config = loadConfig('agenttel.yml');
+    const engine = new AgentTelEngineBuilder()
+      .withTeam(config.topology?.team ?? 'payments-platform')
+      .withTier(config.topology?.tier ?? 'critical')
+      .build();
+
+    const app = express();
+    app.use(expressMiddleware({
+      baselineProvider: engine.baselineProvider,
+      topology: engine.topologyRegistry,
+    }));
+    ```
+
+=== "Fastify"
+
+    ```typescript
+    import Fastify from 'fastify';
+    import { fastifyPlugin } from '@agenttel/node';
+
+    const fastify = Fastify();
+    fastify.register(fastifyPlugin, {
+      baselineProvider: engine.baselineProvider,
+      topology: engine.topologyRegistry,
+    });
+    ```
+
+All spans are automatically enriched with topology, baselines, anomaly detection, and SLO tracking — identical attributes to the JVM SDK.
+
+### 4. GenAI Instrumentation (Optional)
+
+```typescript
+import { GenAiSpanBuilder } from '@agenttel/node';
+
+const builder = new GenAiSpanBuilder(tracer);
+const span = builder.startChatSpan('gpt-4o', 'openai');
+// ... make LLM call ...
+GenAiSpanBuilder.endSpanSuccess(span, promptTokens, completionTokens, 'gpt-4o');
+```
+
+### 5. Agentic Observability (Optional)
+
+```typescript
+import { AgentTracer, AgentType, StepType } from '@agenttel/node';
+
+const at = new AgentTracer({
+  agentName: 'incident-responder',
+  agentType: AgentType.SINGLE,
+});
+
+const inv = at.invoke('Diagnose high latency');
+const step = inv.step(StepType.THOUGHT);
+step.end();
+inv.end();
+```
+
+### Compatibility
+
+| Component | Versions |
+|-----------|----------|
+| Node.js | 18+ |
+| TypeScript | 5.0+ |
+| OpenTelemetry SDK | 1.30.0+ |
+| Express, Fastify | Latest |
+
+---
+
+## Backend: Python
+
+Full-featured Python SDK with FastAPI integration.
+
+### 1. Install
+
+```bash
+pip install agenttel[fastapi]
+
+# Optional extras
+pip install agenttel[openai]       # OpenAI instrumentation
+pip install agenttel[anthropic]    # Anthropic instrumentation
+pip install agenttel[all]          # Everything
+```
+
+### 2. Configure
+
+```yaml
+# agenttel.yml
+agenttel:
+  topology:
+    service-name: payment-service
+    team: payments-platform
+    tier: critical
+    domain: commerce
+  operations:
+    "POST /api/payments":
+      expected-latency-p50: 45ms
+      expected-latency-p99: 200ms
+      retryable: true
+```
+
+### 3. Instrument
+
+```python
+from fastapi import FastAPI
+from agenttel.fastapi import instrument_fastapi
+
+app = FastAPI()
+instrument_fastapi(app)  # One-line integration
+```
+
+All spans are automatically enriched with topology, baselines, anomaly detection, and SLO tracking — identical attributes to the JVM SDK.
+
+### 4. GenAI Instrumentation (Optional)
+
+```python
+from agenttel.genai import instrument_openai, instrument_anthropic
+
+# Wrap your LLM clients — all calls get traced with token/cost tracking
+instrument_openai()      # Patches openai.ChatCompletion
+instrument_anthropic()   # Patches anthropic.Anthropic
+```
+
+### 5. Agentic Observability (Optional)
+
+```python
+from agenttel.agentic import AgentTracer, StepType
+
+tracer = AgentTracer(agent_name="incident-responder", agent_type="single")
+
+with tracer.invoke("Diagnose high latency") as inv:
+    inv.step(StepType.THOUGHT, "analyzing metrics")
+    inv.step(StepType.ACTION, "calling get_service_health")
+    inv.step(StepType.OBSERVATION, "error rate elevated at 5.2%")
+```
+
+### Compatibility
+
+| Component | Versions |
+|-----------|----------|
+| Python | 3.11+ |
+| FastAPI | 0.100+ |
+| OpenTelemetry SDK | 1.20.0+ |
+| Django, Flask | Coming soon |
 
 ---
 
@@ -529,6 +825,8 @@ Once running, add it as an MCP server in your IDE and ask your AI assistant:
 | Example | Description | Run Command |
 |---------|-------------|-------------|
 | [Spring Boot Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `docker compose -f docker/docker-compose.yml up --build` |
+| [Go Service Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/go-service-example) | Go payment service with net/http middleware, topology, baselines, anomaly detection | `cd examples/go-service-example && go run .` |
+| [Express Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/express-example) | Node.js payment service with Express middleware, topology, baselines, anomaly detection | `cd examples/express-example && npm run dev` |
 | [LangChain4j Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
 | [React Checkout Example](https://github.com/rrohitramsen/AgentTel/tree/main/agenttel-web/examples/react-checkout) | React SPA with frontend telemetry — journey tracking, anomaly detection, cross-stack correlation | `cd agenttel-web/examples/react-checkout && npm start` |
 
