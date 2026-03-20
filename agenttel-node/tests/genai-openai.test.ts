@@ -24,22 +24,23 @@ function createMockSpan() {
 // Mock tracer that returns mock spans
 function createMockTracer() {
   const mockSpan = createMockSpan();
+  const mockTracer = {
+    startSpan: vi.fn(() => mockSpan),
+  };
   return {
-    tracer: {
-      startSpan: vi.fn(() => mockSpan),
-    },
+    mockTracer,
     span: mockSpan,
   };
 }
 
 describe('GenAI OpenAI Instrumentation', () => {
   it('creates span with correct model and system attributes', () => {
-    const { tracer, span } = createMockTracer();
-    const builder = new GenAiSpanBuilder(tracer.tracer as any);
+    const { mockTracer, span } = createMockTracer();
+    const builder = new GenAiSpanBuilder(mockTracer as any);
 
     const result = builder.startChatSpan('gpt-4o', 'openai');
 
-    expect(tracer.tracer.startSpan).toHaveBeenCalledWith(
+    expect(mockTracer.startSpan).toHaveBeenCalledWith(
       'chat gpt-4o',
       expect.objectContaining({
         attributes: expect.objectContaining({

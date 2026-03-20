@@ -6,7 +6,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from agenttel.models import SloStatus
 from agenttel.slo.tracker import SloTracker
 
 

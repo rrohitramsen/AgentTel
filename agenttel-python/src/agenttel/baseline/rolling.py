@@ -6,7 +6,7 @@ import math
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from agenttel.enums import BaselineConfidence, BaselineSource
 from agenttel.baseline.provider import BaselineProvider

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import functools
-import time
 from typing import Any, Callable
 
 from opentelemetry import trace

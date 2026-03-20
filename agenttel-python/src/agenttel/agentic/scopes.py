@@ -10,7 +10,6 @@ from opentelemetry import trace
 
 from agenttel import agentic_attributes as aa
 from agenttel.enums import (
-    GuardrailAction,
     HumanCheckpointType,
     InvocationStatus,
     StepType,

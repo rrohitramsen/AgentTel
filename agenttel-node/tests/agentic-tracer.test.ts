@@ -23,21 +23,22 @@ function createMockSpan() {
 // Create a mock tracer that returns predictable mock spans
 function createMockTracer() {
   const spans: Array<ReturnType<typeof createMockSpan>> = [];
+  const mockTracer = {
+    startSpan: vi.fn(() => {
+      const span = createMockSpan();
+      spans.push(span);
+      return span;
+    }),
+  };
   return {
-    tracer: {
-      startSpan: vi.fn(() => {
-        const span = createMockSpan();
-        spans.push(span);
-        return span;
-      }),
-    },
+    mockTracer,
     spans,
   };
 }
 
 describe('AgentTracer', () => {
   it('invoke creates span with agent attrs', () => {
-    const { tracer, spans } = createMockTracer();
+    const { mockTracer, spans } = createMockTracer();
 
     const agentTracer = new AgentTracer(
       {
@@ -46,12 +47,12 @@ describe('AgentTracer', () => {
         framework: 'agenttel',
         agentVersion: '1.0',
       },
-      tracer.tracer as any,
+      mockTracer as any,
     );
 
     const invocation = agentTracer.invoke('Monitor SLO compliance');
 
-    expect(tracer.tracer.startSpan).toHaveBeenCalledWith('invoke_agent', expect.any(Object));
+    expect(mockTracer.startSpan).toHaveBeenCalledWith('invoke_agent', expect.any(Object));
     expect(spans).toHaveLength(1);
 
     const span = spans[0];
@@ -64,11 +65,11 @@ describe('AgentTracer', () => {
   });
 
   it('step creates span with step number and type', () => {
-    const { tracer, spans } = createMockTracer();
+    const { mockTracer, spans } = createMockTracer();
 
     const agentTracer = new AgentTracer(
       { agentName: 'test-agent' },
-      tracer.tracer as any,
+      mockTracer as any,
     );
 
     const invocation = agentTracer.invoke('test goal');
@@ -83,11 +84,11 @@ describe('AgentTracer', () => {
   });
 
   it('task creates span with task name and status', () => {
-    const { tracer, spans } = createMockTracer();
+    const { mockTracer, spans } = createMockTracer();
 
     const agentTracer = new AgentTracer(
       { agentName: 'test-agent' },
-      tracer.tracer as any,
+      mockTracer as any,
     );
 
     const invocation = agentTracer.invoke('test goal');
@@ -102,11 +103,11 @@ describe('AgentTracer', () => {
   });
 
   it('subtask increments depth', () => {
-    const { tracer, spans } = createMockTracer();
+    const { mockTracer, spans } = createMockTracer();
 
     const agentTracer = new AgentTracer(
       { agentName: 'test-agent' },
-      tracer.tracer as any,
+      mockTracer as any,
     );
 
     const invocation = agentTracer.invoke('test goal');
@@ -122,11 +123,11 @@ describe('AgentTracer', () => {
   });
 
   it('end sets completed status', () => {
-    const { tracer, spans } = createMockTracer();
+    const { mockTracer, spans } = createMockTracer();
 
     const agentTracer = new AgentTracer(
       { agentName: 'test-agent' },
-      tracer.tracer as any,
+      mockTracer as any,
     );
 
     const invocation = agentTracer.invoke('test goal');
@@ -141,11 +142,11 @@ describe('AgentTracer', () => {
   });
 
   it('endError sets failed status and records exception', () => {
-    const { tracer, spans } = createMockTracer();
+    const { mockTracer, spans } = createMockTracer();
 
     const agentTracer = new AgentTracer(
       { agentName: 'test-agent' },
-      tracer.tracer as any,
+      mockTracer as any,
     );
 
     const invocation = agentTracer.invoke('will fail');

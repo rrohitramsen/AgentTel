@@ -25,8 +25,7 @@ def instrument_langchain() -> None:
         return
 
     try:
-        from langchain_core.callbacks import CallbackManager
-        from langchain_core.globals import set_llm_cache
+        from langchain_core.globals import set_llm_cache  # noqa: F401 — availability check
     except ImportError:
         return
 
