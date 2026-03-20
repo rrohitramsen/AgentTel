@@ -5,10 +5,8 @@ from __future__ import annotations
 import functools
 from typing import Any
 
-from opentelemetry import context, trace
+from opentelemetry import trace
 
-from agenttel.genai import attributes as genai_attr
-from agenttel.genai.cost import ModelCostCalculator
 from agenttel.genai.span_builder import GenAiSpanBuilder
 
 

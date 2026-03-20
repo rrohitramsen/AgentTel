@@ -117,7 +117,7 @@ class TestInstrumentOpenAI:
 
     def test_handles_streaming(self):
         """Verify streaming response wraps in a generator."""
-        exporter = setup_tracer()
+        setup_tracer()
 
         client = create_mock_openai_client()
         # Create mock streaming chunks

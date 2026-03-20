@@ -117,7 +117,7 @@ class TestInstrumentAnthropic:
 
     def test_handles_streaming(self):
         """Verify streaming response wraps events correctly."""
-        exporter = setup_tracer()
+        setup_tracer()
 
         client = create_mock_anthropic_client()
 

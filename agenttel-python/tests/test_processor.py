@@ -1,6 +1,6 @@
 """Tests for AgentTelSpanProcessor."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from agenttel.config import AgentTelConfig
 from agenttel.engine import AgentTelEngine

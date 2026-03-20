@@ -1,8 +1,5 @@
 """Tests for MCP Server JSON-RPC 2.0 interface."""
 
-import json
-from unittest.mock import MagicMock, AsyncMock
-
 import pytest
 
 from agenttel.agent.mcp_server import (
@@ -121,7 +118,7 @@ class TestMcpServerAsync:
         """Verify /health returns ok status."""
         try:
             from aiohttp import web
-            from aiohttp.test_utils import AioHTTPTestCase, TestClient, TestServer
+            from aiohttp.test_utils import TestClient, TestServer
         except ImportError:
             pytest.skip("aiohttp not installed")
 

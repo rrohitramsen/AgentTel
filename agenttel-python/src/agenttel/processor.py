@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import time
-from typing import Any
-
-from opentelemetry import context, trace
+from opentelemetry import context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 
 from agenttel import attributes as attr
@@ -14,7 +11,7 @@ from agenttel.baseline.composite import CompositeBaselineProvider
 from agenttel.baseline.rolling import RollingBaselineProvider
 from agenttel.causality.tracker import CausalityTracker
 from agenttel.config import AgentTelConfig
-from agenttel.enums import AlertLevel, DependencyState
+from agenttel.enums import AlertLevel
 from agenttel.error.classifier import ErrorClassifier
 from agenttel.events import AgentTelEventEmitter
 from agenttel.models import OperationBaseline, OperationContext
