@@ -4,15 +4,25 @@
 </p>
 
 <p align="center">
-  <a href="https://central.sonatype.com/search?q=dev.agenttel"><img src="https://img.shields.io/maven-central/v/dev.agenttel/agenttel-core" alt="Maven Central"></a>
-  <a href="https://github.com/rrohitramsen/AgentTel/actions"><img src="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml"><img src="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
-  <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/JDK-17%2B-orange.svg" alt="JDK 17+"></a>
-  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-4.7%2B-blue.svg" alt="TypeScript"></a>
-  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8.svg" alt="Go 1.22+"></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-18%2B-339933.svg" alt="Node.js 18+"></a>
-  <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-1.59.0-blueviolet.svg" alt="OpenTelemetry"></a>
+  <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-1.39%2B-blueviolet.svg" alt="OpenTelemetry"></a>
   <a href="https://rrohitramsen.github.io/AgentTel"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Documentation"></a>
+</p>
+
+<p align="center">
+  <a href="https://central.sonatype.com/search?q=dev.agenttel"><img src="https://img.shields.io/maven-central/v/dev.agenttel/agenttel-core?label=Maven%20Central&logo=apachemaven" alt="Maven Central"></a>
+  <a href="https://www.npmjs.com/package/@agenttel/node"><img src="https://img.shields.io/npm/v/@agenttel/node?label=npm&logo=npm" alt="npm"></a>
+  <a href="https://pypi.org/project/agenttel/"><img src="https://img.shields.io/pypi/v/agenttel?label=PyPI&logo=python&logoColor=white" alt="PyPI"></a>
+  <a href="https://pkg.go.dev/go.agenttel.dev/agenttel"><img src="https://img.shields.io/badge/Go-pkg.go.dev-00ADD8?logo=go&logoColor=white" alt="Go Reference"></a>
+</p>
+
+<p align="center">
+  <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/JDK-17%2B-orange.svg?logo=openjdk&logoColor=white" alt="JDK 17+"></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.24%2B-00ADD8.svg?logo=go&logoColor=white" alt="Go 1.24+"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-18%2B-339933.svg?logo=nodedotjs&logoColor=white" alt="Node.js 18+"></a>
+  <a href="https://www.python.org"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11+"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-4.7%2B-3178C6.svg?logo=typescript&logoColor=white" alt="TypeScript"></a>
 </p>
 
 ---
