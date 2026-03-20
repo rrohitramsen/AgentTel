@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
-
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from agenttel.enums import (
     ConsumptionPattern,

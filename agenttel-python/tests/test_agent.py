@@ -4,7 +4,7 @@ from agenttel.agent.health import ServiceHealthAggregator
 from agenttel.agent.identity import AgentIdentity, ToolPermissionRegistry
 from agenttel.agent.remediation import RemediationRegistry, RemediationExecutor
 from agenttel.agent.reporting import SloReportGenerator, TrendAnalyzer
-from agenttel.enums import AgentRole, DependencyState, SloType
+from agenttel.enums import AgentRole
 from agenttel.models import SloDefinition
 from agenttel.slo.tracker import SloTracker
 

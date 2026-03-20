@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 
-from agenttel.enums import AlertLevel, SloType
+from agenttel.enums import AlertLevel
 from agenttel.models import SloDefinition, SloStatus
 
 

@@ -43,7 +43,6 @@ nav:
   - Getting Started:
     - Overview: getting-started/overview.md
     - Quick Start: getting-started/quick-start.md
-    - "Quick Start: Python": getting-started/quick-start-python.md
     - FAQ: getting-started/faq.md
   - Concepts:
     - Architecture: concepts/architecture.md

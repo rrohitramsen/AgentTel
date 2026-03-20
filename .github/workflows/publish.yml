@@ -1,4 +1,4 @@
-name: Publish to Maven Central
+name: Publish
 
 on:
   release:
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  publish-java:
     runs-on: ubuntu-latest
 
     steps:
@@ -34,3 +34,64 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_SIGNING_PASSPHRASE }}
+
+  publish-npm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Build and publish @agenttel/types
+        working-directory: agenttel-types
+        run: |
+          npm ci
+          npx tsc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Build and publish @agenttel/node
+        working-directory: agenttel-node
+        run: |
+          npm ci
+          npx tsc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build and test
+        working-directory: agenttel-python
+        run: |
+          pip install -e ".[dev]"
+          pytest -v
+
+      - name: Build distribution
+        working-directory: agenttel-python
+        run: python -m build
+
+      - name: Publish to PyPI
+        working-directory: agenttel-python
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}

@@ -6,6 +6,8 @@ import json
 import logging
 from typing import Any, Callable
 
+from agenttel.agent.auth import AuthConfig, ToolPermissionRegistry as AuthPermissionRegistry
+
 logger = logging.getLogger("agenttel.mcp")
 
 
@@ -66,11 +68,15 @@ class McpServer:
         tool_registry: McpToolRegistry,
         host: str = "0.0.0.0",
         port: int = 8091,
+        auth_config: AuthConfig | None = None,
+        permissions: AuthPermissionRegistry | None = None,
     ) -> None:
         self._registry = tool_registry
         self._host = host
         self._port = port
         self._app = None
+        self._auth_config = auth_config
+        self._permissions = permissions
 
     async def start(self) -> None:
         """Start the MCP server."""
@@ -107,6 +113,22 @@ class McpServer:
         params = body.get("params", {})
         req_id = body.get("id")
 
+        # Authenticate if auth is configured
+        identity = None
+        if self._auth_config is not None:
+            auth_header = request.headers.get("Authorization", "")
+            key = auth_header
+            for prefix in ("Bearer ", "bearer "):
+                if key.startswith(prefix):
+                    key = key[len(prefix):]
+                    break
+
+            identity = self._auth_config.resolve_key(key)
+            if identity is None:
+                return web.json_response(
+                    _jsonrpc_error(req_id, -32603, "Unauthorized: invalid or missing API key")
+                )
+
         if method == "tools/list":
             result = {"tools": self._registry.list_tools()}
             return web.json_response(_jsonrpc_result(req_id, result))
@@ -114,6 +136,18 @@ class McpServer:
         if method == "tools/call":
             tool_name = params.get("name")
             tool_args = params.get("arguments", {})
+
+            # Permission check
+            if self._permissions is not None and identity is not None:
+                if not self._permissions.is_allowed(identity, tool_name):
+                    return web.json_response(
+                        _jsonrpc_error(
+                            req_id,
+                            -32603,
+                            f"Permission denied: role '{identity.role}' cannot access tool '{tool_name}'",
+                        )
+                    )
+
             tool = self._registry.get_tool(tool_name)
 
             if tool is None:

@@ -1,0 +1,6 @@
+agenttel[fastapi,agent]
+fastapi>=0.100.0
+uvicorn>=0.24.0
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-exporter-otlp>=1.20.0

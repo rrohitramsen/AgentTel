@@ -1,0 +1,13 @@
+# Profile: Export OTLP directly to AgentTel Platform (localhost:8000)
+# Uses http/json protocol since the platform accepts OTLP JSON (not protobuf)
+otel:
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: otlp
+  logs:
+    exporter: otlp
+  exporter:
+    otlp:
+      endpoint: http://localhost:8000
+      protocol: http/json

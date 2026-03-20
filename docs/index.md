@@ -36,7 +36,7 @@ Modern observability tools generate massive volumes of telemetry — traces, met
 - **No decision metadata** — Is this operation retryable? Is there a fallback? What's the runbook?
 - **No actionable interface** — Agents can read telemetry but can't query live system state or execute remediation
 
-AgentTel closes these gaps at the instrumentation layer — enriching every span across the full stack (JVM backends and browser frontends) with baselines, topology, and decision metadata so AI agents can reason and act autonomously.
+AgentTel closes these gaps at the instrumentation layer — enriching every span across the full stack (JVM, Go, Node.js, Python backends and browser frontends) with baselines, topology, and decision metadata so AI agents can reason and act autonomously.
 
 </div>
 
@@ -59,7 +59,7 @@ AgentTel enriches telemetry across the full stack — all configurable via YAML 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'lineColor': '#6366f1'}}}%%
 graph LR
-    B1["Your Backend<br/>(JVM)"] --> AT1["AgentTel Core"]
+    B1["Your Backend<br/>(JVM / Go / Node.js / Python)"] --> AT1["AgentTel SDK"]
     B2["Your Frontend<br/>(Browser)"] --> AT2["AgentTel Web SDK"]
     AT1 --> C["OpenTelemetry SDK"]
     AT2 --> C
@@ -94,6 +94,14 @@ graph LR
 ## Key Features
 
 <div class="feature-grid" markdown>
+
+<div class="feature-card" markdown>
+
+### [Multi-Language SDKs](getting-started/quick-start/)
+
+Native SDKs for JVM (Spring Boot), Go (net/http, Gin, gRPC), Node.js (Express, Fastify), and Python (FastAPI) — same YAML config, same enriched attributes, same agent interface across all languages.
+
+</div>
 
 <div class="feature-card" markdown>
 
@@ -193,12 +201,18 @@ graph TB
         WEB["agenttel-web<br/><small>Browser SDK (TypeScript)<br/>Auto-instrumentation, Journeys,<br/>Anomaly Detection, Correlation</small>"]
     end
 
-    subgraph Integration["Integration Layer"]
+    subgraph Integration["Integration Layer (JVM)"]
         SBS["agenttel-spring-boot-starter<br/><small>Auto-config, BPP, AOP</small>"]
         JAE["agenttel-javaagent<br/><small>Zero-code OTel extension</small>"]
     end
 
-    subgraph Core["Core Libraries"]
+    subgraph MultiLang["Multi-Language SDKs"]
+        GOSDK["agenttel-go<br/><small>Go SDK — net/http, Gin, gRPC<br/>Baselines, Anomaly, SLO, GenAI</small>"]
+        NODESDK["agenttel-node<br/><small>Node.js SDK — Express, Fastify<br/>Baselines, Anomaly, SLO, GenAI</small>"]
+        PYSDK["agenttel-python<br/><small>Python SDK — FastAPI<br/>Baselines, Anomaly, SLO, GenAI</small>"]
+    end
+
+    subgraph Core["Core Libraries (JVM)"]
         COR["agenttel-core<br/><small>SpanProcessor, Baselines,<br/>Anomaly Detection, SLO Tracking</small>"]
         GEN["agenttel-genai<br/><small>LangChain4j, Spring AI,<br/>Anthropic, OpenAI, Bedrock</small>"]
         AGC["agenttel-agentic<br/><small>Agent Tracing, Orchestration,<br/>Cost, Guardrails, Quality</small>"]
@@ -211,10 +225,12 @@ graph TB
 
     subgraph Foundation["Foundation"]
         API["agenttel-api<br/><small>Annotations, Attributes, Models</small>"]
+        TYPES["agenttel-types<br/><small>Shared TypeScript types</small>"]
         OTEL["OpenTelemetry SDK"]
     end
 
     App --> Integration
+    App --> MultiLang
     SBS --> COR
     SBS --> GEN
     SBS --> AGC
@@ -224,25 +240,35 @@ graph TB
     GEN --> API
     AGC --> API
     AGT --> COR
+    GOSDK --> OTEL
+    NODESDK --> TYPES
+    NODESDK --> OTEL
+    PYSDK --> OTEL
     API --> OTEL
+    WEB --> TYPES
     WEB --> OTEL
     INS -.->|"generates config"| App
 
     style App fill:none,stroke:#818cf8,color:#818cf8
     style Frontend fill:none,stroke:#818cf8,color:#818cf8
     style Integration fill:none,stroke:#818cf8,color:#818cf8
+    style MultiLang fill:none,stroke:#818cf8,color:#818cf8
     style Core fill:none,stroke:#818cf8,color:#818cf8
     style Tooling fill:none,stroke:#818cf8,color:#818cf8
     style Foundation fill:none,stroke:#818cf8,color:#818cf8
     style SBS fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
     style JAE fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
     style WEB fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style GOSDK fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style NODESDK fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
+    style PYSDK fill:#a78bfa,stroke:#7c3aed,color:#1e1b4b
     style INS fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style COR fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style GEN fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style AGC fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style AGT fill:#818cf8,stroke:#6366f1,color:#1e1b4b
     style API fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
+    style TYPES fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
     style OTEL fill:#818cf8,stroke:#a5b4fc,color:#1e1b4b
 ```
 
@@ -303,6 +329,32 @@ Affected Deps: stripe-api
 | Anthropic Java SDK | 2.0.0+ (optional) |
 | OpenAI Java SDK | 4.0.0+ (optional) |
 | AWS Bedrock SDK | 2.30.0+ (optional) |
+
+**Backend (Go)**
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Go | 1.22+ |
+| OpenTelemetry SDK | 1.33.0+ |
+| net/http, Gin, gRPC | Latest |
+
+**Backend (Node.js)**
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Node.js | 18+ |
+| TypeScript | 5.0+ |
+| OpenTelemetry SDK | 1.30.0+ |
+| Express, Fastify | Latest |
+
+**Backend (Python)**
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Python | 3.11+ |
+| FastAPI | 0.100+ |
+| OpenTelemetry SDK | 1.20.0+ |
+| Django, Flask | Coming soon |
 
 **Frontend (Browser)**
 

@@ -1,0 +1,134 @@
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-node';
+import type { Context } from '@opentelemetry/api';
+import type { Span } from '@opentelemetry/api';
+import * as attrs from './attributes.js';
+import { AnomalyDetector } from './anomaly/detector.js';
+import type { BaselineProvider } from './baseline/provider.js';
+import { RollingBaselineProvider } from './baseline/rolling.js';
+import { ErrorClassifier } from './error/classifier.js';
+import { SLOTracker } from './slo/tracker.js';
+import { TopologyRegistry } from './topology/registry.js';
+import { AgentTelEventEmitter } from './events/emitter.js';
+
+export interface ProcessorOptions {
+  topology?: TopologyRegistry;
+  baselineProvider?: BaselineProvider;
+  rollingProvider?: RollingBaselineProvider;
+  anomalyDetector?: AnomalyDetector;
+  sloTracker?: SLOTracker;
+  errorClassifier?: ErrorClassifier;
+  eventEmitter?: AgentTelEventEmitter;
+}
+
+/** OTel SpanProcessor that enriches spans with AgentTel metadata. */
+export class AgentTelSpanProcessor implements SpanProcessor {
+  private readonly topology?: TopologyRegistry;
+  private readonly baselineProvider?: BaselineProvider;
+  private readonly rollingProvider?: RollingBaselineProvider;
+  private readonly anomalyDetector?: AnomalyDetector;
+  private readonly sloTracker?: SLOTracker;
+  private readonly errorClassifier?: ErrorClassifier;
+  private readonly eventEmitter?: AgentTelEventEmitter;
+
+  constructor(options: ProcessorOptions = {}) {
+    this.topology = options.topology;
+    this.baselineProvider = options.baselineProvider;
+    this.rollingProvider = options.rollingProvider;
+    this.anomalyDetector = options.anomalyDetector;
+    this.sloTracker = options.sloTracker;
+    this.errorClassifier = options.errorClassifier;
+    this.eventEmitter = options.eventEmitter;
+  }
+
+  onStart(span: Span, _parentContext: Context): void {
+    // Enrich with topology metadata
+    if (this.topology) {
+      if (this.topology.team) span.setAttribute(attrs.TOPOLOGY_TEAM, this.topology.team);
+      if (this.topology.tier) span.setAttribute(attrs.TOPOLOGY_TIER, this.topology.tier);
+      if (this.topology.domain) span.setAttribute(attrs.TOPOLOGY_DOMAIN, this.topology.domain);
+
+      const deps = this.topology.dependencies();
+      if (deps.length > 0) {
+        span.setAttribute(attrs.TOPOLOGY_DEPENDENCIES, this.topology.serializeDependenciesJSON());
+      }
+      const consumers = this.topology.consumers();
+      if (consumers.length > 0) {
+        span.setAttribute(attrs.TOPOLOGY_CONSUMERS, this.topology.serializeConsumersJSON());
+      }
+    }
+
+    // Enrich with baseline data
+    const opName = (span as unknown as { name: string }).name;
+    if (this.baselineProvider && opName) {
+      const baseline = this.baselineProvider.getBaseline(opName);
+      if (baseline) {
+        span.setAttribute(attrs.BASELINE_LATENCY_P50_MS, baseline.latencyP50Ms);
+        span.setAttribute(attrs.BASELINE_LATENCY_P99_MS, baseline.latencyP99Ms);
+        span.setAttribute(attrs.BASELINE_ERROR_RATE, baseline.errorRate);
+        span.setAttribute(attrs.BASELINE_SOURCE, baseline.source);
+      }
+    }
+  }
+
+  onEnd(span: ReadableSpan): void {
+    const opName = span.name;
+    const durationMs = (span.endTime[0] - span.startTime[0]) * 1000 +
+      (span.endTime[1] - span.startTime[1]) / 1e6;
+    const isError = span.status?.code === 2; // StatusCode.ERROR
+
+    // Record in rolling baseline
+    if (this.rollingProvider && opName) {
+      if (isError) {
+        this.rollingProvider.recordError(opName);
+      } else {
+        this.rollingProvider.recordLatency(opName, durationMs);
+      }
+    }
+
+    // Anomaly detection
+    if (this.anomalyDetector && this.rollingProvider && opName) {
+      const snap = this.rollingProvider.getSnapshot(opName);
+      if (snap && snap.sampleCount > 0) {
+        const result = this.anomalyDetector.evaluate('latency', durationMs, snap.mean, snap.stddev);
+        if (result.isAnomaly && this.eventEmitter) {
+          this.eventEmitter.emit(attrs.EVENT_ANOMALY_DETECTED, {
+            operation: opName,
+            score: result.anomalyScore,
+            zScore: result.zScore,
+          });
+        }
+      }
+    }
+
+    // SLO tracking
+    if (this.sloTracker && opName) {
+      if (isError) {
+        this.sloTracker.recordFailure(opName);
+      } else {
+        this.sloTracker.recordSuccess(opName);
+      }
+    }
+
+    // Error classification
+    if (this.errorClassifier && isError) {
+      const events = span.events || [];
+      for (const event of events) {
+        if (event.name === 'exception') {
+          const exType = String(event.attributes?.['exception.type'] ?? '');
+          const exMsg = String(event.attributes?.['exception.message'] ?? '');
+          if (exType) {
+            this.errorClassifier.classifyException(exType, exMsg);
+          }
+        }
+      }
+    }
+  }
+
+  async shutdown(): Promise<void> {
+    // no-op
+  }
+
+  async forceFlush(): Promise<void> {
+    // no-op
+  }
+}

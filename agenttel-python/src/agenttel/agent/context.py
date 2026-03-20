@@ -83,5 +83,4 @@ class AgentContextProvider:
         # Add causal chain if available
         chain = self._causality.build_causal_chain()
         if chain:
-            result = self.get_full_context.__wrapped__  # avoid recursion
             pass

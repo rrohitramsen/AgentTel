@@ -4,18 +4,30 @@
 </p>
 
 <p align="center">
-  <a href="https://central.sonatype.com/search?q=dev.agenttel"><img src="https://img.shields.io/maven-central/v/dev.agenttel/agenttel-core" alt="Maven Central"></a>
-  <a href="https://github.com/rrohitramsen/AgentTel/actions"><img src="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml"><img src="https://github.com/rrohitramsen/AgentTel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
-  <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/JDK-17%2B-orange.svg" alt="JDK 17+"></a>
-  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-4.7%2B-blue.svg" alt="TypeScript"></a>
-  <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-1.59.0-blueviolet.svg" alt="OpenTelemetry"></a>
+  <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-1.39%2B-blueviolet.svg" alt="OpenTelemetry"></a>
   <a href="https://rrohitramsen.github.io/AgentTel"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Documentation"></a>
+</p>
+
+<p align="center">
+  <a href="https://central.sonatype.com/search?q=dev.agenttel"><img src="https://img.shields.io/maven-central/v/dev.agenttel/agenttel-core?label=Maven%20Central&logo=apachemaven" alt="Maven Central"></a>
+  <a href="https://www.npmjs.com/package/@agenttel/node"><img src="https://img.shields.io/npm/v/@agenttel/node?label=npm&logo=npm" alt="npm"></a>
+  <a href="https://pypi.org/project/agenttel/"><img src="https://img.shields.io/pypi/v/agenttel?label=PyPI&logo=python&logoColor=white" alt="PyPI"></a>
+  <a href="https://pkg.go.dev/go.agenttel.dev/agenttel"><img src="https://img.shields.io/badge/Go-pkg.go.dev-00ADD8?logo=go&logoColor=white" alt="Go Reference"></a>
+</p>
+
+<p align="center">
+  <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/JDK-17%2B-orange.svg?logo=openjdk&logoColor=white" alt="JDK 17+"></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.24%2B-00ADD8.svg?logo=go&logoColor=white" alt="Go 1.24+"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-18%2B-339933.svg?logo=nodedotjs&logoColor=white" alt="Node.js 18+"></a>
+  <a href="https://www.python.org"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11+"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-4.7%2B-3178C6.svg?logo=typescript&logoColor=white" alt="TypeScript"></a>
 </p>
 
 ---
 
-AgentTel enriches [OpenTelemetry](https://opentelemetry.io) telemetry with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards. Works across the full stack: JVM backends (Java, Kotlin, Scala), Python backends (FastAPI, Django, Flask), and browser frontends (TypeScript/JavaScript).
+AgentTel enriches [OpenTelemetry](https://opentelemetry.io) telemetry with the structured context AI agents need to **autonomously diagnose, reason about, and resolve production incidents** — without human interpretation of dashboards. Works across the full stack: JVM backends (Java, Kotlin, Scala), Go backends, Node.js/TypeScript backends, Python backends (FastAPI, Django, Flask), and browser frontends (TypeScript/JavaScript).
 
 Standard observability answers *"What happened?"* AgentTel adds *"What does an AI agent need to know to act on this?"*
 
@@ -188,6 +200,8 @@ AgentTel supports multiple integration paths — pick what fits your stack:
 | Path | Best For | Effort |
 |------|----------|--------|
 | Spring Boot Starter | Spring Boot applications | Add dependency + YAML config |
+| **Go SDK** | **Go services (net/http, Gin, gRPC)** | **`go get` + YAML config** |
+| **Node.js SDK** | **Express / Fastify services** | **`npm install` + YAML config** |
 | **Python SDK** | **FastAPI / Python services** | **`pip install` + YAML config** |
 | JavaAgent Extension | Any JVM app (no code changes) | JVM flag + YAML config |
 | Web SDK | Browser/SPA applications | `npm install` + init call |
@@ -426,6 +440,93 @@ instrument_fastapi(app)  # One-line integration
 
 All spans are now enriched with topology, baselines, anomaly detection, and SLO tracking — identical attributes to the JVM SDK.
 
+### Backend: Go
+
+#### 1. Install
+
+```bash
+go get go.agenttel.dev/agenttel@latest
+```
+
+#### 2. Configure
+
+```yaml
+# agenttel.yml — same format as JVM/Python SDKs
+agenttel:
+  topology:
+    service-name: payment-service
+    team: payments-platform
+    tier: critical
+  operations:
+    "POST /api/payments":
+      expected-latency-p50: 45ms
+      expected-latency-p99: 200ms
+      retryable: true
+```
+
+#### 3. Instrument
+
+```go
+import (
+    agenttel "go.agenttel.dev/agenttel"
+    agmw "go.agenttel.dev/agenttel/middleware/http"
+)
+
+cfg, _ := agenttel.LoadConfigFile("agenttel.yml")
+engine := agenttel.NewEngineBuilder(cfg).Build()
+
+// Wrap your handler with AgentTel middleware
+handler := agmw.Middleware(mux,
+    agmw.WithBaselineProvider(engine.BaselineProvider()),
+    agmw.WithTopology(engine.TopologyRegistry()),
+)
+```
+
+Also supports **Gin** (`middleware/gin`) and **gRPC** (`middleware/grpc`) out of the box. See [Go Quickstart](docs/getting-started/go-quickstart.md) for details.
+
+### Backend: Node.js (Express / Fastify)
+
+#### 1. Install
+
+```bash
+npm install @agenttel/node @opentelemetry/api @opentelemetry/sdk-trace-node
+```
+
+#### 2. Configure
+
+```yaml
+# agenttel.yml — same format as all other SDKs
+agenttel:
+  topology:
+    service-name: payment-service
+    team: payments-platform
+    tier: critical
+  operations:
+    "POST /api/payments":
+      expected-latency-p50: 45ms
+      expected-latency-p99: 200ms
+      retryable: true
+```
+
+#### 3. Instrument
+
+```typescript
+import { AgentTelEngineBuilder, expressMiddleware, loadConfig } from '@agenttel/node';
+
+const config = loadConfig('agenttel.yml');
+const engine = new AgentTelEngineBuilder()
+  .withTeam(config.topology?.team ?? 'my-team')
+  .withTier(config.topology?.tier ?? 'critical')
+  .build();
+
+app.use(expressMiddleware({
+  baselineProvider: engine.baselineProvider,
+  topology: engine.topologyRegistry,
+}));
+```
+
+Also supports **Fastify** (`fastifyPlugin`). See [Node.js Quickstart](docs/getting-started/nodejs-quickstart.md) for details.
+
 ### Frontend: Browser SDK
 
 ```bash
@@ -506,6 +607,12 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 │                      OpenTelemetry SDK                               │
 └─────────────────────────────────────────────────────────────────────┘
 
+  agenttel-go (Go SDK — full feature parity)
+  Core · net/http · Gin · gRPC · GenAI · Agent/MCP · Agentic Observability
+
+  agenttel-node (Node.js SDK — full feature parity)
+  Core · Express · Fastify · GenAI · Agent/MCP · Agentic Observability
+
   agenttel-python (Python SDK — full feature parity)
   Core · FastAPI · GenAI · Agent/MCP · Agentic Observability
 
@@ -523,6 +630,9 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 | `agenttel-javaagent` | `dev.agenttel:agenttel-javaagent` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
 | `agenttel-spring-boot-starter` | `dev.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
 | `agenttel-web` | `@agenttel/web` (npm) | Browser telemetry SDK — auto-instrumentation of page loads, navigation, API calls, errors, Web Vitals, journey tracking, anomaly detection, W3C trace propagation. |
+| `agenttel-go` | `go.agenttel.dev/agenttel` (Go module) | Go SDK — full feature parity. Core enrichment, net/http + Gin + gRPC middleware, GenAI instrumentation, MCP agent interface, agentic observability. |
+| `agenttel-node` | `@agenttel/node` (npm) | Node.js SDK — full feature parity. Core enrichment, Express + Fastify middleware, GenAI instrumentation, MCP agent interface, agentic observability. |
+| `agenttel-types` | `@agenttel/types` (npm) | Shared TypeScript types, enums, and attribute constants for `@agenttel/web` and `@agenttel/node`. |
 | `agenttel-python` | `agenttel` (pip) | Python SDK — full feature parity with JVM SDK. Core enrichment, FastAPI integration, GenAI instrumentation, MCP agent interface, agentic observability. |
 | `agenttel-instrument` | `agenttel-instrument` (pip) | IDE MCP server — codebase analysis, config generation, validation, improvement suggestions, and auto-apply for both backend and frontend instrumentation. |
 | `agenttel-testing` | `dev.agenttel:agenttel-testing` | Test utilities for verifying span enrichment. |
@@ -551,6 +661,8 @@ Working examples to get you started quickly:
 |---------|-------------|-------------|
 | [Spring Boot Example](examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `./gradlew :examples:spring-boot-example:bootRun` |
 | [LangChain4j Example](examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
+| [Go Service Example](examples/go-service-example) | Go payment service with net/http middleware, topology, baselines, anomaly detection | `cd examples/go-service-example && go run .` |
+| [Express Example](examples/express-example) | Node.js payment service with Express middleware, topology, baselines, anomaly detection | `cd examples/express-example && npm run dev` |
 | [React Checkout Example](agenttel-web/examples/react-checkout) | React SPA with frontend telemetry — journey tracking, anomaly detection, cross-stack correlation | `cd agenttel-web/examples/react-checkout && npm start` |
 
 Each example includes a README with step-by-step instructions and curl commands to exercise the instrumentation.
@@ -569,6 +681,26 @@ Each example includes a README with step-by-step instructions and curl commands 
 | Anthropic Java SDK | 2.0.0+ (optional) |
 | OpenAI Java SDK | 4.0.0+ (optional) |
 | AWS Bedrock SDK | 2.30.0+ (optional) |
+
+### Backend (Go)
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Go | 1.22+ |
+| OpenTelemetry SDK | 1.33.0+ |
+| net/http | Standard library |
+| Gin | 1.9+ (optional) |
+| gRPC | 1.60+ (optional) |
+
+### Backend (Node.js)
+
+| Component | Supported Versions |
+|-----------|--------------------|
+| Node.js | 18+ |
+| TypeScript | 5.0+ |
+| OpenTelemetry SDK | 1.30.0+ |
+| Express | 4.x / 5.x (optional) |
+| Fastify | 4.x+ (optional) |
 
 ### Frontend (Browser)
 
@@ -637,10 +769,18 @@ implementation 'dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha'
 | `dev.agenttel` | `agenttel-spring-boot-starter` | Spring Boot auto-configuration |
 | `dev.agenttel` | `agenttel-testing` | Test utilities |
 
-**npm (Browser):**
+**Go module:**
+
+| Module | Description |
+|--------|-------------|
+| `go.agenttel.dev/agenttel` | Go SDK — core enrichment, middleware (net/http, Gin, gRPC), GenAI, Agent/MCP, agentic observability |
+
+**npm (Browser + Node.js):**
 
 | Package | Description |
 |---------|-------------|
+| `@agenttel/node` | Node.js SDK — core enrichment, middleware (Express, Fastify), GenAI, Agent/MCP, agentic observability |
+| `@agenttel/types` | Shared TypeScript types, enums, and attribute constants |
 | `@agenttel/web` | Browser telemetry SDK with auto-instrumentation |
 
 **pip (Python SDK + Tooling):**
@@ -669,14 +809,19 @@ See [FAQ.md](FAQ.md) for frequently asked questions about code changes, performa
 ## Building from Source
 
 ```bash
-# Requires JDK 17+
+# Java (requires JDK 17+)
 ./gradlew clean build
-
-# Run tests only
 ./gradlew test
-
-# Build a specific module
 ./gradlew :agenttel-agent:build
+
+# Go (requires Go 1.22+)
+cd agenttel-go && go test -race ./...
+
+# Node.js (requires Node.js 18+)
+cd agenttel-node && npm ci && npm test
+
+# Shared TypeScript types
+cd agenttel-types && npm ci && npx tsc --noEmit
 ```
 
 ## Contributing
