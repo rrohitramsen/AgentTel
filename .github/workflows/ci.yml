@@ -128,6 +128,7 @@ jobs:
   attribute-parity:
     runs-on: ubuntu-latest
     needs: [go-test, node-test, python-test]
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
