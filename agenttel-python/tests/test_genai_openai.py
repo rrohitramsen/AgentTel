@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory import InMemorySpanExporter
+from opentelemetry.sdk.trace.export import InMemorySpanExporter
 
 from agenttel.genai.openai import instrument_openai
 from agenttel.genai import attributes as genai_attr
