@@ -2,22 +2,8 @@
 
 from unittest.mock import MagicMock
 
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-
 from agenttel.genai.openai import instrument_openai
 from agenttel.genai import attributes as genai_attr
-
-
-def setup_tracer():
-    """Create an in-memory exporter and tracer provider for testing."""
-    exporter = InMemorySpanExporter()
-    provider = TracerProvider()
-    provider.add_span_processor(SimpleSpanProcessor(exporter))
-    trace.set_tracer_provider(provider)
-    return exporter
 
 
 def create_mock_openai_client():
@@ -76,10 +62,8 @@ class TestInstrumentOpenAI:
         assert result is client
         assert client.chat.completions.create is not original_create
 
-    def test_creates_span_with_correct_attrs(self):
+    def test_creates_span_with_correct_attrs(self, span_exporter):
         """Verify span has gen_ai.system=openai and gen_ai.request.model."""
-        exporter = setup_tracer()
-
         client = create_mock_openai_client()
         mock_response = create_mock_response()
         client.chat.completions.create = MagicMock(return_value=mock_response)
@@ -87,7 +71,7 @@ class TestInstrumentOpenAI:
         instrument_openai(client)
         client.chat.completions.create(model="gpt-4o", messages=[])
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
 
         span = spans[-1]
@@ -96,10 +80,8 @@ class TestInstrumentOpenAI:
         assert attrs.get(genai_attr.SYSTEM) == "openai"
         assert attrs.get(genai_attr.REQUEST_MODEL) == "gpt-4o"
 
-    def test_extracts_prompt_and_completion_tokens(self):
+    def test_extracts_prompt_and_completion_tokens(self, span_exporter):
         """Verify that prompt_tokens and completion_tokens are extracted."""
-        exporter = setup_tracer()
-
         client = create_mock_openai_client()
         mock_response = create_mock_response(prompt_tokens=150, completion_tokens=75)
         client.chat.completions.create = MagicMock(return_value=mock_response)
@@ -107,7 +89,7 @@ class TestInstrumentOpenAI:
         instrument_openai(client)
         client.chat.completions.create(model="gpt-4o", messages=[])
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
 
         span = spans[-1]
@@ -115,10 +97,8 @@ class TestInstrumentOpenAI:
         assert attrs.get(genai_attr.USAGE_INPUT_TOKENS) == 150
         assert attrs.get(genai_attr.USAGE_OUTPUT_TOKENS) == 75
 
-    def test_handles_streaming(self):
+    def test_handles_streaming(self, span_exporter):
         """Verify streaming response wraps in a generator."""
-        setup_tracer()
-
         client = create_mock_openai_client()
         # Create mock streaming chunks
         chunk1 = MagicMock()
@@ -143,10 +123,8 @@ class TestInstrumentOpenAI:
         chunks = list(result)
         assert len(chunks) == 2
 
-    def test_handles_errors(self):
+    def test_handles_errors(self, span_exporter):
         """Verify error is recorded on span and re-raised."""
-        exporter = setup_tracer()
-
         client = create_mock_openai_client()
         client.chat.completions.create = MagicMock(
             side_effect=RuntimeError("API rate limit exceeded")
@@ -160,7 +138,7 @@ class TestInstrumentOpenAI:
         except RuntimeError as e:
             assert "rate limit" in str(e)
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
         span = spans[-1]
         # Verify the span recorded the error
@@ -173,10 +151,8 @@ class TestInstrumentOpenAI:
         result = instrument_openai(None)
         assert result is None
 
-    def test_handles_reasoning_tokens(self):
+    def test_handles_reasoning_tokens(self, span_exporter):
         """Verify completion_tokens_details.reasoning_tokens is captured."""
-        exporter = setup_tracer()
-
         client = create_mock_openai_client()
         mock_response = create_mock_response(reasoning_tokens=500)
         client.chat.completions.create = MagicMock(return_value=mock_response)
@@ -184,16 +160,14 @@ class TestInstrumentOpenAI:
         instrument_openai(client)
         client.chat.completions.create(model="o1", messages=[])
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
         span = spans[-1]
         attrs = dict(span.attributes or {})
         assert attrs.get(genai_attr.USAGE_REASONING_TOKENS) == 500
 
-    def test_handles_cached_tokens(self):
+    def test_handles_cached_tokens(self, span_exporter):
         """Verify prompt_tokens_details.cached_tokens is captured."""
-        exporter = setup_tracer()
-
         client = create_mock_openai_client()
         mock_response = create_mock_response(cached_tokens=250)
         client.chat.completions.create = MagicMock(return_value=mock_response)
@@ -201,7 +175,7 @@ class TestInstrumentOpenAI:
         instrument_openai(client)
         client.chat.completions.create(model="gpt-4o", messages=[])
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
         span = spans[-1]
         attrs = dict(span.attributes or {})

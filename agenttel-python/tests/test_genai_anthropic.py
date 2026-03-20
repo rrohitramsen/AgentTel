@@ -2,22 +2,8 @@
 
 from unittest.mock import MagicMock
 
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-
 from agenttel.genai.anthropic import instrument_anthropic
 from agenttel.genai import attributes as genai_attr
-
-
-def setup_tracer():
-    """Create an in-memory exporter and tracer provider for testing."""
-    exporter = InMemorySpanExporter()
-    provider = TracerProvider()
-    provider.add_span_processor(SimpleSpanProcessor(exporter))
-    trace.set_tracer_provider(provider)
-    return exporter
 
 
 def create_mock_anthropic_client():
@@ -58,10 +44,8 @@ class TestInstrumentAnthropic:
         assert result is client
         assert client.messages.create is not original_create
 
-    def test_extracts_input_and_output_tokens(self):
+    def test_extracts_input_and_output_tokens(self, span_exporter):
         """Verify input_tokens and output_tokens are captured."""
-        exporter = setup_tracer()
-
         client = create_mock_anthropic_client()
         mock_response = create_mock_response(input_tokens=800, output_tokens=300)
         client.messages.create = MagicMock(return_value=mock_response)
@@ -69,7 +53,7 @@ class TestInstrumentAnthropic:
         instrument_anthropic(client)
         client.messages.create(model="claude-opus-4", messages=[], max_tokens=1024)
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
 
         span = spans[-1]
@@ -77,10 +61,8 @@ class TestInstrumentAnthropic:
         assert attrs.get(genai_attr.USAGE_INPUT_TOKENS) == 800
         assert attrs.get(genai_attr.USAGE_OUTPUT_TOKENS) == 300
 
-    def test_handles_stop_reason(self):
+    def test_handles_stop_reason(self, span_exporter):
         """Verify stop_reason is captured as finish_reason."""
-        exporter = setup_tracer()
-
         client = create_mock_anthropic_client()
         mock_response = create_mock_response(stop_reason="end_turn")
         client.messages.create = MagicMock(return_value=mock_response)
@@ -88,7 +70,7 @@ class TestInstrumentAnthropic:
         instrument_anthropic(client)
         client.messages.create(model="claude-opus-4", messages=[], max_tokens=1024)
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
 
         span = spans[-1]
@@ -97,10 +79,8 @@ class TestInstrumentAnthropic:
         assert finish_reasons is not None
         assert "end_turn" in (finish_reasons if isinstance(finish_reasons, (list, tuple)) else [finish_reasons])
 
-    def test_handles_cache_read_input_tokens(self):
+    def test_handles_cache_read_input_tokens(self, span_exporter):
         """Verify cache_read_input_tokens is captured."""
-        exporter = setup_tracer()
-
         client = create_mock_anthropic_client()
         mock_response = create_mock_response(cache_read_input_tokens=300)
         client.messages.create = MagicMock(return_value=mock_response)
@@ -108,17 +88,15 @@ class TestInstrumentAnthropic:
         instrument_anthropic(client)
         client.messages.create(model="claude-opus-4", messages=[], max_tokens=1024)
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
 
         span = spans[-1]
         attrs = dict(span.attributes or {})
         assert attrs.get(genai_attr.USAGE_CACHED_TOKENS) == 300
 
-    def test_handles_streaming(self):
+    def test_handles_streaming(self, span_exporter):
         """Verify streaming response wraps events correctly."""
-        setup_tracer()
-
         client = create_mock_anthropic_client()
 
         # Create mock streaming events
@@ -149,10 +127,8 @@ class TestInstrumentAnthropic:
         events = list(result)
         assert len(events) == 2
 
-    def test_handles_errors(self):
+    def test_handles_errors(self, span_exporter):
         """Verify error is recorded on span and re-raised."""
-        exporter = setup_tracer()
-
         client = create_mock_anthropic_client()
         client.messages.create = MagicMock(
             side_effect=RuntimeError("overloaded_error")
@@ -166,7 +142,7 @@ class TestInstrumentAnthropic:
         except RuntimeError as e:
             assert "overloaded_error" in str(e)
 
-        spans = exporter.get_finished_spans()
+        spans = span_exporter.get_finished_spans()
         assert len(spans) >= 1
         span = spans[-1]
         events = span.events or []
