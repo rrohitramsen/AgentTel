@@ -4,9 +4,73 @@ All notable changes to AgentTel are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0-alpha] - 2026-03-16
+## [0.3.0-alpha] - 2026-03-20
 
 ### Added
+
+**Go SDK (agenttel-go) — Full Feature Parity**
+
+Core (`go.agenttel.dev/agenttel`):
+- Semantic attributes (~60 constants) matching Java/Python SDKs
+- All enums (`ServiceTier`, `ErrorCategory`, `DependencyType`, etc.)
+- YAML configuration loader from `agenttel.yml`
+- `AgentTelSpanProcessor` with baseline/anomaly/SLO enrichment
+- Rolling baseline provider, composite baseline, z-score anomaly detection
+- SLO tracker with error budget calculation
+- Error classifier, topology registry, structured event emitter
+- HTTP, Gin, and gRPC middleware
+
+GenAI Instrumentation (sub-modules):
+- `go.agenttel.dev/agenttel/genai/openai` — OpenAI SDK wrapper (sync + streaming)
+- `go.agenttel.dev/agenttel/genai/anthropic` — Anthropic SDK wrapper (sync + streaming)
+- `GenAiSpanBuilder` for consistent span creation with cost calculation
+
+Agentic Observability:
+- `AgenticTracer` — builder pattern API for agent tracing
+- Invocation, step, tool call scopes with auto-closing
+- Orchestration patterns: sequential, parallel, eval-loop
+
+Agent Interface:
+- MCP server (JSON-RPC 2.0 over HTTP) with tool registry
+- Bearer token auth with API key registry and RBAC
+- Health aggregation, incident context, remediation registry
+
+**Node.js SDK (@agenttel/node) — Full Feature Parity**
+
+Core (`@agenttel/node`):
+- Semantic attributes (~60 constants) matching Java/Python/Go SDKs
+- All enums with TypeScript type safety
+- YAML configuration loader from `agenttel.yml`
+- `AgentTelSpanProcessor` with baseline/anomaly/SLO enrichment
+- Rolling baseline provider, composite baseline, z-score anomaly detection
+- SLO tracker with error budget calculation
+- Error classifier, topology registry, structured event emitter
+- Express and Fastify middleware
+
+GenAI Instrumentation:
+- OpenAI SDK wrapper (sync + streaming)
+- Anthropic SDK wrapper (sync + streaming)
+- `GenAiSpanBuilder` for consistent span creation with cost calculation
+
+Agentic Observability:
+- `AgenticTracer` — builder pattern API for agent tracing
+- Invocation, step, tool call scopes
+- Orchestration patterns: sequential, parallel, eval-loop
+
+Agent Interface:
+- MCP server (JSON-RPC 2.0 over HTTP) with tool registry
+- Bearer token auth with API key registry and RBAC
+
+**Shared Types (@agenttel/types)**
+- Canonical TypeScript attribute constants, enums, and interfaces
+- Dual ESM/CJS build for use by @agenttel/node and browser SDK
+
+**Cross-SDK Improvements**
+- `attributes.json` — canonical attribute schema (single source of truth)
+- `scripts/validate-attributes.sh` — CI parity enforcement across all 4 SDKs
+- Unified CI pipeline: Java (JDK 17/21), Go (1.24), Node (20), Python (3.11/3.12/3.13)
+- MCP server auth (Bearer token + RBAC) added to Java SDK
+- Example apps: Go net/http, Gin, Express, Fastify, FastAPI, Spring Boot
 
 **Python SDK (agenttel-python) — Full Feature Parity**
 
