@@ -1,12 +1,25 @@
 module go.agenttel.dev/agenttel/genai/openai
 
-go 1.22
+go 1.24.0
+
+toolchain go1.24.13
 
 require (
-	go.agenttel.dev/agenttel v0.1.0
 	github.com/sashabaranov/go-openai v1.36.1
-	go.opentelemetry.io/otel v1.33.0
-	go.opentelemetry.io/otel/trace v1.33.0
+	go.agenttel.dev/agenttel v0.1.0
+	go.opentelemetry.io/otel v1.39.0
+	go.opentelemetry.io/otel/sdk v1.39.0
+	go.opentelemetry.io/otel/trace v1.39.0
+)
+
+require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	go.opentelemetry.io/otel/metric v1.39.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
 )
 
 replace go.agenttel.dev/agenttel => ../../

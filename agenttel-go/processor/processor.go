@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"go.agenttel.dev/agenttel/anomaly"
@@ -125,7 +126,7 @@ func (p *AgentTelSpanProcessor) OnStart(_ context.Context, span sdktrace.ReadWri
 func (p *AgentTelSpanProcessor) OnEnd(span sdktrace.ReadOnlySpan) {
 	name := span.Name()
 	durationMs := float64(span.EndTime().Sub(span.StartTime()).Milliseconds())
-	isError := span.Status().Code == 2 // otel codes.Error = 2
+	isError := span.Status().Code == codes.Error
 
 	// Record rolling baseline
 	if p.rollingProvider != nil {

@@ -204,9 +204,10 @@ func TestOnEnd_ErrorClassification(t *testing.T) {
 
 func TestOnEnd_NoAnomaly(t *testing.T) {
 	rp := baseline.NewRollingProvider(100, 5)
-	// Seed baseline with latencies around 100ms
+	// Seed baseline with near-zero latencies (matching the near-zero duration
+	// of spans created and immediately ended in tests).
 	for i := 0; i < 20; i++ {
-		rp.RecordLatency("GET /api/healthy", 100.0+float64(i))
+		rp.RecordLatency("GET /api/healthy", 0.0)
 	}
 
 	ad := anomaly.NewDetector(3.0)
@@ -226,12 +227,12 @@ func TestOnEnd_NoAnomaly(t *testing.T) {
 	)
 	_, tracer := createTracerProvider(proc)
 
-	// A normally-fast span should not trigger anomaly
+	// A near-zero duration span against a near-zero baseline should not trigger anomaly
 	_, span := tracer.Start(context.Background(), "GET /api/healthy")
 	span.End()
 
 	if anomalyDetected {
-		t.Error("did not expect anomaly for a fast span against a baseline of ~100ms")
+		t.Error("did not expect anomaly for a span matching the baseline")
 	}
 }
 

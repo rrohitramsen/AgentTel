@@ -1,6 +1,6 @@
 module github.com/AgentTel/AgentTel/examples/gin-example
 
-go 1.22
+go 1.24
 
 require (
 	go.agenttel.dev/agenttel v0.1.0

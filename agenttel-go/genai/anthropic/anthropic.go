@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/packages/ssestream"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
@@ -67,7 +68,7 @@ func (tc *TracedClient) CreateMessage(
 	ctx context.Context,
 	params anthropic.MessageNewParams,
 ) (*anthropic.Message, error) {
-	model := string(params.Model)
+	model := params.Model
 	if model == "" {
 		model = "unknown"
 	}
@@ -75,15 +76,12 @@ func (tc *TracedClient) CreateMessage(
 	ctx, span := tc.spanBuilder.StartChatSpan(ctx, model, systemName)
 
 	// Set optional request parameters.
-	// The Anthropic Go SDK uses param.Opt[T] for optional fields.
-	// Temperature.Value and TopP.Value give the float64 value; IsPresent()
-	// returns true when explicitly set.
 	var temp float64
-	if params.Temperature.IsPresent() {
+	if params.Temperature.Valid() {
 		temp = params.Temperature.Value
 	}
 	genai.SetRequestParams(span, temp, int64(params.MaxTokens), 0)
-	if params.TopP.IsPresent() {
+	if params.TopP.Valid() {
 		genai.SetRequestParams(span, 0, 0, params.TopP.Value)
 	}
 
@@ -125,7 +123,7 @@ func (tc *TracedClient) CreateMessageStreaming(
 	ctx context.Context,
 	params anthropic.MessageNewParams,
 ) *TracedStream {
-	model := string(params.Model)
+	model := params.Model
 	if model == "" {
 		model = "unknown"
 	}
@@ -133,11 +131,11 @@ func (tc *TracedClient) CreateMessageStreaming(
 	ctx, span := tc.spanBuilder.StartChatSpan(ctx, model, systemName)
 
 	var temp float64
-	if params.Temperature.IsPresent() {
+	if params.Temperature.Valid() {
 		temp = params.Temperature.Value
 	}
 	genai.SetRequestParams(span, temp, int64(params.MaxTokens), 0)
-	if params.TopP.IsPresent() {
+	if params.TopP.Valid() {
 		genai.SetRequestParams(span, 0, 0, params.TopP.Value)
 	}
 
@@ -150,10 +148,10 @@ func (tc *TracedClient) CreateMessageStreaming(
 	}
 }
 
-// TracedStream wraps an Anthropic MessageStream to accumulate token
-// usage from SSE events and end the span when the stream completes.
+// TracedStream wraps an Anthropic SSE stream to accumulate token
+// usage from events and end the span when the stream completes.
 type TracedStream struct {
-	stream        *anthropic.MessageStream
+	stream        *ssestream.Stream[anthropic.MessageStreamEventUnion]
 	span          trace.Span
 	responseModel string
 	responseID    string
@@ -181,7 +179,7 @@ func (ts *TracedStream) Next() bool {
 }
 
 // Current returns the current stream event.
-func (ts *TracedStream) Current() anthropic.MessageStreamEvent {
+func (ts *TracedStream) Current() anthropic.MessageStreamEventUnion {
 	return ts.stream.Current()
 }
 
@@ -196,9 +194,10 @@ func (ts *TracedStream) Close() {
 }
 
 // accumulateEvent extracts token usage and metadata from SSE events.
-func (ts *TracedStream) accumulateEvent(event anthropic.MessageStreamEvent) {
-	switch e := event.(type) {
-	case anthropic.MessageStartEvent:
+func (ts *TracedStream) accumulateEvent(event anthropic.MessageStreamEventUnion) {
+	switch event.Type {
+	case "message_start":
+		e := event.AsMessageStart()
 		if e.Message.Model != "" {
 			ts.responseModel = e.Message.Model
 		}
@@ -209,7 +208,8 @@ func (ts *TracedStream) accumulateEvent(event anthropic.MessageStreamEvent) {
 		ts.cacheRead = e.Message.Usage.CacheReadInputTokens
 		ts.cacheCreate = e.Message.Usage.CacheCreationInputTokens
 
-	case anthropic.MessageDeltaEvent:
+	case "message_delta":
+		e := event.AsMessageDelta()
 		ts.outputTokens = e.Usage.OutputTokens
 		stopReason := string(e.Delta.StopReason)
 		if stopReason != "" {

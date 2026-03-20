@@ -48,12 +48,20 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.24'
           cache-dependency-path: agenttel-go/go.sum
 
       - name: Run tests
         working-directory: agenttel-go
         run: go test -race -count=1 -timeout=120s ./...
+
+      - name: Test GenAI Anthropic
+        working-directory: agenttel-go/genai/anthropic
+        run: go test -race -count=1 -timeout=60s ./...
+
+      - name: Test GenAI OpenAI
+        working-directory: agenttel-go/genai/openai
+        run: go test -race -count=1 -timeout=60s ./...
 
       - name: Vet
         working-directory: agenttel-go

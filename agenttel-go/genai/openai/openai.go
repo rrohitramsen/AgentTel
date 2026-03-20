@@ -72,15 +72,8 @@ func (tc *TracedClient) CreateChatCompletion(
 
 	ctx, span := tc.spanBuilder.StartChatSpan(ctx, model, systemName)
 
-	// Set optional request parameters.
-	if req.Temperature != nil {
-		genai.SetRequestParams(span, float64(*req.Temperature), int64(req.MaxTokens), 0)
-	} else {
-		genai.SetRequestParams(span, 0, int64(req.MaxTokens), 0)
-	}
-	if req.TopP != nil {
-		genai.SetRequestParams(span, 0, 0, float64(*req.TopP))
-	}
+	// Set request parameters.
+	genai.SetRequestParams(span, float64(req.Temperature), int64(req.MaxTokens), float64(req.TopP))
 
 	resp, err := tc.client.CreateChatCompletion(ctx, req)
 	if err != nil {
@@ -146,14 +139,7 @@ func (tc *TracedClient) CreateChatCompletionStream(
 
 	ctx, span := tc.spanBuilder.StartChatSpan(ctx, model, systemName)
 
-	if req.Temperature != nil {
-		genai.SetRequestParams(span, float64(*req.Temperature), int64(req.MaxTokens), 0)
-	} else {
-		genai.SetRequestParams(span, 0, int64(req.MaxTokens), 0)
-	}
-	if req.TopP != nil {
-		genai.SetRequestParams(span, 0, 0, float64(*req.TopP))
-	}
+	genai.SetRequestParams(span, float64(req.Temperature), int64(req.MaxTokens), float64(req.TopP))
 
 	stream, err := tc.client.CreateChatCompletionStream(ctx, req)
 	if err != nil {
