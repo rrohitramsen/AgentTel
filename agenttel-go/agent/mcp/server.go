@@ -6,6 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -42,23 +45,59 @@ type RPCError struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-// Server is an MCP JSON-RPC 2.0 server.
-type Server struct {
-	mu       sync.RWMutex
-	tools    map[string]Tool
-	handlers map[string]ToolHandler
-	name     string
-	version  string
+// contextKey is an unexported type for context keys in this package.
+type contextKey int
+
+const (
+	// identityKey is the context key for AgentIdentity.
+	identityKey contextKey = iota
+)
+
+// IdentityFromContext extracts the AgentIdentity from a context, if present.
+func IdentityFromContext(ctx context.Context) *AgentIdentity {
+	v, _ := ctx.Value(identityKey).(*AgentIdentity)
+	return v
 }
 
-// NewServer creates a new MCP server.
-func NewServer(name, version string) *Server {
-	return &Server{
+// Option configures a Server.
+type Option func(*Server)
+
+// WithAuth enables API key authentication on the server.
+// When configured, HandleHTTPRequest will require a valid
+// Authorization: Bearer <key> header.
+func WithAuth(config AuthConfig) Option {
+	return func(s *Server) { s.authConfig = &config }
+}
+
+// WithPermissions enables role-based tool permission checks.
+// Requires WithAuth to be effective (identity must be resolved first).
+func WithPermissions(registry *ToolPermissionRegistry) Option {
+	return func(s *Server) { s.permissions = registry }
+}
+
+// Server is an MCP JSON-RPC 2.0 server.
+type Server struct {
+	mu          sync.RWMutex
+	tools       map[string]Tool
+	handlers    map[string]ToolHandler
+	name        string
+	version     string
+	authConfig  *AuthConfig            // nil = no auth
+	permissions *ToolPermissionRegistry // nil = no permission checks
+}
+
+// NewServer creates a new MCP server. Options are applied in order.
+func NewServer(name, version string, opts ...Option) *Server {
+	s := &Server{
 		tools:    make(map[string]Tool),
 		handlers: make(map[string]ToolHandler),
 		name:     name,
 		version:  version,
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // RegisterTool adds a tool to the server.
@@ -86,6 +125,68 @@ func (s *Server) HandleRequest(ctx context.Context, reqBytes []byte) []byte {
 	default:
 		return s.errorResponse(req.ID, -32601, fmt.Sprintf("Method not found: %s", req.Method))
 	}
+}
+
+// HandleHTTPRequest is an http.HandlerFunc-compatible method that extracts
+// the Authorization: Bearer <key> header, authenticates the caller, checks
+// permissions, and dispatches the JSON-RPC request.
+//
+// When no AuthConfig is set, it behaves identically to HandleRequest.
+func (s *Server) HandleHTTPRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(s.errorResponse(nil, -32700, "Failed to read request body"))
+		return
+	}
+
+	ctx := r.Context()
+
+	// Authenticate if auth is configured
+	if s.authConfig != nil {
+		authHeader := r.Header.Get("Authorization")
+		key := strings.TrimPrefix(authHeader, "Bearer ")
+		key = strings.TrimPrefix(key, "bearer ")
+
+		identity, authErr := s.authConfig.resolveKey(key)
+		if authErr != nil || identity == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(s.errorResponse(nil, -32603, "Unauthorized: invalid or missing API key"))
+			return
+		}
+		ctx = context.WithValue(ctx, identityKey, identity)
+	}
+
+	// Parse request to check permissions before dispatch
+	if s.permissions != nil && s.authConfig != nil {
+		var req Request
+		if parseErr := json.Unmarshal(body, &req); parseErr == nil && req.Method == "tools/call" {
+			var params struct {
+				Name string `json:"name"`
+			}
+			if parseErr2 := json.Unmarshal(req.Params, &params); parseErr2 == nil {
+				identity := IdentityFromContext(ctx)
+				if identity != nil && !s.permissions.IsAllowed(identity, params.Name) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write(s.errorResponse(req.ID, -32603,
+						fmt.Sprintf("Permission denied: role '%s' cannot access tool '%s'", identity.Role, params.Name)))
+					return
+				}
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(s.HandleRequest(ctx, body))
 }
 
 func (s *Server) handleInitialize(req Request) []byte {

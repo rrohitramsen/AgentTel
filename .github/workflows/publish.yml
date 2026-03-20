@@ -64,3 +64,34 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build and test
+        working-directory: agenttel-python
+        run: |
+          pip install -e ".[dev]"
+          pytest -v
+
+      - name: Build distribution
+        working-directory: agenttel-python
+        run: python -m build
+
+      - name: Publish to PyPI
+        working-directory: agenttel-python
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}

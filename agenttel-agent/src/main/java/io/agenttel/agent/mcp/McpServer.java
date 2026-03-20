@@ -45,15 +45,28 @@ public class McpServer {
     private final Map<String, McpToolDefinition> toolDefinitions = new ConcurrentHashMap<>();
     private final Map<String, McpToolHandler> toolHandlers = new ConcurrentHashMap<>();
     private final ToolPermissionRegistry permissionRegistry;
+    private final ApiKeyRegistry apiKeyRegistry;
     private HttpServer httpServer;
 
     public McpServer(int port) {
-        this(port, null);
+        this(port, null, null);
     }
 
     public McpServer(int port, ToolPermissionRegistry permissionRegistry) {
+        this(port, permissionRegistry, null);
+    }
+
+    /**
+     * Creates an MCP server with optional permission registry and API key registry.
+     *
+     * @param port               the port to listen on (0 for OS-assigned)
+     * @param permissionRegistry optional role-based permission checks (null to skip)
+     * @param apiKeyRegistry     optional API key authentication (null to skip)
+     */
+    public McpServer(int port, ToolPermissionRegistry permissionRegistry, ApiKeyRegistry apiKeyRegistry) {
         this.port = port;
         this.permissionRegistry = permissionRegistry;
+        this.apiKeyRegistry = apiKeyRegistry;
     }
 
     /**
@@ -125,7 +138,7 @@ public class McpServer {
             return;
         }
 
-        // Extract agent identity from HTTP headers
+        // Extract agent identity from HTTP headers (X-Agent-* style)
         Map<String, String> headers = new HashMap<>();
         for (String headerName : List.of(
                 AgentIdentity.HEADER_AGENT_ID,
@@ -134,6 +147,28 @@ public class McpServer {
             var values = exchange.getRequestHeaders().get(headerName);
             if (values != null && !values.isEmpty()) {
                 headers.put(headerName, values.get(0));
+            }
+        }
+
+        // API key authentication via Authorization: Bearer <key>
+        AgentIdentity bearerIdentity = null;
+        if (apiKeyRegistry != null && apiKeyRegistry.isConfigured()) {
+            var authValues = exchange.getRequestHeaders().get("Authorization");
+            String authHeader = (authValues != null && !authValues.isEmpty()) ? authValues.get(0) : "";
+            String key = authHeader.startsWith("Bearer ") ? authHeader.substring(7).trim()
+                       : authHeader.startsWith("bearer ") ? authHeader.substring(7).trim() : "";
+
+            var resolved = apiKeyRegistry.resolveKey(key);
+            if (resolved.isEmpty()) {
+                sendJsonRpcError(exchange, null, -32603, "Unauthorized: invalid or missing API key");
+                return;
+            }
+            bearerIdentity = resolved.get();
+            // Populate X-Agent-* headers from bearer identity so downstream resolution picks it up
+            headers.put(AgentIdentity.HEADER_AGENT_ID, bearerIdentity.agentId());
+            headers.put(AgentIdentity.HEADER_AGENT_ROLE, bearerIdentity.role());
+            if (bearerIdentity.sessionId() != null) {
+                headers.put(AgentIdentity.HEADER_AGENT_SESSION_ID, bearerIdentity.sessionId());
             }
         }
 
@@ -235,6 +270,13 @@ public class McpServer {
      */
     public ToolPermissionRegistry getPermissionRegistry() {
         return permissionRegistry;
+    }
+
+    /**
+     * Returns the API key registry, if configured.
+     */
+    public ApiKeyRegistry getApiKeyRegistry() {
+        return apiKeyRegistry;
     }
 
     private static class PermissionDeniedException extends RuntimeException {

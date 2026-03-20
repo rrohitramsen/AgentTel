@@ -41,6 +41,7 @@ public class AgentTelMcpServerBuilder {
     private AgentContextProvider contextProvider;
     private RemediationExecutor remediationExecutor;
     private ToolPermissionRegistry permissionRegistry;
+    private ApiKeyRegistry apiKeyRegistry;
     private SessionManager sessionManager;
 
     public AgentTelMcpServerBuilder port(int port) {
@@ -63,6 +64,11 @@ public class AgentTelMcpServerBuilder {
         return this;
     }
 
+    public AgentTelMcpServerBuilder apiKeyRegistry(ApiKeyRegistry apiKeyRegistry) {
+        this.apiKeyRegistry = apiKeyRegistry;
+        return this;
+    }
+
     public AgentTelMcpServerBuilder sessionManager(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
         return this;
@@ -72,7 +78,7 @@ public class AgentTelMcpServerBuilder {
      * Builds and returns a configured MCP server (not yet started).
      */
     public McpServer build() {
-        McpServer server = new McpServer(port, permissionRegistry);
+        McpServer server = new McpServer(port, permissionRegistry, apiKeyRegistry);
         registerDefaultTools(server);
         return server;
     }

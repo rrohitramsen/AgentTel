@@ -1,0 +1,51 @@
+agenttel:
+  topology:
+    service-name: gin-payment-service
+    team: payments-platform
+    tier: critical
+    domain: commerce
+    on-call-channel: "#payments-oncall"
+
+  dependencies:
+    - name: payment-gateway
+      type: rest_api
+      criticality: critical
+      timeout-ms: 5000
+    - name: customer-db
+      type: database
+      criticality: critical
+      timeout-ms: 3000
+
+  consumers:
+    - name: checkout-service
+      pattern: sync
+    - name: order-service
+      pattern: async
+
+  operations:
+    "POST /api/payments":
+      expected-latency-p50: 45ms
+      expected-latency-p99: 200ms
+      expected-error-rate: 0.001
+      retryable: false
+      idempotent: false
+    "GET /api/payments/:id":
+      expected-latency-p50: 15ms
+      expected-latency-p99: 80ms
+      retryable: true
+      idempotent: true
+
+  baselines:
+    rolling-window-size: 1000
+    rolling-min-samples: 10
+
+  anomaly-detection:
+    z-score-threshold: 3.0
+
+  slo:
+    payment-availability:
+      target: 0.999
+      type: availability
+    payment-latency:
+      target: 200
+      type: latency

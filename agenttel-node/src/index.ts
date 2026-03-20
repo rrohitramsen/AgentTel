@@ -49,6 +49,8 @@ export type { FastifyPluginOptions } from './middleware/fastify.js';
 // GenAI
 export { GenAiSpanBuilder } from './genai/span-builder.js';
 export { calculateCost, registerModelPricing } from './genai/cost.js';
+export { instrumentOpenAI } from './genai/openai.js';
+export { instrumentAnthropic } from './genai/anthropic.js';
 
 // Agent
 export { HealthAggregator } from './agent/health.js';

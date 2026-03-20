@@ -27,10 +27,18 @@
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-trace-node": "^1.25.0"
+    "@opentelemetry/sdk-trace-node": "^1.25.0",
+    "openai": "^4.0.0",
+    "@anthropic-ai/sdk": "^0.30.0"
   },
   "peerDependenciesMeta": {
     "@opentelemetry/sdk-trace-node": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
       "optional": true
     }
   },
