@@ -95,7 +95,42 @@ Open a [GitHub issue](https://github.com/rrohitramsen/AgentTel/issues/new?templa
 2. Create a feature branch from `main`
 3. Make your changes
 4. Ensure all tests pass: `./gradlew clean build`
-5. Submit a pull request against `main`
+5. Sign off your commits (see below)
+6. Submit a pull request against `main`
+
+### Developer Certificate of Origin (DCO)
+
+All contributions must be signed off under the [Developer Certificate of
+Origin](DCO). This certifies that you have the right to submit the work under
+the project's open source license.
+
+**Sign off your commits** by adding a `Signed-off-by` trailer with your real
+name and email address:
+
+```
+Signed-off-by: Jane Doe <jane@example.com>
+```
+
+Git can do this automatically with the `-s` flag:
+
+```bash
+git commit -s -m "Add support for custom span attributes"
+```
+
+If you forgot to sign off a commit, you can amend it:
+
+```bash
+git commit --amend -s
+```
+
+Or sign off an entire branch interactively:
+
+```bash
+git rebase --signoff HEAD~<number-of-commits>
+```
+
+A DCO bot will check all pull requests. Unsigned commits will block the PR
+from merging.
 
 ### PR Guidelines
 
