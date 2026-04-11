@@ -48,10 +48,10 @@
     "browser",
     "frontend"
   ],
-  "author": "AgentTel Contributors",
+  "author": "AgentTel Ltd",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rrohitramsen/AgentTel"
+    "url": "https://github.com/agenttel/agenttel-sdk"
   }
 }

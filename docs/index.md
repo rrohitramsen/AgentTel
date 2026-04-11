@@ -372,6 +372,6 @@ Affected Deps: stripe-api
 <div style="text-align: center; margin-top: 3rem;" markdown>
 
 [Get Started](getting-started/quick-start.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/rrohitramsen/AgentTel){ .md-button }
+[View on GitHub](https://github.com/agenttel/agenttel-sdk){ .md-button }
 
 </div>

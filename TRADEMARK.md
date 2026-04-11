@@ -1,12 +1,13 @@
 # AgentTel Trademark Policy
 
-"AgentTel" is a trademark of the AgentTel project.
+"AgentTel" is a trademark of AgentTel Ltd (Company No. 17098920, England and
+Wales).
 
 ## Purpose
 
 This policy exists to protect the AgentTel community by ensuring that the
 "AgentTel" name is used in ways that are accurate and not misleading to users.
-The AgentTel source code is available under the Apache License 2.0, but the
+The AgentTel SDK source code is available under the Apache License 2.0, but the
 name "AgentTel" and associated logos are not covered by that license.
 
 ## Permitted Uses
@@ -54,7 +55,7 @@ truthful compatibility statements.
 
 For uses not covered by this policy, or to request an exception, contact the
 project maintainers by opening an issue at
-https://github.com/rrohitramsen/AgentTel/issues.
+https://github.com/agenttel/agenttel-sdk/issues.
 
 ## Changes
 

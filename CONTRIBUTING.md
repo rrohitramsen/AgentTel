@@ -16,8 +16,8 @@ Thank you for your interest in contributing to AgentTel. This guide will help yo
 **Backend (JVM):**
 
 ```bash
-git clone https://github.com/rrohitramsen/AgentTel.git
-cd AgentTel
+git clone https://github.com/agenttel/agenttel-sdk.git
+cd agenttel-sdk
 ./gradlew clean build
 ```
 
@@ -74,7 +74,7 @@ examples/                     # Example applications
 
 ### Reporting Bugs
 
-Open a [GitHub issue](https://github.com/rrohitramsen/AgentTel/issues/new?template=bug_report.md) with:
+Open a [GitHub issue](https://github.com/agenttel/agenttel-sdk/issues/new?template=bug_report.md) with:
 
 - A clear description of the problem
 - Steps to reproduce
@@ -83,7 +83,7 @@ Open a [GitHub issue](https://github.com/rrohitramsen/AgentTel/issues/new?templa
 
 ### Suggesting Features
 
-Open a [GitHub issue](https://github.com/rrohitramsen/AgentTel/issues/new?template=feature_request.md) describing:
+Open a [GitHub issue](https://github.com/agenttel/agenttel-sdk/issues/new?template=feature_request.md) describing:
 
 - The use case or problem you're solving
 - Your proposed approach (if any)
@@ -214,4 +214,4 @@ from merging.
 
 ## Questions?
 
-Open a discussion in [GitHub Issues](https://github.com/rrohitramsen/AgentTel/issues).
+Open a discussion in [GitHub Issues](https://github.com/agenttel/agenttel-sdk/issues).

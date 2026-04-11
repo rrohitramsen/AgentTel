@@ -118,7 +118,7 @@ subprojects {
             pom {
                 name.set(project.name)
                 description.set(project.description ?: "AgentTel - Agent-ready telemetry for Java")
-                url.set("https://github.com/rrohitramsen/AgentTel")
+                url.set("https://github.com/agenttel/agenttel-sdk")
 
                 licenses {
                     license {
@@ -135,9 +135,9 @@ subprojects {
                 }
 
                 scm {
-                    connection.set("scm:git:git://github.com/rrohitramsen/AgentTel.git")
-                    developerConnection.set("scm:git:ssh://github.com/rrohitramsen/AgentTel.git")
-                    url.set("https://github.com/rrohitramsen/AgentTel")
+                    connection.set("scm:git:git://github.com/agenttel/agenttel-sdk.git")
+                    developerConnection.set("scm:git:ssh://github.com/agenttel/agenttel-sdk.git")
+                    url.set("https://github.com/agenttel/agenttel-sdk")
                 }
             }
         }
