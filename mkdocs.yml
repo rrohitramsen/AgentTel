@@ -1,8 +1,8 @@
 site_name: AgentTel
 site_description: Agent-Ready Telemetry for OpenTelemetry
-site_url: https://rrohitramsen.github.io/AgentTel
-repo_url: https://github.com/rrohitramsen/AgentTel
-repo_name: rrohitramsen/AgentTel
+site_url: https://agenttel.github.io/agenttel-sdk
+repo_url: https://github.com/agenttel/agenttel-sdk
+repo_name: agenttel/agenttel-sdk
 
 theme:
   name: material
@@ -115,4 +115,4 @@ extra_javascript:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/rrohitramsen/AgentTel
+      link: https://github.com/agenttel/agenttel-sdk

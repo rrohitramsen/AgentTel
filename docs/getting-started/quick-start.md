@@ -824,11 +824,11 @@ Once running, add it as an MCP server in your IDE and ask your AI assistant:
 
 | Example | Description | Run Command |
 |---------|-------------|-------------|
-| [Spring Boot Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `docker compose -f docker/docker-compose.yml up --build` |
-| [Go Service Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/go-service-example) | Go payment service with net/http middleware, topology, baselines, anomaly detection | `cd examples/go-service-example && go run .` |
-| [Express Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/express-example) | Node.js payment service with Express middleware, topology, baselines, anomaly detection | `cd examples/express-example && npm run dev` |
-| [LangChain4j Example](https://github.com/rrohitramsen/AgentTel/tree/main/examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
-| [React Checkout Example](https://github.com/rrohitramsen/AgentTel/tree/main/agenttel-web/examples/react-checkout) | React SPA with frontend telemetry — journey tracking, anomaly detection, cross-stack correlation | `cd agenttel-web/examples/react-checkout && npm start` |
+| [Spring Boot Example](https://github.com/agenttel/agenttel-sdk/tree/main/examples/spring-boot-example) | Payment service with span enrichment, topology, baselines, anomaly detection, and MCP server | `docker compose -f docker/docker-compose.yml up --build` |
+| [Go Service Example](https://github.com/agenttel/agenttel-sdk/tree/main/examples/go-service-example) | Go payment service with net/http middleware, topology, baselines, anomaly detection | `cd examples/go-service-example && go run .` |
+| [Express Example](https://github.com/agenttel/agenttel-sdk/tree/main/examples/express-example) | Node.js payment service with Express middleware, topology, baselines, anomaly detection | `cd examples/express-example && npm run dev` |
+| [LangChain4j Example](https://github.com/agenttel/agenttel-sdk/tree/main/examples/langchain4j-example) | GenAI tracing with LangChain4j — chat spans, token tracking, and cost calculation | `./gradlew :examples:langchain4j-example:run` |
+| [React Checkout Example](https://github.com/agenttel/agenttel-sdk/tree/main/agenttel-web/examples/react-checkout) | React SPA with frontend telemetry — journey tracking, anomaly detection, cross-stack correlation | `cd agenttel-web/examples/react-checkout && npm start` |
 
 ## Next Steps
 

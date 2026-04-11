@@ -201,5 +201,5 @@ Agentic Observability (`agenttel`):
 - Grafana dashboard templates (overview + GenAI)
 - Spring Boot and LangChain4j example applications
 
-[0.2.0-alpha]: https://github.com/rrohitramsen/AgentTel/releases/tag/v0.2.0-alpha
-[0.1.0-alpha]: https://github.com/rrohitramsen/AgentTel/releases/tag/v0.1.0-alpha
+[0.2.0-alpha]: https://github.com/agenttel/agenttel-sdk/releases/tag/v0.2.0-alpha
+[0.1.0-alpha]: https://github.com/agenttel/agenttel-sdk/releases/tag/v0.1.0-alpha
