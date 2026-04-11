@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 **Go SDK (agenttel-go) — Full Feature Parity**
 
-Core (`go.agenttel.dev/agenttel`):
+Core (`go.agenttel.dev/agenttel-go`):
 - Semantic attributes (~60 constants) matching Java/Python SDKs
 - All enums (`ServiceTier`, `ErrorCategory`, `DependencyType`, etc.)
 - YAML configuration loader from `agenttel.yml`
@@ -21,8 +21,8 @@ Core (`go.agenttel.dev/agenttel`):
 - HTTP, Gin, and gRPC middleware
 
 GenAI Instrumentation (sub-modules):
-- `go.agenttel.dev/agenttel/genai/openai` — OpenAI SDK wrapper (sync + streaming)
-- `go.agenttel.dev/agenttel/genai/anthropic` — Anthropic SDK wrapper (sync + streaming)
+- `go.agenttel.dev/agenttel-go/genai/openai` — OpenAI SDK wrapper (sync + streaming)
+- `go.agenttel.dev/agenttel-go/genai/anthropic` — Anthropic SDK wrapper (sync + streaming)
 - `GenAiSpanBuilder` for consistent span creation with cost calculation
 
 Agentic Observability:

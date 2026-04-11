@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"go.agenttel.dev/agenttel/enums"
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/enums"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // PatternMatcher detects known incident patterns from telemetry observations.

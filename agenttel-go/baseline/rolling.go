@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // RollingWindow is a lock-free ring buffer for latency and error tracking.

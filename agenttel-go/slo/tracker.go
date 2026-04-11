@@ -4,8 +4,8 @@ package slo
 import (
 	"sync"
 
-	"go.agenttel.dev/agenttel/enums"
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/enums"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 type sloState struct {

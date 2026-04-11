@@ -1,4 +1,4 @@
-module go.agenttel.dev/agenttel/genai/anthropic
+module go.agenttel.dev/agenttel-go/genai/anthropic
 
 go 1.24.0
 
@@ -6,7 +6,7 @@ toolchain go1.24.13
 
 require (
 	github.com/anthropics/anthropic-sdk-go v1.27.1
-	go.agenttel.dev/agenttel v0.1.0
+	go.agenttel.dev/agenttel-go v0.1.0
 	go.opentelemetry.io/otel v1.39.0
 	go.opentelemetry.io/otel/sdk v1.39.0
 	go.opentelemetry.io/otel/trace v1.39.0
@@ -27,4 +27,4 @@ require (
 	golang.org/x/sys v0.39.0 // indirect
 )
 
-replace go.agenttel.dev/agenttel => ../../
+replace go.agenttel.dev/agenttel-go => ../../

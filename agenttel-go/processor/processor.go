@@ -9,13 +9,13 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
-	"go.agenttel.dev/agenttel/anomaly"
-	"go.agenttel.dev/agenttel/attributes"
-	"go.agenttel.dev/agenttel/baseline"
-	"go.agenttel.dev/agenttel/errorclass"
-	"go.agenttel.dev/agenttel/events"
-	"go.agenttel.dev/agenttel/slo"
-	"go.agenttel.dev/agenttel/topology"
+	"go.agenttel.dev/agenttel-go/anomaly"
+	"go.agenttel.dev/agenttel-go/attributes"
+	"go.agenttel.dev/agenttel-go/baseline"
+	"go.agenttel.dev/agenttel-go/errorclass"
+	"go.agenttel.dev/agenttel-go/events"
+	"go.agenttel.dev/agenttel-go/slo"
+	"go.agenttel.dev/agenttel-go/topology"
 )
 
 // SpanCompletionListener is called after a span is processed.

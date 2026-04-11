@@ -1,7 +1,7 @@
 package baseline
 
 import (
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // CompositeProvider chains multiple providers with fallback semantics.

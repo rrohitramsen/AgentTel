@@ -9,8 +9,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	attrs "go.agenttel.dev/agenttel/attributes"
-	"go.agenttel.dev/agenttel/genai"
+	attrs "go.agenttel.dev/agenttel-go/attributes"
+	"go.agenttel.dev/agenttel-go/genai"
 )
 
 // setupTracer creates an in-memory exporter and a tracer for testing.

@@ -10,8 +10,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	agattr "go.agenttel.dev/agenttel/attributes"
-	"go.agenttel.dev/agenttel/enums"
+	agattr "go.agenttel.dev/agenttel-go/attributes"
+	"go.agenttel.dev/agenttel-go/enums"
 )
 
 func setupTracer() (*tracetest.InMemoryExporter, oteltrace.Tracer) {

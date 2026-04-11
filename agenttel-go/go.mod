@@ -1,4 +1,4 @@
-module go.agenttel.dev/agenttel
+module go.agenttel.dev/agenttel-go
 
 go 1.24.0
 

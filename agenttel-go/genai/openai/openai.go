@@ -4,7 +4,7 @@
 //
 //	import (
 //	    openai "github.com/sashabaranov/go-openai"
-//	    agenttelOpenAI "go.agenttel.dev/agenttel/genai/openai"
+//	    agenttelOpenAI "go.agenttel.dev/agenttel-go/genai/openai"
 //	)
 //
 //	client := openai.NewClient("sk-...")
@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
-	"go.agenttel.dev/agenttel/genai"
+	"go.agenttel.dev/agenttel-go/genai"
 )
 
 const (

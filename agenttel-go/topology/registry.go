@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // Registry holds service topology metadata: team, tier, domain, dependencies, consumers.

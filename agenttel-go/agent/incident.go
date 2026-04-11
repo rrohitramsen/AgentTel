@@ -3,8 +3,8 @@ package agent
 import (
 	"time"
 
-	"go.agenttel.dev/agenttel/enums"
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/enums"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // IncidentContext holds all context needed for incident investigation.

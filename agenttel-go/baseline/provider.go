@@ -2,7 +2,7 @@
 package baseline
 
 import (
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // Provider returns baseline data for a named operation.

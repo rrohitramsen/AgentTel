@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 func TestCompositeProvider_PriorityOrder(t *testing.T) {

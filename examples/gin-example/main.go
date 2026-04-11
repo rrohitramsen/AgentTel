@@ -20,8 +20,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.opentelemetry.io/otel/trace"
 
-	agenttel "go.agenttel.dev/agenttel"
-	aggin "go.agenttel.dev/agenttel/middleware/gin"
+	agenttel "go.agenttel.dev/agenttel-go"
+	aggin "go.agenttel.dev/agenttel-go/middleware/gin"
 )
 
 func main() {

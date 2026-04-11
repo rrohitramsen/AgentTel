@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 func TestRegistry_BasicMetadata(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 func TestTracker_BasicAvailability(t *testing.T) {

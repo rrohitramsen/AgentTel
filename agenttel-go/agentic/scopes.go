@@ -4,7 +4,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	agattr "go.agenttel.dev/agenttel/attributes"
+	agattr "go.agenttel.dev/agenttel-go/attributes"
 )
 
 // StepScope represents a single reasoning step.

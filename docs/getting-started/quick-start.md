@@ -246,7 +246,7 @@ Full-featured Go SDK with middleware for net/http, Gin, and gRPC.
 ### 1. Install
 
 ```bash
-go get go.agenttel.dev/agenttel@latest
+go get go.agenttel.dev/agenttel-go@latest
 ```
 
 ### 2. Configure
@@ -274,8 +274,8 @@ agenttel:
 
     ```go
     import (
-        agenttel "go.agenttel.dev/agenttel"
-        agmw "go.agenttel.dev/agenttel/middleware/http"
+        agenttel "go.agenttel.dev/agenttel-go"
+        agmw "go.agenttel.dev/agenttel-go/middleware/http"
     )
 
     cfg, _ := agenttel.LoadConfigFile("agenttel.yml")
@@ -294,7 +294,7 @@ agenttel:
 === "Gin"
 
     ```go
-    import agmw "go.agenttel.dev/agenttel/middleware/gin"
+    import agmw "go.agenttel.dev/agenttel-go/middleware/gin"
 
     r := gin.Default()
     r.Use(agmw.Middleware(engine.BaselineProvider(), engine.TopologyRegistry()))
@@ -303,7 +303,7 @@ agenttel:
 === "gRPC"
 
     ```go
-    import agmw "go.agenttel.dev/agenttel/middleware/grpc"
+    import agmw "go.agenttel.dev/agenttel-go/middleware/grpc"
 
     srv := grpc.NewServer(
         grpc.UnaryInterceptor(agmw.UnaryServerInterceptor(
@@ -317,7 +317,7 @@ All spans are automatically enriched with topology, baselines, anomaly detection
 ### 4. GenAI Instrumentation (Optional)
 
 ```go
-import "go.agenttel.dev/agenttel/genai"
+import "go.agenttel.dev/agenttel-go/genai"
 
 builder := genai.NewSpanBuilder(tracer)
 ctx, span := builder.StartChatSpan(ctx, "gpt-4o", "openai")
@@ -328,7 +328,7 @@ genai.EndSpanSuccess(span, promptTokens, completionTokens, "gpt-4o")
 ### 5. Agentic Observability (Optional)
 
 ```go
-import "go.agenttel.dev/agenttel/agentic"
+import "go.agenttel.dev/agenttel-go/agentic"
 
 at := agentic.NewTracer(tracer).
     AgentName("incident-responder").

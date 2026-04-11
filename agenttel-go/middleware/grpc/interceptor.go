@@ -8,9 +8,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 
-	attrs "go.agenttel.dev/agenttel/attributes"
-	"go.agenttel.dev/agenttel/baseline"
-	"go.agenttel.dev/agenttel/topology"
+	attrs "go.agenttel.dev/agenttel-go/attributes"
+	"go.agenttel.dev/agenttel-go/baseline"
+	"go.agenttel.dev/agenttel-go/topology"
 )
 
 // Config holds interceptor configuration.
