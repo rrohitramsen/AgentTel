@@ -7,7 +7,7 @@
   <a href="https://github.com/agenttel/agenttel-sdk/actions/workflows/ci.yml"><img src="https://github.com/agenttel/agenttel-sdk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
   <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-1.39%2B-blueviolet.svg" alt="OpenTelemetry"></a>
-  <a href="https://agenttel.github.io/agenttel-sdk"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Documentation"></a>
+  <a href="https://agenttel.dev"><img src="https://img.shields.io/badge/docs-agenttel.dev-blue.svg" alt="Documentation"></a>
 </p>
 
 <p align="center">
@@ -639,7 +639,7 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 
 ## Documentation
 
-**Full documentation site: [agenttel.github.io/agenttel-sdk](https://agenttel.github.io/agenttel-sdk)**
+**Full documentation site: [agenttel.dev](https://agenttel.dev)**
 
 | Document | Description |
 |----------|-------------|
