@@ -219,21 +219,21 @@ AgentTel supports multiple integration paths — pick what fits your stack:
     <dependency>
         <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-spring-boot-starter</artifactId>
-        <version>0.2.0-alpha</version>
+        <version>0.3.0-alpha</version>
     </dependency>
 
     <!-- Optional: GenAI instrumentation -->
     <dependency>
         <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-genai</artifactId>
-        <version>0.2.0-alpha</version>
+        <version>0.3.0-alpha</version>
     </dependency>
 
     <!-- Optional: Agent interface layer (MCP server, incident context, remediation) -->
     <dependency>
         <groupId>dev.agenttel</groupId>
         <artifactId>agenttel-agent</artifactId>
-        <version>0.2.0-alpha</version>
+        <version>0.3.0-alpha</version>
     </dependency>
 </dependencies>
 ```
@@ -244,13 +244,13 @@ AgentTel supports multiple integration paths — pick what fits your stack:
 // build.gradle.kts
 dependencies {
     // Core: span enrichment, baselines, anomaly detection, SLO tracking
-    implementation("dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha")
+    implementation("dev.agenttel:agenttel-spring-boot-starter:0.3.0-alpha")
 
     // Optional: GenAI instrumentation
-    implementation("dev.agenttel:agenttel-genai:0.2.0-alpha")
+    implementation("dev.agenttel:agenttel-genai:0.3.0-alpha")
 
     // Optional: Agent interface layer (MCP server, incident context, remediation)
-    implementation("dev.agenttel:agenttel-agent:0.2.0-alpha")
+    implementation("dev.agenttel:agenttel-agent:0.3.0-alpha")
 }
 ```
 
@@ -738,20 +738,20 @@ AgentTel publishes standard Maven artifacts to Maven Central. Your application c
 <dependency>
     <groupId>dev.agenttel</groupId>
     <artifactId>agenttel-spring-boot-starter</artifactId>
-    <version>0.2.0-alpha</version>
+    <version>0.3.0-alpha</version>
 </dependency>
 ```
 
 ### Gradle (Kotlin DSL)
 
 ```kotlin
-implementation("dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha")
+implementation("dev.agenttel:agenttel-spring-boot-starter:0.3.0-alpha")
 ```
 
 ### Gradle (Groovy DSL)
 
 ```groovy
-implementation 'dev.agenttel:agenttel-spring-boot-starter:0.2.0-alpha'
+implementation 'dev.agenttel:agenttel-spring-boot-starter:0.3.0-alpha'
 ```
 
 ### All Available Artifacts

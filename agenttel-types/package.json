@@ -1,6 +1,6 @@
 {
   "name": "@agenttel/types",
-  "version": "0.3.0-alpha",
+  "version": "0.3.0-alpha.0",
   "description": "Shared types, enums, and attribute constants for AgentTel SDKs",
   "type": "module",
   "main": "./dist/cjs/index.js",
@@ -25,7 +25,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AgentTel/AgentTel.git",
+    "url": "https://github.com/AgentTel/agenttel-sdk.git",
     "directory": "agenttel-types"
   }
 }
