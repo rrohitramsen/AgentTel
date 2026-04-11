@@ -4,7 +4,7 @@ package anomaly
 import (
 	"math"
 
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // Detector performs z-score-based anomaly detection.

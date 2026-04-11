@@ -12,13 +12,13 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"go.agenttel.dev/agenttel/anomaly"
-	"go.agenttel.dev/agenttel/attributes"
-	"go.agenttel.dev/agenttel/baseline"
-	"go.agenttel.dev/agenttel/events"
-	"go.agenttel.dev/agenttel/models"
-	"go.agenttel.dev/agenttel/slo"
-	"go.agenttel.dev/agenttel/topology"
+	"go.agenttel.dev/agenttel-go/anomaly"
+	"go.agenttel.dev/agenttel-go/attributes"
+	"go.agenttel.dev/agenttel-go/baseline"
+	"go.agenttel.dev/agenttel-go/events"
+	"go.agenttel.dev/agenttel-go/models"
+	"go.agenttel.dev/agenttel-go/slo"
+	"go.agenttel.dev/agenttel-go/topology"
 )
 
 // createTracerProvider creates a tracer provider with the given processor and in-memory exporter.

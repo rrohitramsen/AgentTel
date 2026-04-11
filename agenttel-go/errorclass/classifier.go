@@ -4,8 +4,8 @@ package errorclass
 import (
 	"strings"
 
-	"go.agenttel.dev/agenttel/enums"
-	"go.agenttel.dev/agenttel/models"
+	"go.agenttel.dev/agenttel-go/enums"
+	"go.agenttel.dev/agenttel-go/models"
 )
 
 // Classifier categorizes errors from exception types and HTTP status codes.

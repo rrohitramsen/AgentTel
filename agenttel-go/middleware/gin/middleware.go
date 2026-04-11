@@ -5,9 +5,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	attrs "go.agenttel.dev/agenttel/attributes"
-	"go.agenttel.dev/agenttel/baseline"
-	"go.agenttel.dev/agenttel/topology"
+	attrs "go.agenttel.dev/agenttel-go/attributes"
+	"go.agenttel.dev/agenttel-go/baseline"
+	"go.agenttel.dev/agenttel-go/topology"
 )
 
 // GinContext is a minimal interface for the gin.Context methods we need,

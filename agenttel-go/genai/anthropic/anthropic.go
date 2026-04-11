@@ -4,7 +4,7 @@
 //
 //	import (
 //	    "github.com/anthropics/anthropic-sdk-go"
-//	    agenttelAnthropic "go.agenttel.dev/agenttel/genai/anthropic"
+//	    agenttelAnthropic "go.agenttel.dev/agenttel-go/genai/anthropic"
 //	)
 //
 //	client := anthropic.NewClient()
@@ -20,7 +20,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
-	"go.agenttel.dev/agenttel/genai"
+	"go.agenttel.dev/agenttel-go/genai"
 )
 
 const (

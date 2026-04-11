@@ -14,7 +14,7 @@
   <a href="https://central.sonatype.com/search?q=dev.agenttel"><img src="https://img.shields.io/maven-central/v/dev.agenttel/agenttel-core?label=Maven%20Central&logo=apachemaven" alt="Maven Central"></a>
   <a href="https://www.npmjs.com/package/@agenttel/node"><img src="https://img.shields.io/npm/v/@agenttel/node?label=npm&logo=npm" alt="npm"></a>
   <a href="https://pypi.org/project/agenttel/"><img src="https://img.shields.io/pypi/v/agenttel?label=PyPI&logo=python&logoColor=white" alt="PyPI"></a>
-  <a href="https://pkg.go.dev/go.agenttel.dev/agenttel"><img src="https://img.shields.io/badge/Go-pkg.go.dev-00ADD8?logo=go&logoColor=white" alt="Go Reference"></a>
+  <a href="https://pkg.go.dev/go.agenttel.dev/agenttel-go"><img src="https://img.shields.io/badge/Go-pkg.go.dev-00ADD8?logo=go&logoColor=white" alt="Go Reference"></a>
 </p>
 
 <p align="center">
@@ -445,7 +445,7 @@ All spans are now enriched with topology, baselines, anomaly detection, and SLO 
 #### 1. Install
 
 ```bash
-go get go.agenttel.dev/agenttel@latest
+go get go.agenttel.dev/agenttel-go@latest
 ```
 
 #### 2. Configure
@@ -468,8 +468,8 @@ agenttel:
 
 ```go
 import (
-    agenttel "go.agenttel.dev/agenttel"
-    agmw "go.agenttel.dev/agenttel/middleware/http"
+    agenttel "go.agenttel.dev/agenttel-go"
+    agmw "go.agenttel.dev/agenttel-go/middleware/http"
 )
 
 cfg, _ := agenttel.LoadConfigFile("agenttel.yml")
@@ -630,7 +630,7 @@ Then ask your IDE agent: *"Analyze my codebase and generate AgentTel configurati
 | `agenttel-javaagent` | `dev.agenttel:agenttel-javaagent` | Zero-code OTel javaagent extension. Drop-in enrichment for any JVM app — no Spring dependency. |
 | `agenttel-spring-boot-starter` | `dev.agenttel:agenttel-spring-boot-starter` | Spring Boot auto-configuration. Single dependency for Spring Boot apps. |
 | `agenttel-web` | `@agenttel/web` (npm) | Browser telemetry SDK — auto-instrumentation of page loads, navigation, API calls, errors, Web Vitals, journey tracking, anomaly detection, W3C trace propagation. |
-| `agenttel-go` | `go.agenttel.dev/agenttel` (Go module) | Go SDK — full feature parity. Core enrichment, net/http + Gin + gRPC middleware, GenAI instrumentation, MCP agent interface, agentic observability. |
+| `agenttel-go` | `go.agenttel.dev/agenttel-go` (Go module) | Go SDK — full feature parity. Core enrichment, net/http + Gin + gRPC middleware, GenAI instrumentation, MCP agent interface, agentic observability. |
 | `agenttel-node` | `@agenttel/node` (npm) | Node.js SDK — full feature parity. Core enrichment, Express + Fastify middleware, GenAI instrumentation, MCP agent interface, agentic observability. |
 | `agenttel-types` | `@agenttel/types` (npm) | Shared TypeScript types, enums, and attribute constants for `@agenttel/web` and `@agenttel/node`. |
 | `agenttel-python` | `agenttel` (pip) | Python SDK — full feature parity with JVM SDK. Core enrichment, FastAPI integration, GenAI instrumentation, MCP agent interface, agentic observability. |
@@ -773,7 +773,7 @@ implementation 'dev.agenttel:agenttel-spring-boot-starter:0.3.0-alpha'
 
 | Module | Description |
 |--------|-------------|
-| `go.agenttel.dev/agenttel` | Go SDK — core enrichment, middleware (net/http, Gin, gRPC), GenAI, Agent/MCP, agentic observability |
+| `go.agenttel.dev/agenttel-go` | Go SDK — core enrichment, middleware (net/http, Gin, gRPC), GenAI, Agent/MCP, agentic observability |
 
 **npm (Browser + Node.js):**
 

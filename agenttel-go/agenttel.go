@@ -16,14 +16,14 @@
 package agenttel
 
 import (
-	"go.agenttel.dev/agenttel/anomaly"
-	"go.agenttel.dev/agenttel/baseline"
-	"go.agenttel.dev/agenttel/errorclass"
-	"go.agenttel.dev/agenttel/events"
-	"go.agenttel.dev/agenttel/models"
-	"go.agenttel.dev/agenttel/processor"
-	"go.agenttel.dev/agenttel/slo"
-	"go.agenttel.dev/agenttel/topology"
+	"go.agenttel.dev/agenttel-go/anomaly"
+	"go.agenttel.dev/agenttel-go/baseline"
+	"go.agenttel.dev/agenttel-go/errorclass"
+	"go.agenttel.dev/agenttel-go/events"
+	"go.agenttel.dev/agenttel-go/models"
+	"go.agenttel.dev/agenttel-go/processor"
+	"go.agenttel.dev/agenttel-go/slo"
+	"go.agenttel.dev/agenttel-go/topology"
 )
 
 // Engine is the top-level orchestrator for all AgentTel components.

@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	attrs "go.agenttel.dev/agenttel/attributes"
+	attrs "go.agenttel.dev/agenttel-go/attributes"
 )
 
 // SpanBuilder creates properly-formed GenAI spans following OTel semantic conventions.
